@@ -1,40 +1,35 @@
 "use client"
 
 import { MoreHorizontal, Pencil } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useTranslations } from "next-intl"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { rdButton } from "@/app/(tenant)/ecommerce/_components/ui"
 
 interface ProductsTableRowActionsProps {
   productId: number
   onEdit: (productId: number) => void
 }
 
-export function ProductsTableRowActions({
-  productId,
-  onEdit,
-}: ProductsTableRowActionsProps) {
+/** Row menu (28px ghost icon): Edit. Clicks never open the row (the table ignores buttons). */
+export function ProductsTableRowActions({ productId, onEdit }: ProductsTableRowActionsProps) {
+  const tc = useTranslations("common")
+  const tu = useTranslations("ecommerceUi")
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <MoreHorizontal className="h-4 w-4" />
-          <span className="sr-only">Open menu</span>
-        </Button>
+        <button type="button" className={rdButton.ghostIconSm} aria-label={tu("moreActions")} title={tu("moreActions")}>
+          <MoreHorizontal className="h-4 w-4" aria-hidden />
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onEdit(productId)}>
-          <Pencil className="me-2 h-4 w-4" />
-          Edit
+        <DropdownMenuItem className="text-[13px]" onClick={() => onEdit(productId)}>
+          <Pencil className="me-2 h-3.5 w-3.5" aria-hidden />
+          {tc("edit")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

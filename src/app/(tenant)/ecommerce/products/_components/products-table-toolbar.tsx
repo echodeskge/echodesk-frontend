@@ -1,24 +1,22 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Table } from "@tanstack/react-table"
-import { Search, Plus, AlertTriangle } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { useTranslations } from "next-intl"
+import { AlertTriangle } from "lucide-react"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { DataTableViewOptions } from "@/components/ui/data-table/data-table-column-toggle"
+  Segmented,
+  Toolbar,
+  ToolbarSearch,
+  ToolbarSpacer,
+  rdButton,
+} from "@/app/(tenant)/ecommerce/_components/ui"
+import { cn } from "@/lib/utils"
 import { PRODUCT_STATUS_LABEL_KEYS, PRODUCT_STATUS_OPTIONS } from "../_data/constants"
-import { ProductList } from "@/api/generated/interfaces"
+import { ColumnsMenu } from "./table-kit"
+
+type StatusOption = (typeof PRODUCT_STATUS_OPTIONS)[number]
 
 interface ProductsTableToolbarProps {
-  table: Table<ProductList>
   searchQuery: string
   statusFilter: string
   lowStockOnly: boolean
@@ -26,12 +24,18 @@ interface ProductsTableToolbarProps {
   onSearchChange: (value: string) => void
   onStatusFilterChange: (value: string) => void
   onLowStockToggle: () => void
-  onAddProduct: () => void
-  t: (key: string) => string
+  columns: { id: string; label: string }[]
+  hiddenColumns: ReadonlySet<string>
+  onHiddenColumnsChange: (hidden: Set<string>) => void
 }
 
+/**
+ * Products toolbar (44px): status segmented control (same values and
+ * `?status=` deep link as the old select), the low-stock toggle with the
+ * count of low-stock products on this page, the column menu and the
+ * search (debounced 300ms, as before).
+ */
 export function ProductsTableToolbar({
-  table,
   searchQuery,
   statusFilter,
   lowStockOnly,
@@ -39,16 +43,17 @@ export function ProductsTableToolbar({
   onSearchChange,
   onStatusFilterChange,
   onLowStockToggle,
-  onAddProduct,
-  t,
+  columns,
+  hiddenColumns,
+  onHiddenColumnsChange,
 }: ProductsTableToolbarProps) {
+  const t = useTranslations("products")
+  const tu = useTranslations("ecommerceUi")
   const [localSearch, setLocalSearch] = useState(searchQuery)
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (localSearch !== searchQuery) {
-        onSearchChange(localSearch)
-      }
+      if (localSearch !== searchQuery) onSearchChange(localSearch)
     }, 300)
     return () => clearTimeout(timer)
   }, [localSearch, searchQuery, onSearchChange])
@@ -57,49 +62,47 @@ export function ProductsTableToolbar({
     setLocalSearch(searchQuery)
   }, [searchQuery])
 
+  const options = PRODUCT_STATUS_OPTIONS.map((status) => ({
+    value: status,
+    label: status === "all" ? tu("all") : t(PRODUCT_STATUS_LABEL_KEYS[status] || status),
+  }))
+
   return (
-    <div className="flex items-center gap-2 max-md:w-full max-md:flex-wrap">
-      <div className="relative max-md:w-full">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder={t("searchPlaceholder")}
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-          className="h-9 pl-8 max-md:w-full md:w-60"
-          aria-label="Search products"
-        />
-      </div>
-      <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-        <SelectTrigger className="h-9 w-32" aria-label="Filter by status">
-          <SelectValue placeholder={t("allStatus")} />
-        </SelectTrigger>
-        <SelectContent>
-          {PRODUCT_STATUS_OPTIONS.map((status) => (
-            <SelectItem key={status} value={status}>
-              {status === "all" ? t("allStatus") : t(PRODUCT_STATUS_LABEL_KEYS[status] || status)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Button
-        variant={lowStockOnly ? "default" : "outline"}
-        size="sm"
-        className="h-9"
+    <Toolbar testId="ec-products-toolbar">
+      <Segmented<StatusOption>
+        value={(PRODUCT_STATUS_OPTIONS as readonly string[]).includes(statusFilter) ? (statusFilter as StatusOption) : "all"}
+        onChange={onStatusFilterChange}
+        options={options}
+        ariaLabel={t("filterByStatus")}
+        testId="ec-products-status"
+      />
+      <button
+        type="button"
         onClick={onLowStockToggle}
+        aria-pressed={lowStockOnly}
+        className={cn(
+          rdButton.outlineSm,
+          lowStockOnly && "border-amber-500/50 bg-amber-500/10 text-amber-800 hover:bg-amber-500/15 dark:text-amber-300"
+        )}
+        data-testid="ec-products-low-stock"
       >
-        <AlertTriangle className="me-2 h-3.5 w-3.5" />
+        <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
         {t("lowStock")}
         {lowStockCount > 0 && !lowStockOnly && (
-          <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">
+          <span className="min-w-4 rounded-full bg-amber-500/15 px-1 text-center text-[10px] leading-4 tabular-nums text-amber-800 dark:text-amber-300">
             {lowStockCount}
-          </Badge>
+          </span>
         )}
-      </Button>
-      <DataTableViewOptions table={table} />
-      <Button size="sm" className="h-9" onClick={onAddProduct}>
-        <Plus className="me-2 h-3.5 w-3.5" />
-        {t("addProduct")}
-      </Button>
-    </div>
+      </button>
+      <ToolbarSpacer />
+      <ColumnsMenu columns={columns} hidden={hiddenColumns} onChange={onHiddenColumnsChange} />
+      <ToolbarSearch
+        value={localSearch}
+        onChange={setLocalSearch}
+        placeholder={t("searchPlaceholder")}
+        clearLabel={tu("clearSearch")}
+        testId="ec-products-search"
+      />
+    </Toolbar>
   )
 }

@@ -2,26 +2,199 @@
   "en": {
     "products": {
       "addProductSheet": {
-        "nameRequired": "Fill in the product name in at least one language"
+        "nameRequired": "Fill in the product name in at least one language",
+        "updated": "Product updated",
+        "updateFailed": "Could not update the product"
+      },
+      "unnamed": "Unnamed product",
+      "stockShort": "{count} in stock",
+      "filterByStatus": "Filter by status",
+      "countLabel": "{count, plural, one {# product} other {# products}}",
+      "columns": {
+        "actions": "Actions"
+      },
+      "stats": {
+        "matching": "Products found",
+        "lowStockPage": "Low stock",
+        "outOfStockPage": "Sold out",
+        "pageHint": "On this page"
+      },
+      "bulkActions": {
+        "setStatus": "Set status:",
+        "updated": "{count, plural, one {# product} other {# products}} set to {status}",
+        "updateFailed": "Could not update the products. Please try again."
+      },
+      "sections": {
+        "basics": "Basics",
+        "pricing": "Pricing",
+        "inventory": "Inventory",
+        "visibility": "Status"
+      },
+      "attributeSelector": {
+        "title": "Attributes",
+        "hint": "Characteristics of this product",
+        "empty": "No attributes yet. Create them under Product attributes first.",
+        "unnamed": "Unnamed",
+        "required": "Required",
+        "valuePlaceholder": "Value",
+        "choose": "Choose…",
+        "addValue": "Add a value",
+        "removeValue": "Remove {value}",
+        "clear": "Clear {name}",
+        "yes": "Yes",
+        "no": "No",
+        "noOptions": "No options available",
+        "unsupported": "Unsupported type"
+      },
+      "variants": {
+        "edit": "Edit variant",
+        "nameLanguage": "Language of the name"
       }
     },
     "languages": {
       "deleteFailed": "Could not delete the language",
       "addLanguageSheet": {
-        "saveFailed": "Could not save the language"
+        "saveFailed": "Could not save the language",
+        "settings": "Settings"
+      },
+      "countLabel": "{count, plural, one {# language} other {# languages}}",
+      "defaultCannotDelete": "The default language cannot be deleted",
+      "totalLanguages": "{count, plural, one {# language} other {# languages}} in total"
+    },
+    "ecommerceUi": {
+      "sortBy": "Sort by {column}",
+      "sortedAsc": "{column}, sorted ascending",
+      "sortedDesc": "{column}, sorted descending"
+    },
+    "productAttributes": {
+      "countLabel": "{count, plural, one {# attribute} other {# attributes}}",
+      "optionsCount": "{count, plural, one {# option} other {# options}}",
+      "properties": "Properties",
+      "table": {
+        "actions": "Actions"
+      },
+      "sections": {
+        "definition": "Definition",
+        "settings": "Settings"
+      },
+      "deleted": "Attribute deleted",
+      "deleteFailed": "Could not delete the attribute",
+      "deleteDialog": {
+        "title": "Delete attribute",
+        "description": "Delete \"{name}\"? This cannot be undone."
+      },
+      "addAttributeSheet": {
+        "nameRequired": "Fill in the attribute name in at least one language",
+        "keyRequired": "Enter a key for the attribute",
+        "optionsRequired": "Add at least one option for a multi-select attribute",
+        "optionsInvalid": "Every option needs a value and a label in at least one language",
+        "optionValueRequired": "Enter a value for the option",
+        "optionLabelRequired": "Enter a label in at least one language",
+        "createFailed": "Could not create the attribute",
+        "updateFailed": "Could not update the attribute",
+        "removeOption": "Remove {name}",
+        "nameInLanguage": "Name in {lang}",
+        "labelPlaceholder": "Label in {lang}"
       }
     }
   },
   "ka": {
     "products": {
       "addProductSheet": {
-        "nameRequired": "შეავსეთ პროდუქტის სახელი ერთ ენაზე მაინც"
+        "nameRequired": "შეავსეთ პროდუქტის სახელი ერთ ენაზე მაინც",
+        "updated": "პროდუქტი განახლდა",
+        "updateFailed": "პროდუქტის განახლება ვერ მოხერხდა"
+      },
+      "outOfStock": "ამოწურული",
+      "unnamed": "უსახელო პროდუქტი",
+      "stockShort": "მარაგში {count}",
+      "filterByStatus": "სტატუსით ფილტრი",
+      "countLabel": "{count} პროდუქტი",
+      "columns": {
+        "actions": "მოქმედებები"
+      },
+      "stats": {
+        "matching": "ნაპოვნი",
+        "lowStockPage": "დაბალი მარაგი",
+        "outOfStockPage": "ამოწურული",
+        "pageHint": "ამ გვერდზე"
+      },
+      "bulkActions": {
+        "setStatus": "სტატუსი:",
+        "updated": "{count} პროდუქტს მიენიჭა სტატუსი „{status}“",
+        "updateFailed": "პროდუქტების განახლება ვერ მოხერხდა. სცადეთ ხელახლა."
+      },
+      "sections": {
+        "basics": "ძირითადი",
+        "pricing": "ფასი",
+        "inventory": "მარაგი",
+        "visibility": "სტატუსი"
+      },
+      "attributeSelector": {
+        "title": "ატრიბუტები",
+        "hint": "ამ პროდუქტის მახასიათებლები",
+        "empty": "ატრიბუტები ჯერ არ არის. ჯერ შექმენით ისინი „პროდუქტის ატრიბუტებში“.",
+        "unnamed": "უსახელო",
+        "required": "სავალდებულო",
+        "valuePlaceholder": "მნიშვნელობა",
+        "choose": "აირჩიეთ…",
+        "addValue": "მნიშვნელობის დამატება",
+        "removeValue": "{value} — წაშლა",
+        "clear": "{name} — გასუფთავება",
+        "yes": "კი",
+        "no": "არა",
+        "noOptions": "ვარიანტები არ არის",
+        "unsupported": "მხარდაუჭერელი ტიპი"
+      },
+      "variants": {
+        "edit": "ვარიანტის რედაქტირება",
+        "nameLanguage": "სახელის ენა"
       }
     },
     "languages": {
       "deleteFailed": "ენის წაშლა ვერ მოხერხდა",
       "addLanguageSheet": {
-        "saveFailed": "ენის შენახვა ვერ მოხერხდა"
+        "saveFailed": "ენის შენახვა ვერ მოხერხდა",
+        "settings": "პარამეტრები"
+      },
+      "countLabel": "{count} ენა",
+      "defaultCannotDelete": "ნაგულისხმევი ენის წაშლა შეუძლებელია",
+      "totalLanguages": "სულ {count} ენა"
+    },
+    "ecommerceUi": {
+      "sortBy": "დალაგება: {column}",
+      "sortedAsc": "{column}, ზრდადობით",
+      "sortedDesc": "{column}, კლებადობით"
+    },
+    "productAttributes": {
+      "countLabel": "{count} ატრიბუტი",
+      "optionsCount": "{count} ოფცია",
+      "properties": "თვისებები",
+      "table": {
+        "actions": "მოქმედებები"
+      },
+      "sections": {
+        "definition": "განსაზღვრება",
+        "settings": "პარამეტრები"
+      },
+      "deleted": "ატრიბუტი წაიშალა",
+      "deleteFailed": "ატრიბუტის წაშლა ვერ მოხერხდა",
+      "deleteDialog": {
+        "title": "ატრიბუტის წაშლა",
+        "description": "წაიშალოს „{name}“? მოქმედების გაუქმება შეუძლებელია."
+      },
+      "addAttributeSheet": {
+        "nameRequired": "შეავსეთ ატრიბუტის სახელი ერთ ენაზე მაინც",
+        "keyRequired": "მიუთითეთ ატრიბუტის გასაღები",
+        "optionsRequired": "მრავალჯერადი არჩევანის ატრიბუტს ერთი ოფცია მაინც სჭირდება",
+        "optionsInvalid": "ყველა ოფციას სჭირდება მნიშვნელობა და იარლიყი ერთ ენაზე მაინც",
+        "optionValueRequired": "მიუთითეთ ოფციის მნიშვნელობა",
+        "optionLabelRequired": "შეავსეთ იარლიყი ერთ ენაზე მაინც",
+        "createFailed": "ატრიბუტის შექმნა ვერ მოხერხდა",
+        "updateFailed": "ატრიბუტის განახლება ვერ მოხერხდა",
+        "removeOption": "{name} — წაშლა",
+        "nameInLanguage": "სახელი — {lang}",
+        "labelPlaceholder": "იარლიყი — {lang}"
       }
     }
   }
