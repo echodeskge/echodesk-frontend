@@ -29,7 +29,10 @@
       },
       "itemListsPage": {
         "public": "Public",
-        "publicLabel": "Public (visible to ecommerce clients)"
+        "publicLabel": "Public (visible to ecommerce clients)",
+        "detailPage": {
+          "inactive": "Inactive"
+        }
       }
     }
   },
@@ -63,7 +66,10 @@
       },
       "itemListsPage": {
         "public": "საჯარო",
-        "publicLabel": "საჯარო (ხილულია ონლაინ მაღაზიის კლიენტებისთვის)"
+        "publicLabel": "საჯარო (ხილულია ონლაინ მაღაზიის კლიენტებისთვის)",
+        "detailPage": {
+          "inactive": "არააქტიური"
+        }
       }
     }
   }

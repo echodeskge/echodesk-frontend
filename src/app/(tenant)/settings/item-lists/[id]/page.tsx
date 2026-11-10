@@ -368,7 +368,7 @@ export default function ItemListDetailPage() {
                         {item.is_active ? (
                           <Badge variant="default">{t("active")}</Badge>
                         ) : (
-                          <Badge variant="secondary">{t("status")}</Badge>
+                          <Badge variant="secondary">{t("inactive")}</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
