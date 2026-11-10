@@ -21,7 +21,7 @@ export type CallEventStatus =
   | 'ended'
   | 'recording'
   | 'on_hold'
-  | (string & {});
+  | (string & Record<never, never>);
 
 /** Payload of a `call_event` frame (see the API contract in PLAN.md). */
 export interface CallEventPayload {

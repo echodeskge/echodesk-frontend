@@ -1,433 +1,342 @@
 /**
- * Tests for CallContext.
- * Verifies default state, provider rendering, hook boundary, and feature gating.
+ * CallContext: default state, hook boundaries, softphone gating, the
+ * `useCall()` compatibility shim and the rail rules while idle.
+ * Interaction flows with the SIP service live in CallContext.test.tsx.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // ---------------------------------------------------------------------------
-// Mocks (must be declared before importing the module under test)
+// Mocks
 // ---------------------------------------------------------------------------
 
+const mockHasFeature = vi.fn(() => false);
 vi.mock("@/contexts/SubscriptionContext", () => ({
-  useSubscription: vi.fn(() => ({
-    hasFeature: vi.fn(() => false),
-    subscription: null,
-    loading: false,
-  })),
+  useSubscription: () => ({ hasFeature: mockHasFeature, subscription: null, loading: false }),
 }));
 
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: vi.fn(() => ({
-    user: null,
-    token: null,
-    isAuthenticated: false,
-    loading: false,
-    login: vi.fn(),
-    logout: vi.fn(),
-    checkAuth: vi.fn(),
-  })),
+  useAuth: vi.fn(() => ({ user: null, token: null, isAuthenticated: false, loading: false })),
 }));
 
 vi.mock("@/hooks/useUserProfile", () => ({
-  useUserProfile: vi.fn(() => ({
-    data: null,
-    isLoading: false,
-    error: null,
-  })),
+  useUserProfile: vi.fn(() => ({ data: null, isLoading: false, error: null })),
 }));
 
+vi.mock("next-intl", () => ({
+  useTranslations: () => (key: string, params?: Record<string, unknown>) =>
+    params ? `calls.errors.${key}:${JSON.stringify(params)}` : `calls.errors.${key}`,
+}));
+
+const mockMyConfig = vi.fn();
 vi.mock("@/api/generated/api", () => ({
   sipConfigurationsList: vi.fn(),
   sipConfigurationsWebrtcConfigRetrieve: vi.fn(),
+  sipConfigurationsMyConfigRetrieve: (...a: unknown[]) => mockMyConfig(...a),
   callLogsInitiateCallCreate: vi.fn(),
   callLogsLogIncomingCallCreate: vi.fn(),
   callLogsEndCallCreate: vi.fn(),
   callLogsUpdateStatusPartialUpdate: vi.fn(),
+  callLogsInitiateConsultationCreate: vi.fn(),
+  callLogsCompleteAttendedTransferCreate: vi.fn(),
+  callLogsCancelConsultationCreate: vi.fn(),
+  callLogsMergeConferenceCreate: vi.fn(),
 }));
 
-vi.mock("@/services/SipService", () => ({
-  SipService: vi.fn().mockImplementation(() => ({
-    on: vi.fn(),
-    initialize: vi.fn(),
-    disconnect: vi.fn(),
-    makeCall: vi.fn(),
-    acceptCall: vi.fn(),
-    rejectCall: vi.fn(),
-    endCall: vi.fn(),
-    toggleHold: vi.fn(),
-    toggleMute: vi.fn(),
-    sendDTMF: vi.fn(),
-    transferCall: vi.fn(),
-    register: vi.fn(),
-  })),
-}));
+const mockSipInitialize = vi.fn();
+vi.mock("@/services/SipService", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/services/SipService")>();
+  return {
+    ...actual,
+    SipService: vi.fn().mockImplementation(() => ({
+      on: vi.fn(() => () => {}),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
+      initialize: (...a: unknown[]) => mockSipInitialize(...a),
+      disconnect: vi.fn().mockResolvedValue(undefined),
+      reconnect: vi.fn().mockResolvedValue(undefined),
+      makeCall: vi.fn(),
+      acceptCall: vi.fn(),
+      rejectCall: vi.fn(),
+      endCall: vi.fn(),
+      toggleHold: vi.fn(),
+      toggleMute: vi.fn(),
+      sendDTMF: vi.fn(),
+      transferCall: vi.fn(),
+      getIncomingInfo: vi.fn(),
+    })),
+  };
+});
 
-import { CallProvider, useCall } from "@/contexts/CallContext";
+import { CallProvider, useCall, useCallState, useCallActions } from "@/contexts/CallContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 const mockUseAuth = vi.mocked(useAuth);
 const mockUseUserProfile = vi.mocked(useUserProfile);
 
-// ---------------------------------------------------------------------------
-// Wrapper helper
-// ---------------------------------------------------------------------------
-
 function createWrapper() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return ({ children }: { children: React.ReactNode }) =>
-    React.createElement(CallProvider, null, children);
+    React.createElement(QueryClientProvider, { client }, React.createElement(CallProvider, null, children));
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+function setAuth(user: Record<string, unknown> | null, profile: Record<string, unknown> | null) {
+  mockUseAuth.mockReturnValue({ user, token: user ? "t" : null, isAuthenticated: !!user, loading: false } as never);
+  mockUseUserProfile.mockReturnValue({ data: profile, isLoading: false, error: null } as never);
+}
+
+const useBoth = () => ({ state: useCallState(), actions: useCallActions() });
 
 describe("CallContext", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorage.clear();
-
-    mockUseAuth.mockReturnValue({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      loading: false,
-      login: vi.fn(),
-      logout: vi.fn(),
-      checkAuth: vi.fn(),
-    } as any);
-
-    mockUseUserProfile.mockReturnValue({
-      data: null,
-      isLoading: false,
-      error: null,
-    } as any);
+    mockHasFeature.mockReturnValue(false);
+    mockMyConfig.mockResolvedValue({ sip_configuration: null });
+    mockSipInitialize.mockResolvedValue(undefined);
+    setAuth(null, null);
   });
 
-  describe("useCall outside provider", () => {
-    it("throws when used outside CallProvider", () => {
+  describe("hook boundaries", () => {
+    it("useCallState / useCallActions / useCall throw outside the provider", () => {
       const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-      expect(() => {
-        renderHook(() => useCall());
-      }).toThrow("useCall must be used within a CallProvider");
-
+      expect(() => renderHook(() => useCallState())).toThrow("useCallState must be used within a CallProvider");
+      expect(() => renderHook(() => useCallActions())).toThrow("useCallActions must be used within a CallProvider");
+      expect(() => renderHook(() => useCall())).toThrow("useCallState must be used within a CallProvider");
       spy.mockRestore();
     });
   });
 
-  describe("provider renders children", () => {
-    it("renders children without crashing", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current).toBeDefined();
-    });
-  });
-
   describe("default state", () => {
-    it("has no active call by default", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.activeCall).toBeNull();
+    it("starts idle, off, closed and error-free", async () => {
+      const { result } = renderHook(useBoth, { wrapper: createWrapper() });
+      const { state } = result.current;
+      expect(state.activeCall).toBeNull();
+      expect(state.sipState).toBe("off");
+      expect(state.activeSipConfig).toBeNull();
+      expect(state.dialNumber).toBe("");
+      expect(state.error).toBeNull();
+      expect(state.rail).toEqual({ mode: "closed", prefill: null, autoDial: false });
+      expect(state.callEndedCounter).toBe(0);
+      expect(state.missedCall).toBeNull();
+      expect(state.busyRejected).toBeNull();
+      expect(state.soundBlocked).toBe(false);
+      await waitFor(() => expect(result.current.state.loading).toBe(false));
     });
 
-    it("has zero call duration by default", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
+    it("exposes every action as a stable function", () => {
+      const { result, rerender } = renderHook(useBoth, { wrapper: createWrapper() });
+      const first = result.current.actions;
+      const names = [
+        "setDialNumber", "makeCall", "acceptCall", "rejectCall", "endCall", "toggleHold", "toggleMute",
+        "sendDTMF", "transferCall", "startAttendedTransfer", "completeTransfer", "cancelTransfer",
+        "mergeConference", "openRail", "closeRail", "minimiseRail", "reconnect", "clearMissedCall",
+        "clearError", "unlockSound",
+      ] as const;
+      for (const name of names) expect(typeof first[name]).toBe("function");
+
+      act(() => {
+        result.current.actions.setDialNumber("101");
       });
-
-      expect(result.current.callDuration).toBe(0);
-    });
-
-    it("is not SIP-registered by default", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.sipRegistered).toBe(false);
-    });
-
-    it("is not SIP-connecting by default", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.sipConnecting).toBe(false);
-    });
-
-    it("has no active SIP configuration by default", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.activeSipConfig).toBeNull();
-    });
-
-    it("has empty dial number by default", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.dialNumber).toBe("");
-    });
-
-    it("has empty error by default", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.error).toBe("");
-    });
-
-    it("has dialpad closed by default", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.isDialpadOpen).toBe(false);
-    });
-
-    it("has zero callEndedCounter by default", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.callEndedCounter).toBe(0);
-    });
-
-    it("has no missed call by default", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.missedCall).toBeNull();
+      rerender();
+      expect(result.current.actions).toBe(first);
+      expect(result.current.state.dialNumber).toBe("101");
     });
   });
 
-  describe("state setters", () => {
-    it("setDialNumber updates dialNumber", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
+  describe("idle actions", () => {
+    it("are no-ops without a SIP service", async () => {
+      const { result } = renderHook(useBoth, { wrapper: createWrapper() });
+      const a = result.current.actions;
+      await act(async () => {
+        await a.acceptCall();
+        await a.rejectCall();
+        await a.endCall();
+        await a.toggleHold();
+        a.toggleMute();
+        await a.completeTransfer();
+        await a.cancelTransfer();
+        await a.mergeConference();
       });
-
-      act(() => {
-        result.current.setDialNumber("+995555123456");
-      });
-
-      expect(result.current.dialNumber).toBe("+995555123456");
+      expect(a.sendDTMF("5")).toBe(false);
+      expect(result.current.state.activeCall).toBeNull();
+      expect(result.current.state.error).toBeNull();
     });
 
-    it("setError updates error message", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
+    it("makeCall() without registration sets the notRegistered key", async () => {
+      const { result } = renderHook(useBoth, { wrapper: createWrapper() });
+      await act(async () => {
+        await result.current.actions.makeCall("101");
       });
-
-      act(() => {
-        result.current.setError("Connection lost");
-      });
-
-      expect(result.current.error).toBe("Connection lost");
+      expect(result.current.state.error).toEqual({ key: "notRegistered" });
+      expect(result.current.state.activeCall).toBeNull();
     });
 
-    it("setIsDialpadOpen updates dialpad state", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
+    it("makeCall() with an empty number does nothing", async () => {
+      const { result } = renderHook(useBoth, { wrapper: createWrapper() });
+      await act(async () => {
+        await result.current.actions.makeCall();
       });
-
-      act(() => {
-        result.current.setIsDialpadOpen(true);
-      });
-
-      expect(result.current.isDialpadOpen).toBe(true);
+      expect(result.current.state.error).toBeNull();
     });
 
-    it("toggleDialpad flips dialpad state", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
+    it("transferCall() / startAttendedTransfer() set the error and rethrow", async () => {
+      const { result } = renderHook(useBoth, { wrapper: createWrapper() });
+      let thrown: unknown;
+      await act(async () => {
+        await result.current.actions.transferCall("102").catch((e) => {
+          thrown = e;
+        });
       });
+      expect(thrown).toMatchObject({ key: "noActiveCall" });
+      expect(result.current.state.error).toEqual({ key: "noActiveCall" });
 
-      expect(result.current.isDialpadOpen).toBe(false);
+      thrown = undefined;
+      await act(async () => {
+        await result.current.actions.startAttendedTransfer("102", "Agent").catch((e) => {
+          thrown = e;
+        });
+      });
+      expect(thrown).toMatchObject({ key: "noActiveCall" });
+    });
 
+    it("clearError() clears and errors auto-clear after 6 s", async () => {
+      vi.useFakeTimers();
+      try {
+        const { result } = renderHook(useBoth, { wrapper: createWrapper() });
+        await act(async () => {
+          await result.current.actions.makeCall("101");
+        });
+        expect(result.current.state.error).toEqual({ key: "notRegistered" });
+        act(() => {
+          vi.advanceTimersByTime(6_100);
+        });
+        expect(result.current.state.error).toBeNull();
+
+        await act(async () => {
+          await result.current.actions.makeCall("101");
+        });
+        act(() => {
+          result.current.actions.clearError();
+        });
+        expect(result.current.state.error).toBeNull();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
+  describe("rail rules while idle", () => {
+    it("openRail() prefills the dial number; closeRail() closes; minimiseRail() needs a call", () => {
+      const { result } = renderHook(useBoth, { wrapper: createWrapper() });
+      act(() => {
+        result.current.actions.openRail({ number: " +995 555 000 111 " });
+      });
+      expect(result.current.state.rail).toEqual({ mode: "open", prefill: "+995 555 000 111", autoDial: false });
+      expect(result.current.state.dialNumber).toBe("+995 555 000 111");
+
+      act(() => {
+        result.current.actions.minimiseRail();
+      });
+      expect(result.current.state.rail.mode).toBe("open");
+
+      act(() => {
+        result.current.actions.closeRail();
+      });
+      expect(result.current.state.rail).toEqual({ mode: "closed", prefill: null, autoDial: false });
+    });
+
+    it("openRail() without a number keeps the dial field", () => {
+      const { result } = renderHook(useBoth, { wrapper: createWrapper() });
+      act(() => {
+        result.current.actions.setDialNumber("55");
+        result.current.actions.openRail();
+      });
+      expect(result.current.state.rail.mode).toBe("open");
+      expect(result.current.state.dialNumber).toBe("55");
+    });
+  });
+
+  describe("softphone gating", () => {
+    it("does not load a configuration when the tenant lacks ip_calling", async () => {
+      mockHasFeature.mockReturnValue(false);
+      setAuth({ id: 1, is_staff: true }, { id: 1, feature_keys: ["ip_calling"] });
+      const { result } = renderHook(useBoth, { wrapper: createWrapper() });
+      await waitFor(() => expect(result.current.state.loading).toBe(false));
+      expect(mockMyConfig).not.toHaveBeenCalled();
+      expect(result.current.state.sipState).toBe("off");
+    });
+
+    it("does not load when the user has neither the key nor staff status", async () => {
+      mockHasFeature.mockReturnValue(true);
+      setAuth({ id: 1 }, { id: 1, feature_keys: [], all_permissions: ["make_calls"] });
+      const { result } = renderHook(useBoth, { wrapper: createWrapper() });
+      await waitFor(() => expect(result.current.state.loading).toBe(false));
+      expect(mockMyConfig).not.toHaveBeenCalled();
+    });
+
+    it("does not load without the make_calls permission", async () => {
+      mockHasFeature.mockReturnValue(true);
+      setAuth({ id: 1 }, { id: 1, feature_keys: ["ip_calling"], all_permissions: [] });
+      const { result } = renderHook(useBoth, { wrapper: createWrapper() });
+      await waitFor(() => expect(result.current.state.loading).toBe(false));
+      expect(mockMyConfig).not.toHaveBeenCalled();
+    });
+
+    it("loads for a user with the key and make_calls", async () => {
+      mockHasFeature.mockReturnValue(true);
+      setAuth({ id: 1 }, { id: 1, feature_keys: JSON.stringify(["ip_calling"]), all_permissions: ["make_calls"] });
+      const { result } = renderHook(useBoth, { wrapper: createWrapper() });
+      await waitFor(() => expect(mockMyConfig).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(result.current.state.loading).toBe(false));
+    });
+
+    it("loads for staff without an explicit key", async () => {
+      mockHasFeature.mockReturnValue(true);
+      setAuth({ id: 1, is_staff: true }, { id: 1, feature_keys: [] });
+      renderHook(useBoth, { wrapper: createWrapper() });
+      await waitFor(() => expect(mockMyConfig).toHaveBeenCalledTimes(1));
+    });
+  });
+
+  describe("useCall() compatibility shim", () => {
+    it("returns state + actions plus the legacy names", () => {
+      const { result } = renderHook(() => useCall(), { wrapper: createWrapper() });
+      const v = result.current;
+      expect(v.activeCall).toBeNull();
+      expect(v.callDuration).toBe(0);
+      expect(v.sipRegistered).toBe(false);
+      expect(v.sipConnecting).toBe(false);
+      expect(v.isDialpadOpen).toBe(false);
+      expect(v.error).toBe("");
+      expect(v.rail.mode).toBe("closed");
+      for (const fn of [
+        "setDialNumber", "makeCall", "handleAcceptCall", "handleRejectCall", "handleEndCall", "handleToggleHold",
+        "handleToggleMute", "setIsDialpadOpen", "toggleDialpad", "sendDTMF", "transferCall", "startAttendedTransfer",
+        "completeTransfer", "cancelTransfer", "mergeConference", "clearMissedCall", "openRail", "closeRail", "reconnect",
+      ] as const) {
+        expect(typeof v[fn]).toBe("function");
+      }
+    });
+
+    it("maps the dialpad flags onto the rail and translates the error", async () => {
+      const { result } = renderHook(() => useCall(), { wrapper: createWrapper() });
       act(() => {
         result.current.toggleDialpad();
       });
-
       expect(result.current.isDialpadOpen).toBe(true);
-
+      expect(result.current.rail.mode).toBe("open");
       act(() => {
-        result.current.toggleDialpad();
+        result.current.setIsDialpadOpen(false);
       });
-
       expect(result.current.isDialpadOpen).toBe(false);
-    });
 
-    it("clearMissedCall resets missedCall to null", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
+      await act(async () => {
+        await result.current.makeCall("101");
       });
-
-      // missedCall is null initially; clearMissedCall keeps it null
-      act(() => {
-        result.current.clearMissedCall();
-      });
-
-      expect(result.current.missedCall).toBeNull();
-    });
-  });
-
-  describe("feature gating (ip_calling)", () => {
-    it("sets loading to false when user has no ip_calling feature", async () => {
-      mockUseAuth.mockReturnValue({
-        user: { id: 1, is_staff: false, is_superuser: false } as any,
-        token: "token",
-        isAuthenticated: true,
-        loading: false,
-        login: vi.fn(),
-        logout: vi.fn(),
-        checkAuth: vi.fn(),
-      } as any);
-
-      mockUseUserProfile.mockReturnValue({
-        data: { feature_keys: [] },
-        isLoading: false,
-        error: null,
-      } as any);
-
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-    });
-
-    it("grants access to staff users even without explicit ip_calling feature", async () => {
-      mockUseAuth.mockReturnValue({
-        user: { id: 1, is_staff: true, is_superuser: false } as any,
-        token: "token",
-        isAuthenticated: true,
-        loading: false,
-        login: vi.fn(),
-        logout: vi.fn(),
-        checkAuth: vi.fn(),
-      } as any);
-
-      mockUseUserProfile.mockReturnValue({
-        data: { feature_keys: [] },
-        isLoading: false,
-        error: null,
-      } as any);
-
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      // Staff users have ip_calling access, so loading stays true until SIP config is loaded
-      // (the provider will attempt to load SIP configuration)
-      expect(result.current).toBeDefined();
-    });
-
-    it("grants access to superuser even without explicit ip_calling feature", () => {
-      mockUseAuth.mockReturnValue({
-        user: { id: 1, is_staff: false, is_superuser: true } as any,
-        token: "token",
-        isAuthenticated: true,
-        loading: false,
-        login: vi.fn(),
-        logout: vi.fn(),
-        checkAuth: vi.fn(),
-      } as any);
-
-      mockUseUserProfile.mockReturnValue({
-        data: { feature_keys: [] },
-        isLoading: false,
-        error: null,
-      } as any);
-
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      // Superusers have ip_calling access
-      expect(result.current).toBeDefined();
-    });
-
-    it("recognises ip_calling from feature_keys array", () => {
-      mockUseAuth.mockReturnValue({
-        user: { id: 1, is_staff: false, is_superuser: false } as any,
-        token: "token",
-        isAuthenticated: true,
-        loading: false,
-        login: vi.fn(),
-        logout: vi.fn(),
-        checkAuth: vi.fn(),
-      } as any);
-
-      mockUseUserProfile.mockReturnValue({
-        data: { feature_keys: ["ip_calling", "other_feature"] },
-        isLoading: false,
-        error: null,
-      } as any);
-
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      // User has ip_calling in their feature_keys, so the provider will try to load SIP config
-      expect(result.current).toBeDefined();
-    });
-
-    it("recognises ip_calling from feature_keys JSON string", () => {
-      mockUseAuth.mockReturnValue({
-        user: { id: 1, is_staff: false, is_superuser: false } as any,
-        token: "token",
-        isAuthenticated: true,
-        loading: false,
-        login: vi.fn(),
-        logout: vi.fn(),
-        checkAuth: vi.fn(),
-      } as any);
-
-      mockUseUserProfile.mockReturnValue({
-        data: { feature_keys: JSON.stringify(["ip_calling"]) },
-        isLoading: false,
-        error: null,
-      } as any);
-
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current).toBeDefined();
-    });
-  });
-
-  describe("exposes all expected functions", () => {
-    it("exposes all context value keys", () => {
-      const { result } = renderHook(() => useCall(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(typeof result.current.setDialNumber).toBe("function");
-      expect(typeof result.current.makeCall).toBe("function");
-      expect(typeof result.current.handleAcceptCall).toBe("function");
-      expect(typeof result.current.handleRejectCall).toBe("function");
-      expect(typeof result.current.handleEndCall).toBe("function");
-      expect(typeof result.current.handleToggleHold).toBe("function");
-      expect(typeof result.current.handleToggleMute).toBe("function");
-      expect(typeof result.current.setError).toBe("function");
-      expect(typeof result.current.setIsDialpadOpen).toBe("function");
-      expect(typeof result.current.toggleDialpad).toBe("function");
-      expect(typeof result.current.sendDTMF).toBe("function");
-      expect(typeof result.current.transferCall).toBe("function");
-      expect(typeof result.current.clearMissedCall).toBe("function");
+      expect(result.current.error).toBe("calls.errors.notRegistered");
     });
   });
 });
