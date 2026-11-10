@@ -4,9 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { AlertCircle, Check, ChevronDown, CircleCheck, Loader2, PhoneOff, Plus, Search, Settings, UserRound, X } from "lucide-react";
-import { useCall } from "@/contexts/CallContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTicketCreate } from "@/contexts/TicketCreateContext";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { useCallBridgeActions, useCallBridgeState } from "@/hooks/useCallBridge";
+import { useCallingAccess } from "@/lib/calling-access";
+import { isPbxAdmin } from "@/lib/backendPermissions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatCallDay, formatMmSs } from "@/components/calls/call-format";
 import { cn } from "@/lib/utils";
@@ -27,22 +30,17 @@ const TOAST_MS = 2600;
 /** The redesigned Calls screen: header bridge, tabs/agent/search toolbar, day-grouped history. */
 export function CallsScreen() {
   const t = useTranslations("calls.page");
+  const tAccess = useTranslations("calls.access");
   const locale = useLocale();
   const { user } = useAuth();
-  const isAdmin = !!(user?.is_staff || user?.is_superuser);
+  const { data: profile } = useUserProfile();
+  // "SIP settings" and "Configure SIP" go to PBX admins: staff, superuser
+  // or manage_settings (crm/permissions.py is_pbx_admin).
+  const canManagePbx = isPbxAdmin(user as never) || isPbxAdmin(profile as never);
+  const { canUseSoftphone } = useCallingAccess();
   const { openTicketCreate } = useTicketCreate();
-  const {
-    activeCall,
-    sipRegistered,
-    sipConnecting,
-    activeSipConfig,
-    loading: configLoading,
-    error: callError,
-    callEndedCounter,
-    setDialNumber,
-    setIsDialpadOpen,
-    isDialpadOpen,
-  } = useCall();
+  const { inCall, sipState, activeSipConfig, loading: configLoading, errorText, callEndedCounter, railOpen } = useCallBridgeState();
+  const { openRail } = useCallBridgeActions();
 
   const [tab, setTab] = useState<CallTab>("all");
   const [agentId, setAgentId] = useState<number | null>(null);
@@ -94,29 +92,39 @@ export function CallsScreen() {
 
   const showToast = useCallback((message: string, tone: "ok" | "warn" = "warn") => setToast({ message, tone }), []);
 
+  // Why the softphone cannot open right now (null = it can). Keyed on the
+  // user's access and the SIP state, not on whether a dock widget rendered.
+  const softphoneBlocker = useCallback((): string | null => {
+    if (!canUseSoftphone) return tAccess("noSoftphone");
+    if (configLoading) return t("loadingConfig");
+    if (!activeSipConfig || sipState === "off") return t("noConfig");
+    // Connecting / failed: the rail shows the SIP state and a Reconnect itself.
+    return null;
+  }, [activeSipConfig, canUseSoftphone, configLoading, sipState, t, tAccess]);
+
   const onNewCall = useCallback(() => {
-    if (!activeSipConfig) {
-      showToast(configLoading ? t("loadingConfig") : t("noConfig"));
+    const blocker = softphoneBlocker();
+    if (blocker) {
+      showToast(blocker);
       return;
     }
-    // The softphone itself says when SIP is not registered.
-    setIsDialpadOpen(true);
-  }, [activeSipConfig, configLoading, setIsDialpadOpen, showToast, t]);
+    openRail();
+  }, [openRail, showToast, softphoneBlocker]);
 
   const onCallBack = useCallback(
     (number: string) => {
-      if (activeCall) {
+      if (inCall) {
         showToast(t("finishCurrentCall"));
         return;
       }
-      if (!activeSipConfig) {
-        showToast(t("noConfig"));
+      const blocker = softphoneBlocker();
+      if (blocker) {
+        showToast(blocker);
         return;
       }
-      setDialNumber(number);
-      setIsDialpadOpen(true);
+      openRail({ number });
     },
-    [activeCall, activeSipConfig, setDialNumber, setIsDialpadOpen, showToast, t]
+    [inCall, openRail, showToast, softphoneBlocker, t]
   );
 
   const onSaveNotes = useCallback(
@@ -137,11 +145,11 @@ export function CallsScreen() {
   return (
     <section className="relative flex h-full min-h-0 w-full flex-col overflow-hidden" data-testid="calls-screen">
       <CallsHeaderBridge
-        sipRegistered={sipRegistered}
-        sipConnecting={sipConnecting}
+        sipRegistered={sipState === "registered"}
+        sipConnecting={sipState === "connecting" || sipState === "reconnecting"}
         extension={activeSipConfig?.username}
-        showSip={!!activeSipConfig}
-        isAdmin={isAdmin}
+        showSip={!!activeSipConfig && canUseSoftphone}
+        canManagePbx={canManagePbx}
         onNewCall={onNewCall}
       />
 
@@ -248,12 +256,18 @@ export function CallsScreen() {
         </div>
       </div>
 
-      {/* SIP config / error notices */}
-      {!configLoading && !activeSipConfig && (
+      {/* access / SIP config / error notices */}
+      {!canUseSoftphone && (
+        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground" data-testid="calls-view-only">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 flex-1">{tAccess("viewOnly")}</span>
+        </div>
+      )}
+      {canUseSoftphone && !configLoading && !activeSipConfig && (
         <div className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground" data-testid="calls-no-config">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           <span className="min-w-0 flex-1">{t("noConfig")}</span>
-          {isAdmin && (
+          {canManagePbx && (
             <Link
               href="/settings/calls"
               className="inline-flex h-7 items-center gap-1.5 rounded-md border bg-background px-2.5 font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -264,11 +278,11 @@ export function CallsScreen() {
           )}
         </div>
       )}
-      {/* (the open softphone shows the same error itself) */}
-      {callError && !isDialpadOpen && (
+      {/* (the open rail shows the same error itself) */}
+      {errorText && !railOpen && (
         <div role="alert" className="flex shrink-0 items-center gap-2 border-b bg-destructive/10 px-4 py-2 text-xs text-destructive">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-          <span className="min-w-0 flex-1 break-words">{callError}</span>
+          <span className="min-w-0 flex-1 break-words">{errorText}</span>
         </div>
       )}
 

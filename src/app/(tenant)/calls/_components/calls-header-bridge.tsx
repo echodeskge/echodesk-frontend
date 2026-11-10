@@ -12,16 +12,16 @@ interface CallsHeaderBridgeProps {
   extension?: string;
   /** Shows the SIP pill (only when a softphone config exists). */
   showSip: boolean;
-  /** Admins get the "SIP settings" link. */
-  isAdmin: boolean;
+  /** PBX admins (staff, superuser or manage_settings) get the "SIP settings" link. */
+  canManagePbx: boolean;
   onNewCall: () => void;
 }
 
 /**
  * Fills the app header for Calls: the SIP registration pill after the
- * title, the "New call" primary button and (admins) "SIP settings".
+ * title, the "New call" primary button and (PBX admins) "SIP settings".
  */
-export function CallsHeaderBridge({ sipRegistered, sipConnecting, extension, showSip, isAdmin, onNewCall }: CallsHeaderBridgeProps) {
+export function CallsHeaderBridge({ sipRegistered, sipConnecting, extension, showSip, canManagePbx, onNewCall }: CallsHeaderBridgeProps) {
   const t = useTranslations("calls.page");
   const newCall = t("newCall");
   const sipSettings = t("sipSettings");
@@ -43,7 +43,7 @@ export function CallsHeaderBridge({ sipRegistered, sipConnecting, extension, sho
           <span className="hidden sm:inline">{newCall}</span>
         </button>
       ),
-      icons: isAdmin ? (
+      icons: canManagePbx ? (
         <Link
           href="/settings/calls"
           aria-label={sipSettings}
@@ -56,7 +56,7 @@ export function CallsHeaderBridge({ sipRegistered, sipConnecting, extension, sho
         </Link>
       ) : undefined,
     },
-    [showSip, sipRegistered, sipConnecting, extension, isAdmin, newCall, sipSettings, onNewCall]
+    [showSip, sipRegistered, sipConnecting, extension, canManagePbx, newCall, sipSettings, onNewCall]
   );
 
   return null;
