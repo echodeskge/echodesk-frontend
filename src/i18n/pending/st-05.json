@@ -31,7 +31,8 @@
         "public": "Public",
         "publicLabel": "Public (visible to ecommerce clients)",
         "detailPage": {
-          "inactive": "Inactive"
+          "inactive": "Inactive",
+          "failedToLoad": "Failed to load the item list"
         }
       }
     }
@@ -68,7 +69,8 @@
         "public": "საჯარო",
         "publicLabel": "საჯარო (ხილულია ონლაინ მაღაზიის კლიენტებისთვის)",
         "detailPage": {
-          "inactive": "არააქტიური"
+          "inactive": "არააქტიური",
+          "failedToLoad": "ელემენტების სიის ჩატვირთვა ვერ მოხერხდა"
         }
       }
     }

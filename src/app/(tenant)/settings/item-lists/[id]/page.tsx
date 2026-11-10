@@ -117,7 +117,7 @@ export default function ItemListDetailPage() {
       const response = await itemListsRetrieve(listId);
       setItemList(response);
     } catch (error) {
-      toast.error(getApiErrorMessage(error, t("failedToSaveItem")));
+      toast.error(getApiErrorMessage(error, t("failedToLoad")));
     } finally {
       setLoading(false);
     }
