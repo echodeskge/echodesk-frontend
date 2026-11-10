@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import DOMPurify from "dompurify";
-import { Edit, Trash2, ArrowLeft, List } from "lucide-react";
+import { Edit, Trash2, ArrowLeft, List, CornerDownRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
@@ -260,6 +260,15 @@ export default function ItemListDetailPage() {
     ? itemList.root_items
     : itemList.items?.filter((item: any) => !item.parent) || [];
   const fieldsSchema = (itemList.custom_fields_schema as CustomField[]) || [];
+  // Root items with their (active) children under them, indented by depth.
+  const rows: { item: any; depth: number }[] = [];
+  const walk = (items: any[], depth: number) => {
+    for (const item of items) {
+      rows.push({ item, depth });
+      if (Array.isArray(item.children) && item.children.length > 0) walk(item.children, depth + 1);
+    }
+  };
+  walk(rootItems, 0);
 
   const renderFieldValue = (item: any, field: CustomField) => {
     const value = item.custom_data?.[field.name];
@@ -306,20 +315,28 @@ export default function ItemListDetailPage() {
     return <span className="truncate">{value}</span>;
   };
 
-  const columns: Column<any>[] = [
+  const columns: Column<{ item: any; depth: number }>[] = [
     {
       id: "label",
       header: t("label"),
       width: "minmax(0,1.4fr)",
       mobile: "title",
-      cell: (item) => <span className="truncate font-medium">{item.label}</span>,
+      cell: ({ item, depth }) =>
+        depth > 0 ? (
+          <span className="flex min-w-0 items-center gap-1.5" style={{ paddingInlineStart: (depth - 1) * 18 }}>
+            <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+            <span className="truncate">{item.label}</span>
+          </span>
+        ) : (
+          <span className="truncate font-medium">{item.label}</span>
+        ),
     },
     {
       id: "customId",
       header: t("customId"),
       width: "minmax(0,0.7fr)",
       mobile: "end",
-      cell: (item) =>
+      cell: ({ item }) =>
         item.custom_id ? (
           <span className="inline-flex h-5 max-w-full items-center truncate rounded border px-1.5 font-mono text-[11px]">
             {item.custom_id}
@@ -329,11 +346,11 @@ export default function ItemListDetailPage() {
         ),
     },
     ...fieldsSchema.map(
-      (field): Column<any> => ({
+      (field): Column<{ item: any; depth: number }> => ({
         id: `field-${field.name}`,
         header: field.label,
         width: "minmax(0,1fr)",
-        cell: (item) => (
+        cell: ({ item }) => (
           <span className="flex min-w-0 items-center gap-1">
             <span className="text-xs text-muted-foreground @3xl:hidden">{field.label}:</span>
             {renderFieldValue(item, field)}
@@ -345,7 +362,7 @@ export default function ItemListDetailPage() {
       id: "status",
       header: t("status"),
       width: "96px",
-      cell: (item) =>
+      cell: ({ item }) =>
         item.is_active ? (
           <BadgeCell tone="success" dot>
             {t("active")}
@@ -364,7 +381,7 @@ export default function ItemListDetailPage() {
       width: "72px",
       align: "end",
       mobile: "actions",
-      cell: (item) => (
+      cell: ({ item }) => (
         <span className="flex items-center justify-end gap-1">
           <button
             type="button"
@@ -412,19 +429,19 @@ export default function ItemListDetailPage() {
         variant="card"
         density="comfortable"
         columns={columns}
-        rows={rootItems}
-        rowKey={(item: any) => item.id}
-        onRowClick={canManageSettings ? (item: any) => handleEdit(item) : undefined}
+        rows={rows}
+        rowKey={(row) => row.item.id}
+        onRowClick={canManageSettings ? (row) => handleEdit(row.item) : undefined}
         renderError={() => null}
         empty={<EmptyBlock icon={List} title={t("noItemsFound")} />}
         ariaLabel={itemList.title}
         idPrefix="item-list-items"
       />
-      {rootItems.length > 0 && (
+      {rows.length > 0 && (
         <span className="text-xs tabular-nums text-muted-foreground" data-testid="item-list-items-count">
           {canManageSettings
-            ? `${t("count", { count: rootItems.length })} · ${t("clickToEdit")}`
-            : t("count", { count: rootItems.length })}
+            ? `${t("count", { count: rows.length })} · ${t("clickToEdit")}`
+            : t("count", { count: rows.length })}
         </span>
       )}
 
