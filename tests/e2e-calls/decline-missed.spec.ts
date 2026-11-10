@@ -25,9 +25,12 @@ test.describe("decline-missed", () => {
     await waitIncoming(a102.page);
     await decline(a102.page);
 
+    // The browser sends 603; what the caller gets back is the PBX's Dial
+    // mapping (the local dialplan answers 480 after a bare Hangup(), pbx2 may
+    // relay 603 or 403), so accept the rejection family. The strip auto-clears
+    // after 6 s (ERROR_AUTO_CLEAR_MS), so read its key before waiting for idle.
+    await expect(errorStrip(a101.page)).toHaveAttribute("data-key", /^sip(603|480|403|486)$/, { timeout: 15_000 });
     await expectIdle(a101.page, 15_000);
-    await expect(errorStrip(a101.page)).toBeVisible();
-    await expect(errorStrip(a101.page)).toHaveAttribute("data-key", /sip603/);
     await expect(a102.page.getByTestId("missed-call-toast")).toHaveCount(0);
 
     const rows = await waitForLogs(since, (all) => withStatus(byUser(all, a102.user.id), ["cancelled"]), { label: "102's leg cancelled" });
