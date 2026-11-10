@@ -108,7 +108,9 @@ describe("shipping methods page", () => {
     await waitFor(() => expect(api.ecommerceAdminShippingMethodsCreate).toHaveBeenCalledTimes(1))
     expect(api.ecommerceAdminShippingMethodsCreate.mock.calls[0][0]).toMatchObject({ name: { en: "Express", ka: "" }, price: "0.00", is_active: true })
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Store pickup" }))
+    // The sheet closes after the save resolves; until it is gone it hides
+    // the page from the accessibility tree, so wait for the row button.
+    fireEvent.click(await screen.findByRole("button", { name: "Delete Store pickup" }))
     fireEvent.click(await screen.findByRole("button", { name: "Delete" }))
     await waitFor(() => expect(api.ecommerceAdminShippingMethodsDestroy).toHaveBeenCalledWith(2))
   })
