@@ -1,7 +1,7 @@
 import React from "react"
 import { describe, expect, it, vi, beforeAll, beforeEach } from "vitest"
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react"
-import { renderEc } from "./ec00-helpers"
+import { renderEcQuery } from "./ec00-helpers"
 import { isFinalStatus, selectableStatuses } from "@/app/(tenant)/ecommerce/orders/[id]/_components/order-header-card"
 import { paymentActions } from "@/app/(tenant)/ecommerce/orders/[id]/_components/order-payment-card"
 import { timelineEntries } from "@/app/(tenant)/ecommerce/orders/[id]/_components/order-timeline-card"
@@ -112,7 +112,7 @@ describe("EC-01 order detail: rules (unchanged)", () => {
 
 describe("EC-01 order detail page", () => {
   it("renders header, items, summary, customer, delivery, payment and timeline", async () => {
-    renderEc(<OrderDetailPage />)
+    renderEcQuery(<OrderDetailPage />)
     expect(screen.getByTestId("ec-order-loading")).toBeInTheDocument()
     await screen.findByTestId("ec-order-header")
     expect(retrieve).toHaveBeenCalledWith(17)
@@ -149,7 +149,7 @@ describe("EC-01 order detail page", () => {
 
   it("status change asks first (translated status) and posts update_status", async () => {
     post.mockResolvedValue({ data: makeOrder({ status: "shipped" }) })
-    renderEc(<OrderDetailPage />, "ka")
+    renderEcQuery(<OrderDetailPage />, "ka")
     await screen.findByTestId("ec-order-header")
     const trigger = screen.getByTestId("ec-order-status-select")
     trigger.focus()
@@ -169,7 +169,7 @@ describe("EC-01 order detail page", () => {
   it("mark as paid and refund (with its confirm dialog) for managers", async () => {
     post.mockResolvedValue({ data: {} })
     refund.mockResolvedValue({ status: "refunded" })
-    renderEc(<OrderDetailPage />)
+    renderEcQuery(<OrderDetailPage />)
     await screen.findByTestId("ec-order-header")
     await act(async () => {
       fireEvent.click(screen.getByTestId("ec-order-mark-paid"))
@@ -190,7 +190,7 @@ describe("EC-01 order detail page", () => {
 
   it("no payment buttons for non-managers", async () => {
     access.current = { isEcommerceManager: false }
-    renderEc(<OrderDetailPage />)
+    renderEcQuery(<OrderDetailPage />)
     await screen.findByTestId("ec-order-header")
     expect(screen.queryByTestId("ec-order-mark-paid")).toBeNull()
     expect(screen.queryByTestId("ec-order-refund")).toBeNull()
@@ -198,7 +198,7 @@ describe("EC-01 order detail page", () => {
 
   it("404 shows not found with a back link", async () => {
     retrieve.mockRejectedValue({ response: { status: 404 } })
-    renderEc(<OrderDetailPage />)
+    renderEcQuery(<OrderDetailPage />)
     const empty = await screen.findByTestId("ec-empty")
     expect(empty).toHaveTextContent("Order Not Found")
     expect(within(empty).getByRole("link", { name: /Back/ })).toHaveAttribute("href", "/ecommerce/orders")
@@ -207,7 +207,7 @@ describe("EC-01 order detail page", () => {
 
   it("other load errors show the error state with retry; 403 shows no access", async () => {
     retrieve.mockRejectedValueOnce(new Error("network"))
-    renderEc(<OrderDetailPage />)
+    renderEcQuery(<OrderDetailPage />)
     await screen.findByTestId("ec-error")
     fireEvent.click(screen.getByRole("button", { name: "Try again" }))
     await screen.findByTestId("ec-order-header")
@@ -216,7 +216,7 @@ describe("EC-01 order detail page", () => {
 
   it("403 shows no access", async () => {
     retrieve.mockRejectedValue({ response: { status: 403 } })
-    renderEc(<OrderDetailPage />, "ka")
+    renderEcQuery(<OrderDetailPage />, "ka")
     const err = await screen.findByTestId("ec-error")
     expect(err).toHaveTextContent("წვდომა არ გაქვთ")
     expect(screen.queryByRole("button", { name: "ხელახლა ცდა" })).toBeNull()

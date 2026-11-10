@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useParams } from "next/navigation"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   ecommerceAdminOrdersRetrieve,
   ecommerceAdminOrdersRefundCreate,
@@ -10,23 +11,28 @@ import {
 import axiosInstance from "@/api/axios"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { Archive, Loader2, RotateCcw } from "lucide-react"
 import { useMyAccess } from "@/hooks/useMyAccess"
 import { getApiErrorMessage } from "@/lib/utils"
 import { OrderDetail } from "../_types"
 import { OrderDetails } from "./_components/order-details"
 import { OrderNotFound } from "./_components/order-not-found"
-import { DetailLayout, EcommerceHeaderBridge } from "../../_components/ui"
+import { DetailLayout, EcBanner, EcommerceHeaderBridge, formatEcDateTime, rdButton } from "../../_components/ui"
 
 export default function OrderDetailPage() {
   const params = useParams()
   const t = useTranslations("ecommerceOrders")
+  const locale = useLocale()
+  const queryClient = useQueryClient()
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<unknown>(null)
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [refunding, setRefunding] = useState(false)
-  // Refund, mark-paid and cancelling a paid order need e-commerce manager rights.
-  const { isEcommerceManager } = useMyAccess()
+  const [restoring, setRestoring] = useState(false)
+  // Refund, mark-paid and cancelling a paid order need e-commerce manager rights;
+  // restoring a cleaned order needs the store admin.
+  const { isEcommerceManager, isStoreAdmin } = useMyAccess()
 
   const fetchOrder = useCallback(async (id: number) => {
     try {
@@ -101,6 +107,21 @@ export default function OrderDetailPage() {
     }
   }, [order, t, fetchOrder])
 
+  /** Un-hides a cleaned order; the dashboard numbers include it again. */
+  const handleRestore = useCallback(async () => {
+    if (!order) return
+    try {
+      setRestoring(true)
+      await axiosInstance.post(`/api/ecommerce/admin/orders/${order.id}/restore/`)
+      toast.success(t("cleaned.toast.restoredOne"))
+      await Promise.all([fetchOrder(order.id), queryClient.invalidateQueries({ queryKey: ["ecommerce-analytics"] })])
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, t("cleaned.toast.restoreFailed")))
+    } finally {
+      setRestoring(false)
+    }
+  }, [order, t, fetchOrder, queryClient])
+
   const cardSkeleton = (key: number, h: string) => (
     <div key={key} className="rounded-lg border bg-card">
       <div className="flex h-11 items-center border-b px-4">
@@ -136,6 +157,34 @@ export default function OrderDetailPage() {
     )
   }
 
+  const isCleaned = Boolean(order.is_deleted)
+  const cleanedBanner = isCleaned ? (
+    <div data-testid="ec-order-cleaned-banner">
+      <EcBanner
+        tone="warning"
+        icon={<Archive className="h-4 w-4" aria-hidden />}
+        action={
+          isStoreAdmin ? (
+            <button
+              type="button"
+              className={rdButton.outlineSm}
+              disabled={restoring}
+              onClick={handleRestore}
+              data-testid="ec-order-restore"
+            >
+              {restoring ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <RotateCcw className="h-3.5 w-3.5" aria-hidden />}
+              {t("cleaned.restore")}
+            </button>
+          ) : undefined
+        }
+      >
+        {order.deleted_by_name
+          ? t("cleaned.detailBanner", { name: order.deleted_by_name, date: formatEcDateTime(order.deleted_at, locale) })
+          : t("cleaned.detailBannerNoName", { date: formatEcDateTime(order.deleted_at, locale) })}
+      </EcBanner>
+    </div>
+  ) : undefined
+
   return (
     <>
       <EcommerceHeaderBridge breadcrumb={`#${order.order_number}`} />
@@ -144,6 +193,8 @@ export default function OrderDetailPage() {
         updatingStatus={updatingStatus}
         refunding={refunding}
         isManager={isEcommerceManager}
+        locked={isCleaned}
+        banner={cleanedBanner}
         onStatusChange={handleStatusChange}
         onMarkPaid={handleMarkPaid}
         onRefund={handleRefund}
