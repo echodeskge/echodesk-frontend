@@ -117,6 +117,10 @@
       "languages": {
         "en": "English",
         "ka": "Georgian"
+      },
+      "saveBar": {
+        "unsaved": "You have unsaved changes",
+        "discard": "Discard"
       }
     }
   },
@@ -238,6 +242,10 @@
       "languages": {
         "en": "ინგლისური",
         "ka": "ქართული"
+      },
+      "saveBar": {
+        "unsaved": "გაქვთ შეუნახავი ცვლილებები",
+        "discard": "გაუქმება"
       }
     }
   }
