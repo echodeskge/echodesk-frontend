@@ -99,8 +99,9 @@ export function UsageStatsCard({
 
   const getProgressColor = (check: unknown, status: LimitStatus) => {
     if (!check) return "";
-    if (status.isExceeded) return "bg-red-500";
-    if (status.isNearLimit) return "bg-amber-500";
+    // Colour the filled indicator (the Progress child), not the track.
+    if (status.isExceeded) return "[&>div]:bg-red-500";
+    if (status.isNearLimit) return "[&>div]:bg-amber-500";
     return "";
   };
 
