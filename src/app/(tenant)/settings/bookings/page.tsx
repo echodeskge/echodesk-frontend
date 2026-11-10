@@ -2,17 +2,24 @@
 
 import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Save, Loader2, Eye, EyeOff, Copy, ExternalLink } from "lucide-react"
+import { CalendarCheck, Copy, ExternalLink } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
+import { LoadingBlock } from "@/components/redesign/states"
+import {
+  ActionButton,
+  FieldRow,
+  SecretInput,
+  SettingsFormPage,
+  SettingsSection,
+  SettingsToggle,
+  StickySaveBar,
+  settingsFieldWidth,
+  settingsInputClass,
+} from "@/components/redesign/settings"
 import { useToast } from "@/hooks/use-toast"
 import { useMyAccess } from "@/hooks/useMyAccess"
-import { getApiErrorMessage } from "@/lib/utils"
+import { cn, getApiErrorMessage } from "@/lib/utils"
 import axios from "@/api/axios"
 import { ReminderSettingsCard, SmsSettings, SmsSettingsCard, SMS_SETTINGS_DEFAULTS } from "@/components/bookings/sms-settings-card"
 
@@ -83,7 +90,9 @@ export default function SettingsPage() {
   // If the settings couldn't be loaded, saving would overwrite the real ones
   // with this form's defaults — so saving is blocked until a load succeeds.
   const [loadFailed, setLoadFailed] = useState(false)
-  const [showSecret, setShowSecret] = useState(false)
+  // The last loaded / saved values: Discard goes back to them, and the save bar
+  // says "unsaved changes" while the form differs from them.
+  const [savedSettings, setSavedSettings] = useState<BookingSettings | null>(null)
   const [settings, setSettings] = useState<BookingSettings>({
     require_deposit: false,
     allow_cash_payment: true,
@@ -133,14 +142,16 @@ export default function SettingsPage() {
     try {
       setLoading(true)
       const response = await axios.get("/api/bookings/admin/settings/")
-      setSettings({
+      const loaded = {
         ...response.data,
         // Stored credentials are never sent back; empty = "keep what's saved"
         bog_client_id: "",
         bog_client_secret: "",
         sms_api_key: "",
         sms_api_key_clear: false,
-      })
+      }
+      setSettings(loaded)
+      setSavedSettings(loaded)
       setLoadFailed(false)
     } catch (error) {
       console.error("Failed to fetch settings:", error)
@@ -173,7 +184,9 @@ export default function SettingsPage() {
 
       // The API creates the settings row on first read, so PATCH always applies.
       const response = await axios.patch("/api/bookings/admin/settings/", dataToSend)
-      setSettings({ ...response.data, bog_client_id: "", bog_client_secret: "", sms_api_key: "", sms_api_key_clear: false })
+      const saved = { ...response.data, bog_client_id: "", bog_client_secret: "", sms_api_key: "", sms_api_key_clear: false }
+      setSettings(saved)
+      setSavedSettings(saved)
       toast({ title: t("success"), description: t("settingsSaved") })
     } catch (error) {
       console.error("Failed to save settings:", error)
@@ -183,363 +196,238 @@ export default function SettingsPage() {
     }
   }
 
+  const dirty = savedSettings !== null && JSON.stringify(settings) !== JSON.stringify(savedSettings)
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
+      <section className="w-full p-4 sm:p-6">
+        <LoadingBlock label={t("loading")} testId="booking-settings-loading" />
+      </section>
     )
   }
 
+  const toggleRow = (
+    key: "public_page_enabled" | "require_deposit" | "allow_cash_payment" | "allow_card_payment" | "bog_use_production" | "auto_confirm_on_deposit" | "auto_confirm_on_full_payment",
+    label: string,
+    help: string
+  ) => (
+    <FieldRow label={label} help={help} htmlFor={`bk-${key}`} align="center">
+      <SettingsToggle
+        id={`bk-${key}`}
+        checked={settings[key]}
+        onCheckedChange={(checked) => setSettings({ ...settings, [key]: checked })}
+      />
+    </FieldRow>
+  )
+
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{t("title")}</h1>
-        <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
-      </div>
-
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("publicPage.title")}</CardTitle>
-            <CardDescription>{t("publicPage.description")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
-              <div className="space-y-0.5">
-                <Label>{t("publicPage.enabled")}</Label>
-                <p className="text-sm text-muted-foreground">{t("publicPage.enabledDesc")}</p>
-              </div>
-              <Switch
-                checked={settings.public_page_enabled}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, public_page_enabled: checked })
-                }
-              />
-            </div>
-            {bookingLink && (
-              <div className="space-y-2">
-                <Label htmlFor="booking_link">{t("publicPage.link")}</Label>
-                <div className="flex gap-2">
-                  <Input id="booking_link" readOnly value={bookingLink} className="min-w-0 font-mono text-sm" />
-                  <Button type="button" variant="outline" onClick={copyBookingLink}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    {t("publicPage.copy")}
-                  </Button>
-                  <Button type="button" variant="outline" asChild>
-                    <a href={bookingLink} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      {t("publicPage.open")}
-                    </a>
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground">{t("publicPage.linkDesc")}</p>
-              </div>
-            )}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="min-w-0 space-y-2">
-                <Label htmlFor="public_description_ka">{t("publicPage.descriptionKa")}</Label>
-                <Textarea
-                  id="public_description_ka"
-                  rows={3}
-                  value={settings.public_description?.ka || ""}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      public_description: { ...settings.public_description, ka: e.target.value },
-                    })
-                  }
-                />
-              </div>
-              <div className="min-w-0 space-y-2">
-                <Label htmlFor="public_description_en">{t("publicPage.descriptionEn")}</Label>
-                <Textarea
-                  id="public_description_en"
-                  rows={3}
-                  value={settings.public_description?.en || ""}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      public_description: { ...settings.public_description, en: e.target.value },
-                    })
-                  }
-                />
-              </div>
-              <div className="min-w-0 space-y-2">
-                <Label htmlFor="public_address">{t("publicPage.address")}</Label>
-                <Input
-                  id="public_address"
-                  value={settings.public_address || ""}
-                  onChange={(e) => setSettings({ ...settings, public_address: e.target.value })}
-                />
-              </div>
-              <div className="min-w-0 space-y-2">
-                <Label htmlFor="public_phone">{t("publicPage.phone")}</Label>
-                <Input
-                  id="public_phone"
-                  type="tel"
-                  value={settings.public_phone || ""}
-                  onChange={(e) => setSettings({ ...settings, public_phone: e.target.value })}
-                />
-              </div>
-              <div className="min-w-0 space-y-2 sm:col-span-2">
-                <Label htmlFor="booking_timezone">{t("publicPage.timezone")}</Label>
-                <Select
-                  value={settings.timezone || "Asia/Tbilisi"}
-                  onValueChange={(value) => setSettings({ ...settings, timezone: value })}
+    <SettingsFormPage icon={CalendarCheck} title={t("title")} description={t("subtitle")} testId="booking-settings-page">
+      <SettingsSection title={t("publicPage.title")} hint={t("publicPage.description")}>
+        {toggleRow("public_page_enabled", t("publicPage.enabled"), t("publicPage.enabledDesc"))}
+        {bookingLink && (
+          <FieldRow label={t("publicPage.link")} help={t("publicPage.linkDesc")} htmlFor="booking_link">
+            <div className={cn("flex flex-col gap-2", settingsFieldWidth)}>
+              <input id="booking_link" readOnly value={bookingLink} className={cn(settingsInputClass, "font-mono text-xs")} />
+              <div className="flex flex-wrap gap-1.5">
+                <ActionButton icon={Copy} onClick={copyBookingLink}>
+                  {t("publicPage.copy")}
+                </ActionButton>
+                <a
+                  href={bookingLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-[30px] items-center gap-1.5 rounded-md border bg-background px-2.5 text-xs font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <SelectTrigger id="booking_timezone" className="sm:max-w-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timezoneOptions(settings.timezone).map((zone) => (
-                      <SelectItem key={zone} value={zone}>
-                        {timezoneLabel(zone)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground">{t("publicPage.timezoneDesc")}</p>
+                  <ExternalLink className="h-[13px] w-[13px]" aria-hidden />
+                  {t("publicPage.open")}
+                </a>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("paymentSettings.title")}</CardTitle>
-            <CardDescription>{t("paymentSettings.description")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
-              <div className="space-y-0.5">
-                <Label>{t("paymentSettings.requireDeposit")}</Label>
-                <p className="text-sm text-muted-foreground">{t("paymentSettings.requireDepositDesc")}</p>
-              </div>
-              <Switch
-                checked={settings.require_deposit}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, require_deposit: checked })
-                }
-              />
-            </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
-              <div className="space-y-0.5">
-                <Label>{t("paymentSettings.allowCash")}</Label>
-                <p className="text-sm text-muted-foreground">{t("paymentSettings.allowCashDesc")}</p>
-              </div>
-              <Switch
-                checked={settings.allow_cash_payment}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, allow_cash_payment: checked })
-                }
-              />
-            </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
-              <div className="space-y-0.5">
-                <Label>{t("paymentSettings.allowCard")}</Label>
-                <p className="text-sm text-muted-foreground">{t("paymentSettings.allowCardDesc")}</p>
-              </div>
-              <Switch
-                checked={settings.allow_card_payment}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, allow_card_payment: checked })
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {settings.allow_card_payment && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("bogSettings.title")}</CardTitle>
-              <CardDescription>{t("bogSettings.description")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="bog_client_id">{t("bogSettings.clientId")}</Label>
-                <Input
-                  id="bog_client_id"
-                  value={settings.bog_client_id || ""}
-                  onChange={(e) =>
-                    setSettings({ ...settings, bog_client_id: e.target.value })
-                  }
-                  placeholder={
-                    settings.has_bog_client_id ? t("bogSettings.savedPlaceholder") : t("bogSettings.clientIdPlaceholder")
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="bog_client_secret">{t("bogSettings.clientSecret")}</Label>
-                <div className="relative">
-                  <Input
-                    id="bog_client_secret"
-                    type={showSecret ? "text" : "password"}
-                    value={settings.bog_client_secret || ""}
-                    onChange={(e) =>
-                      setSettings({ ...settings, bog_client_secret: e.target.value })
-                    }
-                    placeholder={
-                      settings.has_bog_client_secret
-                        ? t("bogSettings.savedPlaceholder")
-                        : t("bogSettings.clientSecretPlaceholder")
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowSecret(!showSecret)}
-                  >
-                    {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground">{t("bogSettings.clientSecretHelp")}</p>
-              </div>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
-                <div className="space-y-0.5">
-                  <Label>{t("bogSettings.productionMode")}</Label>
-                  <p className="text-sm text-muted-foreground">{t("bogSettings.productionModeDesc")}</p>
-                </div>
-                <Switch
-                  checked={settings.bog_use_production}
-                  onCheckedChange={(checked) =>
-                    setSettings({ ...settings, bog_use_production: checked })
-                  }
-                />
-              </div>
-            </CardContent>
-          </Card>
+          </FieldRow>
         )}
+        <FieldRow label={t("publicPage.descriptionKa")} htmlFor="public_description_ka">
+          <Textarea
+            id="public_description_ka"
+            rows={3}
+            className={cn("min-h-[72px] text-[13px]", settingsFieldWidth)}
+            value={settings.public_description?.ka || ""}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                public_description: { ...settings.public_description, ka: e.target.value },
+              })
+            }
+          />
+        </FieldRow>
+        <FieldRow label={t("publicPage.descriptionEn")} htmlFor="public_description_en">
+          <Textarea
+            id="public_description_en"
+            rows={3}
+            className={cn("min-h-[72px] text-[13px]", settingsFieldWidth)}
+            value={settings.public_description?.en || ""}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                public_description: { ...settings.public_description, en: e.target.value },
+              })
+            }
+          />
+        </FieldRow>
+        <FieldRow label={t("publicPage.address")} htmlFor="public_address">
+          <input
+            id="public_address"
+            className={cn(settingsInputClass, settingsFieldWidth)}
+            value={settings.public_address || ""}
+            onChange={(e) => setSettings({ ...settings, public_address: e.target.value })}
+          />
+        </FieldRow>
+        <FieldRow label={t("publicPage.phone")} htmlFor="public_phone">
+          <input
+            id="public_phone"
+            type="tel"
+            className={cn(settingsInputClass, settingsFieldWidth)}
+            value={settings.public_phone || ""}
+            onChange={(e) => setSettings({ ...settings, public_phone: e.target.value })}
+          />
+        </FieldRow>
+        <FieldRow label={t("publicPage.timezone")} help={t("publicPage.timezoneDesc")} htmlFor="booking_timezone">
+          <Select
+            value={settings.timezone || "Asia/Tbilisi"}
+            onValueChange={(value) => setSettings({ ...settings, timezone: value })}
+          >
+            <SelectTrigger id="booking_timezone" className={cn("h-[34px] text-[13px]", settingsFieldWidth)}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {timezoneOptions(settings.timezone).map((zone) => (
+                <SelectItem key={zone} value={zone}>
+                  {timezoneLabel(zone)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FieldRow>
+      </SettingsSection>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("bookingRules.title")}</CardTitle>
-            <CardDescription>{t("bookingRules.description")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="min_hours">{t("bookingRules.minHours")}</Label>
-              <Input
-                id="min_hours"
-                type="number"
-                min="0"
-                value={settings.min_hours_before_booking}
-                onChange={(e) =>
-                  setSettings({ ...settings, min_hours_before_booking: parseInt(e.target.value) || 0 })
-                }
-              />
-              <p className="text-sm text-muted-foreground">{t("bookingRules.minHoursDesc")}</p>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="max_days">{t("bookingRules.maxDays")}</Label>
-              <Input
-                id="max_days"
-                type="number"
-                min="1"
-                value={settings.max_days_advance_booking}
-                onChange={(e) =>
-                  setSettings({ ...settings, max_days_advance_booking: parseInt(e.target.value) || 1 })
-                }
-              />
-              <p className="text-sm text-muted-foreground">{t("bookingRules.maxDaysDesc")}</p>
-            </div>
-          </CardContent>
-        </Card>
+      <SettingsSection title={t("paymentSettings.title")} hint={t("paymentSettings.description")}>
+        {toggleRow("require_deposit", t("paymentSettings.requireDeposit"), t("paymentSettings.requireDepositDesc"))}
+        {toggleRow("allow_cash_payment", t("paymentSettings.allowCash"), t("paymentSettings.allowCashDesc"))}
+        {toggleRow("allow_card_payment", t("paymentSettings.allowCard"), t("paymentSettings.allowCardDesc"))}
+      </SettingsSection>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("cancellation.title")}</CardTitle>
-            <CardDescription>{t("cancellation.description")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="cancellation_hours">{t("cancellation.hours")}</Label>
-              <Input
-                id="cancellation_hours"
-                type="number"
-                min="0"
-                value={settings.cancellation_hours_before}
-                onChange={(e) =>
-                  setSettings({ ...settings, cancellation_hours_before: parseInt(e.target.value) || 0 })
-                }
-              />
-              <p className="text-sm text-muted-foreground">{t("cancellation.hoursDesc")}</p>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="refund_policy">{t("cancellation.refundPolicy")}</Label>
-              <Select
-                value={settings.refund_policy}
-                onValueChange={(value) =>
-                  setSettings({ ...settings, refund_policy: value as BookingSettings["refund_policy"] })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="full">{t("cancellation.refundFull")}</SelectItem>
-                  <SelectItem value="partial_50">{t("cancellation.refund50")}</SelectItem>
-                  <SelectItem value="partial_25">{t("cancellation.refund25")}</SelectItem>
-                  <SelectItem value="no_refund">{t("cancellation.noRefund")}</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground">{t("cancellation.refundPolicyDesc")}</p>
-            </div>
-          </CardContent>
-        </Card>
+      {settings.allow_card_payment && (
+        <SettingsSection title={t("bogSettings.title")} hint={t("bogSettings.description")}>
+          <FieldRow label={t("bogSettings.clientId")} htmlFor="bog_client_id">
+            <input
+              id="bog_client_id"
+              className={cn(settingsInputClass, settingsFieldWidth)}
+              value={settings.bog_client_id || ""}
+              onChange={(e) => setSettings({ ...settings, bog_client_id: e.target.value })}
+              placeholder={
+                settings.has_bog_client_id ? t("bogSettings.savedPlaceholder") : t("bogSettings.clientIdPlaceholder")
+              }
+            />
+          </FieldRow>
+          <FieldRow label={t("bogSettings.clientSecret")} help={t("bogSettings.clientSecretHelp")} htmlFor="bog_client_secret">
+            <SecretInput
+              id="bog_client_secret"
+              className={settingsFieldWidth}
+              mono={false}
+              value={settings.bog_client_secret || ""}
+              onChange={(value) => setSettings({ ...settings, bog_client_secret: value })}
+              placeholder={
+                settings.has_bog_client_secret
+                  ? t("bogSettings.savedPlaceholder")
+                  : t("bogSettings.clientSecretPlaceholder")
+              }
+              showLabel={t("bogSettings.showSecret")}
+              hideLabel={t("bogSettings.hideSecret")}
+            />
+          </FieldRow>
+          {toggleRow("bog_use_production", t("bogSettings.productionMode"), t("bogSettings.productionModeDesc"))}
+        </SettingsSection>
+      )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("autoConfirm.title")}</CardTitle>
-            <CardDescription>{t("autoConfirm.description")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
-              <div className="space-y-0.5">
-                <Label>{t("autoConfirm.onDeposit")}</Label>
-                <p className="text-sm text-muted-foreground">{t("autoConfirm.onDepositDesc")}</p>
-              </div>
-              <Switch
-                checked={settings.auto_confirm_on_deposit}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, auto_confirm_on_deposit: checked })
-                }
-              />
-            </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
-              <div className="space-y-0.5">
-                <Label>{t("autoConfirm.onFullPayment")}</Label>
-                <p className="text-sm text-muted-foreground">{t("autoConfirm.onFullPaymentDesc")}</p>
-              </div>
-              <Switch
-                checked={settings.auto_confirm_on_full_payment}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, auto_confirm_on_full_payment: checked })
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
+      <SettingsSection title={t("bookingRules.title")} hint={t("bookingRules.description")}>
+        <FieldRow label={t("bookingRules.minHours")} help={t("bookingRules.minHoursDesc")} htmlFor="min_hours">
+          <input
+            id="min_hours"
+            type="number"
+            min="0"
+            className={cn(settingsInputClass, "w-28")}
+            value={settings.min_hours_before_booking}
+            onChange={(e) => setSettings({ ...settings, min_hours_before_booking: parseInt(e.target.value) || 0 })}
+          />
+        </FieldRow>
+        <FieldRow label={t("bookingRules.maxDays")} help={t("bookingRules.maxDaysDesc")} htmlFor="max_days">
+          <input
+            id="max_days"
+            type="number"
+            min="1"
+            className={cn(settingsInputClass, "w-28")}
+            value={settings.max_days_advance_booking}
+            onChange={(e) => setSettings({ ...settings, max_days_advance_booking: parseInt(e.target.value) || 1 })}
+          />
+        </FieldRow>
+      </SettingsSection>
 
-        <ReminderSettingsCard settings={settings} onChange={(patch) => setSettings((current) => ({ ...current, ...patch }))} />
+      <SettingsSection title={t("cancellation.title")} hint={t("cancellation.description")}>
+        <FieldRow label={t("cancellation.hours")} help={t("cancellation.hoursDesc")} htmlFor="cancellation_hours">
+          <input
+            id="cancellation_hours"
+            type="number"
+            min="0"
+            className={cn(settingsInputClass, "w-28")}
+            value={settings.cancellation_hours_before}
+            onChange={(e) => setSettings({ ...settings, cancellation_hours_before: parseInt(e.target.value) || 0 })}
+          />
+        </FieldRow>
+        <FieldRow label={t("cancellation.refundPolicy")} help={t("cancellation.refundPolicyDesc")} htmlFor="refund_policy">
+          <Select
+            value={settings.refund_policy}
+            onValueChange={(value) => setSettings({ ...settings, refund_policy: value as BookingSettings["refund_policy"] })}
+          >
+            <SelectTrigger id="refund_policy" className={cn("h-[34px] text-[13px]", settingsFieldWidth)}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="full">{t("cancellation.refundFull")}</SelectItem>
+              <SelectItem value="partial_50">{t("cancellation.refund50")}</SelectItem>
+              <SelectItem value="partial_25">{t("cancellation.refund25")}</SelectItem>
+              <SelectItem value="no_refund">{t("cancellation.noRefund")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </FieldRow>
+      </SettingsSection>
 
-        <SmsSettingsCard settings={settings} onChange={(patch) => setSettings((current) => ({ ...current, ...patch }))} />
+      <SettingsSection title={t("autoConfirm.title")} hint={t("autoConfirm.description")}>
+        {toggleRow("auto_confirm_on_deposit", t("autoConfirm.onDeposit"), t("autoConfirm.onDepositDesc"))}
+        {toggleRow("auto_confirm_on_full_payment", t("autoConfirm.onFullPayment"), t("autoConfirm.onFullPaymentDesc"))}
+      </SettingsSection>
 
-        <div className="flex justify-end">
-          {loadFailed && <p className="mr-4 self-center text-sm text-destructive">{t("loadFailed")}</p>}
-          <Button onClick={handleSave} disabled={saving || loadFailed || !isBookingAdmin}>
-            {saving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            {t("saveSettings")}
-          </Button>
-        </div>
-      </div>
-    </div>
+      <ReminderSettingsCard settings={settings} onChange={(patch) => setSettings((current) => ({ ...current, ...patch }))} />
+
+      <SmsSettingsCard settings={settings} onChange={(patch) => setSettings((current) => ({ ...current, ...patch }))} />
+
+      {/* The page's Save, now in the design save bar: same handler, same disabled rule. */}
+      <StickySaveBar
+        mode="always"
+        dirty={dirty}
+        saving={saving}
+        onSave={handleSave}
+        onDiscard={savedSettings ? () => setSettings(savedSettings) : undefined}
+        saveDisabled={saving || loadFailed || !isBookingAdmin}
+        message={loadFailed ? t("loadFailed") : undefined}
+        messageTone="danger"
+        labels={{
+          unsaved: t("saveBar.unsaved"),
+          discard: t("saveBar.discard"),
+          save: t("saveSettings"),
+          saving: t("saveBar.saving"),
+          saved: t("saveBar.saved"),
+        }}
+        testId="booking-settings-savebar"
+      />
+    </SettingsFormPage>
   )
 }

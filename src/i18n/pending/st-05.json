@@ -58,6 +58,19 @@
         "count": "{count, plural, one {# list} other {# lists}}",
         "clickToOpen": "click a row to manage its items"
       }
+    },
+    "bookingSettings": {
+      "loading": "Loading booking settings…",
+      "bogSettings": {
+        "showSecret": "Show secret",
+        "hideSecret": "Hide secret"
+      },
+      "saveBar": {
+        "unsaved": "You have unsaved changes",
+        "discard": "Discard",
+        "saving": "Saving…",
+        "saved": "All changes saved"
+      }
     }
   },
   "ka": {
@@ -118,6 +131,19 @@
         },
         "count": "{count, plural, one {# სია} other {# სია}}",
         "clickToOpen": "ელემენტების სამართავად დააჭირეთ სტრიქონს"
+      }
+    },
+    "bookingSettings": {
+      "loading": "ჯავშნის პარამეტრები იტვირთება…",
+      "bogSettings": {
+        "showSecret": "საიდუმლოს ჩვენება",
+        "hideSecret": "საიდუმლოს დამალვა"
+      },
+      "saveBar": {
+        "unsaved": "გაქვთ შეუნახავი ცვლილებები",
+        "discard": "გაუქმება",
+        "saving": "ინახება…",
+        "saved": "ყველა ცვლილება შენახულია"
       }
     }
   }
