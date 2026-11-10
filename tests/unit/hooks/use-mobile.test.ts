@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile, useViewportIsMobile } from "@/hooks/use-mobile";
 
 describe("useIsMobile", () => {
   let listeners: Map<string, Set<(e: any) => void>>;
@@ -152,5 +152,31 @@ describe("useIsMobile", () => {
     renderHook(() => useIsMobile());
 
     expect(window.matchMedia).toHaveBeenCalledWith("(max-width: 767px)");
+  });
+
+  describe("useViewportIsMobile", () => {
+    it("is undefined on the first render, then the real answer once the media query was read", () => {
+      Object.defineProperty(window, "innerWidth", { writable: true, value: 390 });
+      const seen: Array<boolean | undefined> = [];
+      const { result } = renderHook(() => {
+        const v = useViewportIsMobile();
+        seen.push(v);
+        return v;
+      });
+      expect(seen[0]).toBeUndefined();
+      expect(result.current).toBe(true);
+    });
+
+    it("useIsMobile collapses the unknown state to false", () => {
+      Object.defineProperty(window, "innerWidth", { writable: true, value: 390 });
+      const seen: boolean[] = [];
+      const { result } = renderHook(() => {
+        const v = useIsMobile();
+        seen.push(v);
+        return v;
+      });
+      expect(seen[0]).toBe(false);
+      expect(result.current).toBe(true);
+    });
   });
 });

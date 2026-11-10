@@ -28,6 +28,18 @@ vi.mock("@/api/axios", async (importOriginal) => ({
 vi.mock("@/components/calls/rail/caller-context", () => ({
   CallerContext: () => <div data-testid="call-rail-context" />,
 }));
+// Real dock store, but every width write is recorded (first-paint test).
+const railWidthWrites = vi.hoisted(() => [] as number[]);
+vi.mock("@/components/TeamChat/floatingDock", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/components/TeamChat/floatingDock")>();
+  return {
+    ...actual,
+    setCallRailWidth: (width: 0 | 320) => {
+      railWidthWrites.push(width);
+      actual.setCallRailWidth(width);
+    },
+  };
+});
 
 import { CallRail } from "@/components/calls/rail/call-rail";
 import { __resetDockForTests, announceDockPopoverOpened, getDockState, onDockPopoverOpened } from "@/components/TeamChat/floatingDock";
@@ -35,6 +47,7 @@ import { installMatchMedia, kaMessages, makeActions, makeActiveCall, makeState, 
 
 beforeEach(() => {
   __resetDockForTests();
+  railWidthWrites.length = 0;
   installMatchMedia(1280);
   h.state = makeState();
   h.actions = makeActions();
@@ -84,6 +97,37 @@ describe("CallRail — mount rules", () => {
     expect(getDockState().railWidth).toBe(0);
     fireEvent.click(screen.getByTestId("call-rail-back"));
     expect(h.actions.closeRail).toHaveBeenCalledTimes(1);
+  });
+
+  it("at 390px never paints the desktop column nor publishes 320 before the breakpoint is known", async () => {
+    installMatchMedia(390);
+    // Records every commit: an <aside> inserted as "rail" and flipped to
+    // "sheet" would show up as an attribute mutation.
+    const records: MutationRecord[] = [];
+    const observer = new MutationObserver((batch) => records.push(...batch));
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-layout"], attributeOldValue: true });
+    renderWithProviders(<CallRail />);
+    await waitFor(() => expect(screen.getByTestId("call-rail")).toHaveAttribute("data-layout", "sheet"));
+    records.push(...observer.takeRecords());
+    observer.disconnect();
+
+    const inserted = records
+      .filter((r) => r.type === "childList")
+      .flatMap((r) => Array.from(r.addedNodes))
+      .filter((n): n is HTMLElement => n instanceof HTMLElement)
+      .map((n) => (n.dataset.testid === "call-rail" ? n : n.querySelector<HTMLElement>('[data-testid="call-rail"]')))
+      .filter((n): n is HTMLElement => n !== null);
+    expect(inserted.length).toBeGreaterThan(0);
+    expect(inserted.every((n) => n.getAttribute("data-layout") === "sheet")).toBe(true);
+    expect(records.filter((r) => r.type === "attributes")).toHaveLength(0);
+    expect(railWidthWrites).not.toContain(320);
+    expect(getDockState().railWidth).toBe(0);
+  });
+
+  it("at 1280px publishes the width once the breakpoint is known", async () => {
+    renderWithProviders(<CallRail />);
+    await waitFor(() => expect(getDockState().railWidth).toBe(320));
+    expect(railWidthWrites.filter((w) => w === 320)).toHaveLength(1);
   });
 
   it("announces the dialpad popover when opened for dialling and closes when the chat list opens", () => {

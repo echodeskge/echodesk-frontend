@@ -6,7 +6,7 @@ import { ChevronDown, ChevronLeft, RotateCw, Volume2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CallError, SipState } from "@/contexts/call-types";
 import { useCallingAccess } from "@/lib/calling-access";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useViewportIsMobile } from "@/hooks/use-mobile";
 import { DOCK, announceDockPopoverOpened, onDockPopoverOpened, setCallRailWidth } from "@/components/TeamChat/floatingDock";
 import { CallerContext } from "./caller-context";
 import { SoftphonePanel } from "./softphone-panel";
@@ -106,7 +106,10 @@ export function CallRail() {
   const { activeCall, sipState, activeSipConfig, error, rail, soundBlocked } = useCallState();
   const { closeRail, minimiseRail, reconnect, clearError, unlockSound } = useCallActions();
   const { canUseSoftphone } = useCallingAccess();
-  const isMobile = useIsMobile();
+  // `undefined` on the first client render: nothing is painted and no dock
+  // width is published until the breakpoint is known, so a phone never sees
+  // the desktop column for a frame.
+  const isMobile = useViewportIsMobile();
 
   const open = rail.mode === "open" && canUseSoftphone;
   const inCall = !!activeCall;
@@ -114,7 +117,7 @@ export function CallRail() {
   inCallRef.current = inCall;
 
   useEffect(() => {
-    setCallRailWidth(open && !isMobile ? DOCK.CALL_RAIL_WIDTH : 0);
+    setCallRailWidth(open && isMobile === false ? DOCK.CALL_RAIL_WIDTH : 0);
     return () => setCallRailWidth(0);
   }, [open, isMobile]);
 
@@ -144,7 +147,7 @@ export function CallRail() {
     return () => document.removeEventListener("keydown", onKey);
   }, [open, closeRail]);
 
-  if (!open) return null;
+  if (!open || isMobile === undefined) return null;
 
   const dismiss = inCall ? minimiseRail : closeRail;
 
