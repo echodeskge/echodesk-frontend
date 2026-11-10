@@ -2,16 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Route, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -22,8 +14,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import type { Column } from "@/components/redesign/data-table";
+import { rdButton } from "@/components/redesign/buttons";
+import { BadgeCell, SettingsToggle, TextCell } from "@/components/redesign/settings";
+import { PbxEmpty, PbxListBlock, RowIconButton, dialogInputClass } from "../_components/pbx-ui";
 import {
   Select,
   SelectContent,
@@ -31,14 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -98,6 +84,7 @@ const EMPTY_FORM: InboundFormState = {
 export default function InboundRoutesPage() {
   const t = useTranslations("pbxSettings.inbound");
   const tStatus = useTranslations("pbxSettings.status");
+  const tList = useTranslations("pbxSettings.list");
   const tForm = useTranslations("pbxSettings.form");
   const tToast = useTranslations("pbxSettings.toast");
 
@@ -241,70 +228,83 @@ export default function InboundRoutesPage() {
     return "—";
   };
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between space-y-0">
-        <div>
-          <CardTitle>{t("title")}</CardTitle>
-          <CardDescription>{t("description")}</CardDescription>
-        </div>
-        <Button onClick={openCreate} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          {t("new")}
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground py-6">…</p>
-        ) : routes.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-6">{t("empty")}</p>
+  const columns: Column<InboundRoute>[] = [
+    {
+      id: "did",
+      header: t("columns.did"),
+      width: "minmax(0,1.2fr)",
+      mobile: "title",
+      cell: (r) => <TextCell text={r.did} mono strong />,
+    },
+    {
+      id: "type",
+      header: t("columns.destinationType"),
+      width: "minmax(0,1fr)",
+      cell: (r) => (
+        <TextCell text={t(`destinations.${(r.destination_type as unknown as string) ?? "queue"}` as never)} />
+      ),
+    },
+    {
+      id: "destination",
+      header: t("columns.destination"),
+      width: "minmax(0,1fr)",
+      cell: (r) => <TextCell text={resolveDestination(r)} />,
+    },
+    {
+      id: "priority",
+      header: t("columns.priority"),
+      width: "80px",
+      numeric: true,
+      cell: (r) => r.priority ?? 100,
+    },
+    {
+      id: "status",
+      header: t("columns.status"),
+      width: "100px",
+      mobile: "end",
+      cell: (r) =>
+        r.is_active ? (
+          <BadgeCell tone="success" dot>{tStatus("active")}</BadgeCell>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("columns.did")}</TableHead>
-                <TableHead>{t("columns.destinationType")}</TableHead>
-                <TableHead>{t("columns.destination")}</TableHead>
-                <TableHead>{t("columns.priority")}</TableHead>
-                <TableHead>{t("columns.status")}</TableHead>
-                <TableHead className="w-32" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {routes.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell className="font-mono">{r.did}</TableCell>
-                  <TableCell>
-                    {t(
-                      `destinations.${(r.destination_type as unknown as string) ?? "queue"}` as never
-                    )}
-                  </TableCell>
-                  <TableCell>{resolveDestination(r)}</TableCell>
-                  <TableCell>{r.priority ?? 100}</TableCell>
-                  <TableCell>
-                    {r.is_active ? (
-<Badge variant="default">{tStatus("active")}</Badge>
-) : (
-<Badge variant="secondary">{tStatus("inactive")}</Badge>
-)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 justify-end">
-                      <Button size="sm" variant="ghost" onClick={() => openEdit(r)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(r)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
+          <BadgeCell tone="neutral" dot>{tStatus("inactive")}</BadgeCell>
+        ),
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">{tList("actions")}</span>,
+      width: "68px",
+      align: "end",
+      mobile: "actions",
+      cell: (r) => (
+        <span className="flex items-center gap-0.5">
+          <RowIconButton icon={Pencil} label={t("edit")} onClick={() => openEdit(r)} />
+          <RowIconButton
+            icon={Trash2}
+            tone="danger"
+            label={tForm("delete")}
+            onClick={() => setDeleteTarget(r)}
+            testId="route-delete"
+          />
+        </span>
+      ),
+    },
+  ];
 
+  return (
+    <PbxListBlock
+      title={t("title")}
+      description={t("description")}
+      newAction={{ label: t("new"), onClick: openCreate, testId: "route-new" }}
+      columns={columns}
+      rows={isLoading ? undefined : routes}
+      rowKey={(r) => r.id}
+      onRowClick={openEdit}
+      loading={isLoading}
+      empty={<PbxEmpty icon={Route} text={t("empty")} />}
+      countLabel={tList("routes", { count: routes.length })}
+      ariaLabel={t("title")}
+      idPrefix="pbx-inbound"
+    >
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -312,24 +312,25 @@ export default function InboundRoutesPage() {
             <DialogDescription>{t("description")}</DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-1 gap-4 py-2 md:grid-cols-2">
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="route-did">{t("form.did")}</Label>
+              <Label className="text-[13px]" htmlFor="route-did">{t("form.did")}</Label>
               <Input
+                className={dialogInputClass}
                 id="route-did"
                 value={form.did}
                 onChange={(e) => setForm({ ...form, did: e.target.value })}
               />
-              <p className="text-xs text-muted-foreground">{t("form.didHelp")}</p>
+              <p className="text-xs leading-[17px] text-muted-foreground">{t("form.didHelp")}</p>
             </div>
 
             <div className="space-y-2">
-              <Label>{t("form.trunk")}</Label>
+              <Label className="text-[13px]">{t("form.trunk")}</Label>
               <Select
                 value={form.trunk != null ? String(form.trunk) : ""}
                 onValueChange={(v) => setForm({ ...form, trunk: v ? Number(v) : null })}
               >
-                <SelectTrigger>
+                <SelectTrigger className={dialogInputClass}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -343,14 +344,14 @@ export default function InboundRoutesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t("form.destinationType")}</Label>
+              <Label className="text-[13px]">{t("form.destinationType")}</Label>
               <Select
                 value={form.destination_type}
                 onValueChange={(v) =>
                   setForm({ ...form, destination_type: v as DestType })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className={dialogInputClass}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -365,12 +366,12 @@ export default function InboundRoutesPage() {
 
             {form.destination_type === "queue" && (
               <div className="md:col-span-2 space-y-2">
-                <Label>{t("form.destinationQueue")}</Label>
+                <Label className="text-[13px]">{t("form.destinationQueue")}</Label>
                 <Select
                   value={form.destination_queue != null ? String(form.destination_queue) : ""}
                   onValueChange={(v) => setForm({ ...form, destination_queue: Number(v) })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={dialogInputClass}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -386,14 +387,14 @@ export default function InboundRoutesPage() {
 
             {form.destination_type === "extension" && (
               <div className="md:col-span-2 space-y-2">
-                <Label>{t("form.destinationExtension")}</Label>
+                <Label className="text-[13px]">{t("form.destinationExtension")}</Label>
                 <Select
                   value={
                     form.destination_extension != null ? String(form.destination_extension) : ""
                   }
                   onValueChange={(v) => setForm({ ...form, destination_extension: Number(v) })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={dialogInputClass}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -409,20 +410,21 @@ export default function InboundRoutesPage() {
 
             {form.destination_type === "ivr_custom" && (
               <div className="md:col-span-2 space-y-2">
-                <Label htmlFor="route-ivr">{t("form.ivrCustomContext")}</Label>
+                <Label className="text-[13px]" htmlFor="route-ivr">{t("form.ivrCustomContext")}</Label>
                 <Input
+                  className={dialogInputClass}
                   id="route-ivr"
                   value={form.ivr_custom_context}
                   onChange={(e) =>
                     setForm({ ...form, ivr_custom_context: e.target.value })
                   }
                 />
-                <p className="text-xs text-muted-foreground">{t("form.ivrCustomContextHelp")}</p>
+                <p className="text-xs leading-[17px] text-muted-foreground">{t("form.ivrCustomContextHelp")}</p>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label>{t("form.workingHoursOverride")}</Label>
+              <Label className="text-[13px]">{t("form.workingHoursOverride")}</Label>
               <Select
                 value={
                   form.working_hours_override != null ? String(form.working_hours_override) : ""
@@ -431,7 +433,7 @@ export default function InboundRoutesPage() {
                   setForm({ ...form, working_hours_override: v ? Number(v) : null })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className={dialogInputClass}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -445,33 +447,34 @@ export default function InboundRoutesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="route-priority">{t("form.priority")}</Label>
+              <Label className="text-[13px]" htmlFor="route-priority">{t("form.priority")}</Label>
               <Input
+                className={dialogInputClass}
                 id="route-priority"
                 type="number"
                 value={form.priority}
                 onChange={(e) => setForm({ ...form, priority: Number(e.target.value) || 0 })}
               />
-              <p className="text-xs text-muted-foreground">{t("form.priorityHelp")}</p>
+              <p className="text-xs leading-[17px] text-muted-foreground">{t("form.priorityHelp")}</p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Switch
+            <div className="flex items-center gap-3 rounded-lg border px-3 py-2.5">
+              <SettingsToggle
                 id="route-active"
                 checked={form.is_active}
                 onCheckedChange={(v) => setForm({ ...form, is_active: v })}
               />
-              <Label htmlFor="route-active">{t("form.isActive")}</Label>
+              <Label className="text-[13px]" htmlFor="route-active">{t("form.isActive")}</Label>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <button type="button" className={rdButton.outline} onClick={() => setDialogOpen(false)}>
               {tForm("cancel")}
-            </Button>
-            <Button onClick={handleSubmit} disabled={saving}>
+            </button>
+            <button type="button" className={rdButton.primary} onClick={handleSubmit} disabled={saving} data-testid="pbx-dialog-submit">
               {saving ? tForm("saving") : editing ? tForm("update") : tForm("create")}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -486,12 +489,16 @@ export default function InboundRoutesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{tForm("cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleteMut.isPending}>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteMut.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {deleteMut.isPending ? tForm("deleting") : tForm("confirmDelete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </PbxListBlock>
   );
 }
