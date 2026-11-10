@@ -4,14 +4,18 @@ import { useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Loader2, RotateCcw, Send } from "lucide-react"
 import { bookingsAdminSettingsTestSmsCreate } from "@/api/generated"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
+import { rdButton } from "@/components/redesign/buttons"
+import {
+  ActionButton,
+  FieldRow,
+  SettingsNote,
+  SettingsSection,
+  SettingsToggle,
+  settingsFieldWidth,
+  settingsInputClass,
+} from "@/components/redesign/settings"
 import { useToast } from "@/hooks/use-toast"
 import { useMyAccess } from "@/hooks/useMyAccess"
 import { renderSmsTemplate, smsLength, smsSegments } from "@/lib/sms"
@@ -70,58 +74,56 @@ export function ReminderSettingsCard<T extends SmsSettings>({ settings, onChange
   const second = settings.second_reminder_hours_before
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>{t("description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="reminder-hours">{t("firstLabel")}</Label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="reminder-hours"
-              type="number"
-              min={1}
-              max={168}
-              className="w-24"
-              value={settings.reminder_hours_before}
-              onChange={(e) => onChange({ reminder_hours_before: Math.max(1, parseInt(e.target.value) || 1) })}
-            />
-            <span className="text-sm text-muted-foreground">{t("hoursBefore")}</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
-          <div className="space-y-0.5">
-            <Label>{t("secondLabel")}</Label>
-            <p className="text-sm text-muted-foreground">{t("secondDesc")}</p>
-          </div>
-          <Switch
-            checked={second !== null && second !== undefined}
-            onCheckedChange={(checked) =>
-              onChange({ second_reminder_hours_before: checked ? Math.min(2, Math.max(1, settings.reminder_hours_before - 1)) : null })
-            }
+    <SettingsSection title={t("title")} hint={t("description")} testId="booking-reminders">
+      <FieldRow label={t("firstLabel")} htmlFor="reminder-hours" align="center">
+        <div className="flex items-center gap-2">
+          <input
+            id="reminder-hours"
+            type="number"
+            min={1}
+            max={168}
+            className={cn(settingsInputClass, "w-24")}
+            value={settings.reminder_hours_before}
+            onChange={(e) => onChange({ reminder_hours_before: Math.max(1, parseInt(e.target.value) || 1) })}
           />
+          <span className="text-xs text-muted-foreground">{t("hoursBefore")}</span>
         </div>
-        {second !== null && second !== undefined && (
-          <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              min={1}
-              max={Math.max(1, settings.reminder_hours_before - 1)}
-              className="w-24"
-              value={second}
+      </FieldRow>
+
+      <FieldRow label={t("secondLabel")} help={t("secondDesc")} align="center">
+        <div className="flex flex-col items-start gap-1.5 sm:items-end">
+          <div className="flex flex-wrap items-center gap-2">
+            {second !== null && second !== undefined && (
+              <>
+                <input
+                  type="number"
+                  min={1}
+                  max={Math.max(1, settings.reminder_hours_before - 1)}
+                  className={cn(settingsInputClass, "w-24")}
+                  value={second}
+                  aria-label={t("secondLabel")}
+                  onChange={(e) => onChange({ second_reminder_hours_before: Math.max(1, parseInt(e.target.value) || 1) })}
+                />
+                <span className="text-xs text-muted-foreground">{t("hoursBefore")}</span>
+              </>
+            )}
+            <SettingsToggle
+              checked={second !== null && second !== undefined}
               aria-label={t("secondLabel")}
-              onChange={(e) => onChange({ second_reminder_hours_before: Math.max(1, parseInt(e.target.value) || 1) })}
+              onCheckedChange={(checked) =>
+                onChange({ second_reminder_hours_before: checked ? Math.min(2, Math.max(1, settings.reminder_hours_before - 1)) : null })
+              }
             />
-            <span className="text-sm text-muted-foreground">{t("hoursBefore")}</span>
-            {second >= settings.reminder_hours_before && <span className="text-sm text-destructive">{t("secondMustBeCloser")}</span>}
           </div>
-        )}
-        <p className="text-xs text-muted-foreground">{t("rules")}</p>
-      </CardContent>
-    </Card>
+          {second !== null && second !== undefined && second >= settings.reminder_hours_before && (
+            <span className="text-xs text-destructive">{t("secondMustBeCloser")}</span>
+          )}
+        </div>
+      </FieldRow>
+      <div className="px-4 py-3">
+        <SettingsNote tone="neutral">{t("rules")}</SettingsNote>
+      </div>
+    </SettingsSection>
   )
 }
 
@@ -199,83 +201,72 @@ export function SmsSettingsCard<T extends SmsSettings>({ settings, onChange, bus
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1.5">
-            <CardTitle>{t("title")}</CardTitle>
-            <CardDescription>{t("description")}</CardDescription>
-          </div>
-          <Switch checked={settings.sms_enabled} onCheckedChange={(checked) => onChange({ sms_enabled: checked })} aria-label={t("title")} />
-        </div>
-      </CardHeader>
-
-      {settings.sms_enabled && (
-        <CardContent className="space-y-6">
+    <SettingsSection
+      title={t("title")}
+      hint={t("description")}
+      testId="booking-sms"
+      actions={
+        <SettingsToggle checked={settings.sms_enabled} onCheckedChange={(checked) => onChange({ sms_enabled: checked })} aria-label={t("title")} />
+      }
+    >
+      {settings.sms_enabled ? (
+        <>
           {/* Account */}
-          <div className="space-y-3">
-            <Label>{t("account.title")}</Label>
-            <div className={cn("rounded-md border p-3 text-sm", !canSend && !typedKey && "border-destructive/50 bg-destructive/5")}>
-              {ownKey ? (
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span>{t("account.own")}</span>
-                  <Button type="button" variant="outline" size="sm" onClick={() => onChange({ sms_api_key_clear: true, sms_api_key: "" })}>
-                    {t("account.removeKey")}
-                  </Button>
-                </div>
-              ) : settings.sms_platform_available ? (
-                <div className="space-y-1">
-                  <p>{t("account.platform")}</p>
-                  <p className={cn("text-muted-foreground", used >= limit && "text-destructive")}>
-                    {t("account.platformUsage", { used, limit })}
-                  </p>
-                </div>
-              ) : (
-                <p>{t("account.none")}</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="sms-key" className="text-sm font-normal text-muted-foreground">
+          <FieldRow label={t("account.title")}>
+            <div className={cn("flex flex-col gap-2", settingsFieldWidth)}>
+              <div className={cn("rounded-md border p-2.5 text-[13px]", !canSend && !typedKey && "border-destructive/50 bg-destructive/5")}>
+                {ownKey ? (
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span>{t("account.own")}</span>
+                    <ActionButton onClick={() => onChange({ sms_api_key_clear: true, sms_api_key: "" })}>{t("account.removeKey")}</ActionButton>
+                  </div>
+                ) : settings.sms_platform_available ? (
+                  <div className="space-y-1">
+                    <p>{t("account.platform")}</p>
+                    <p className={cn("text-xs text-muted-foreground", used >= limit && "text-destructive")}>
+                      {t("account.platformUsage", { used, limit })}
+                    </p>
+                  </div>
+                ) : (
+                  <p>{t("account.none")}</p>
+                )}
+              </div>
+              <label htmlFor="sms-key" className="text-xs text-muted-foreground">
                 {ownKey ? t("account.replaceKey") : t("account.ownKeyLabel")}
-              </Label>
-              <Input
+              </label>
+              <input
                 id="sms-key"
                 type="password"
                 autoComplete="off"
+                className={settingsInputClass}
                 value={settings.sms_api_key || ""}
                 placeholder={ownKey ? "••••••••" : t("account.keyPlaceholder")}
                 onChange={(e) => onChange({ sms_api_key: e.target.value, sms_api_key_clear: false })}
               />
-              <p className="text-xs text-muted-foreground">{t("account.keyHint")}</p>
+              <p className="text-xs leading-[17px] text-muted-foreground">{t("account.keyHint")}</p>
+              {typeof settings.sms_sent_this_month === "number" && (
+                <p className="text-xs text-muted-foreground">{t("account.sentThisMonth", { n: settings.sms_sent_this_month })}</p>
+              )}
             </div>
-            {typeof settings.sms_sent_this_month === "number" && (
-              <p className="text-xs text-muted-foreground">{t("account.sentThisMonth", { n: settings.sms_sent_this_month })}</p>
-            )}
-          </div>
+          </FieldRow>
 
           {/* Which notices */}
-          <div className="space-y-3">
-            <Label>{t("kinds.title")}</Label>
-            {SMS_KINDS.map((k) => {
-              const field = `sms_on_${k}` as const
-              return (
-                <div key={k} className="flex items-center justify-between gap-3">
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium">{t(`kinds.${k}`)}</p>
-                    <p className="text-sm text-muted-foreground">{t(`kinds.${k}Desc`)}</p>
-                  </div>
-                  <Switch checked={settings[field]} onCheckedChange={(checked) => onChange({ [field]: checked })} aria-label={t(`kinds.${k}`)} />
-                </div>
-              )
-            })}
-          </div>
+          <div className="border-b bg-muted/20 px-4 py-2 text-xs font-medium text-muted-foreground">{t("kinds.title")}</div>
+          {SMS_KINDS.map((k) => {
+            const field = `sms_on_${k}` as const
+            return (
+              <FieldRow key={k} label={t(`kinds.${k}`)} help={t(`kinds.${k}Desc`)} align="center">
+                <SettingsToggle checked={settings[field]} onCheckedChange={(checked) => onChange({ [field]: checked })} aria-label={t(`kinds.${k}`)} />
+              </FieldRow>
+            )
+          })}
 
           {/* Texts */}
-          <div className="space-y-3">
-            <Label>{t("texts.title")}</Label>
+          <div className="flex flex-col gap-3 border-b px-4 py-3.5">
+            <span className="text-[13px] font-medium">{t("texts.title")}</span>
             <div className="flex flex-wrap gap-2">
               <Select value={kind} onValueChange={(value) => setKind(value as SmsKind)}>
-                <SelectTrigger className="w-[240px]">
+                <SelectTrigger className="h-8 w-full text-[13px] sm:w-[240px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -288,31 +279,43 @@ export function SmsSettingsCard<T extends SmsSettings>({ settings, onChange, bus
               </Select>
               <div className="flex gap-1">
                 {(["ka", "en"] as const).map((lang) => (
-                  <Button key={lang} type="button" size="sm" className="h-9" variant={language === lang ? "default" : "outline"} onClick={() => setLanguage(lang)}>
+                  <button
+                    key={lang}
+                    type="button"
+                    aria-pressed={language === lang}
+                    className={language === lang ? rdButton.primary : rdButton.outline}
+                    onClick={() => setLanguage(lang)}
+                  >
                     {lang === "ka" ? "ქართული" : "English"}
-                  </Button>
+                  </button>
                 ))}
               </div>
               {isCustom && (
-                <Button type="button" variant="ghost" size="sm" className="h-9" onClick={resetText}>
-                  <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                <button type="button" className={rdButton.outline} onClick={resetText}>
+                  <RotateCcw className="h-3.5 w-3.5" aria-hidden />
                   {t("texts.reset")}
-                </Button>
+                </button>
               )}
             </div>
 
-            <Textarea ref={textRef} rows={3} maxLength={600} value={text} onChange={(e) => setText(e.target.value)} />
+            <Textarea ref={textRef} rows={3} maxLength={600} className="text-[13px]" value={text} onChange={(e) => setText(e.target.value)} />
 
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-xs text-muted-foreground">{t("texts.insert")}</span>
               {PLACEHOLDERS.map((name) => (
-                <button key={name} type="button" onClick={() => insertPlaceholder(name)} title={t(`placeholders.${name}`)}>
-                  <Badge variant="secondary" className="cursor-pointer font-mono text-[11px] hover:bg-accent">{`{${name}}`}</Badge>
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => insertPlaceholder(name)}
+                  title={t(`placeholders.${name}`)}
+                  className="inline-flex h-5 items-center rounded border bg-muted/60 px-1.5 font-mono text-[11px] hover:bg-accent"
+                >
+                  {`{${name}}`}
                 </button>
               ))}
             </div>
 
-            <div className="rounded-md bg-muted/50 p-3 text-sm">
+            <div className="rounded-md bg-muted/50 p-3 text-[13px]">
               <p className="mb-1 text-xs text-muted-foreground">{t("texts.preview")}</p>
               <p className="whitespace-pre-wrap break-words">{preview || "—"}</p>
               <p className={cn("mt-2 text-xs text-muted-foreground", segments > 1 && "text-amber-600")}>
@@ -324,19 +327,28 @@ export function SmsSettingsCard<T extends SmsSettings>({ settings, onChange, bus
           </div>
 
           {/* Test */}
-          <div className="space-y-2">
-            <Label htmlFor="sms-test-phone">{t("test.title")}</Label>
+          <FieldRow label={t("test.title")} help={typedKey ? t("test.saveFirst") : t("test.hint")} htmlFor="sms-test-phone">
             <div className="flex flex-wrap gap-2">
-              <Input id="sms-test-phone" type="tel" className="w-[200px]" placeholder="599 12 34 56" value={testPhone} onChange={(e) => setTestPhone(e.target.value)} />
-              <Button type="button" variant="outline" disabled={testing || !isBookingAdmin || testPhone.replace(/\D/g, "").length < 9} onClick={sendTest}>
-                {testing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+              <input
+                id="sms-test-phone"
+                type="tel"
+                className={cn(settingsInputClass, "w-full sm:w-[180px]")}
+                placeholder="599 12 34 56"
+                value={testPhone}
+                onChange={(e) => setTestPhone(e.target.value)}
+              />
+              <ActionButton
+                icon={testing ? Loader2 : Send}
+                className={cn("h-[34px]", testing && "[&>svg]:animate-spin")}
+                disabled={testing || !isBookingAdmin || testPhone.replace(/\D/g, "").length < 9}
+                onClick={sendTest}
+              >
                 {t("test.send")}
-              </Button>
+              </ActionButton>
             </div>
-            <p className="text-xs text-muted-foreground">{typedKey ? t("test.saveFirst") : t("test.hint")}</p>
-          </div>
-        </CardContent>
-      )}
-    </Card>
+          </FieldRow>
+        </>
+      ) : null}
+    </SettingsSection>
   )
 }

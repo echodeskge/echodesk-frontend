@@ -19,8 +19,6 @@ import {
   useRemoveSignature,
   useAvailableItemLists,
 } from "@/hooks/useInvoices";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,9 +30,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { X, Image as ImageIcon, Plus, Pencil, Trash2, Building2 } from "lucide-react";
+import { X, Image as ImageIcon, Plus, Pencil, Trash2, Building2, Receipt } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { Segmented } from "@/components/redesign/segmented";
+import { TonePill } from "@/components/redesign/pill";
+import { EmptyBlock, LoadingBlock } from "@/components/redesign/states";
+import { rdButton } from "@/components/redesign/buttons";
+import {
+  ActionButton,
+  FieldRow,
+  SettingsFormPage,
+  SettingsSection,
+  StickySaveBar,
+  settingsFieldWidth,
+  settingsInputClass,
+} from "@/components/redesign/settings";
+
+type InvoiceTab = "company" | "branding" | "defaults" | "bankAccounts" | "email";
+const FORM_ID = "invoice-settings-form";
 
 interface BankAccount {
   bank_name: string;
@@ -66,6 +80,7 @@ export default function InvoiceSettingsPage() {
   const removeBadgeMutation = useRemoveBadge();
   const removeSignatureMutation = useRemoveSignature();
 
+  const [tab, setTab] = useState<InvoiceTab>("company");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBadge, setUploadingBadge] = useState(false);
   const [uploadingSignature, setUploadingSignature] = useState(false);
@@ -84,7 +99,7 @@ export default function InvoiceSettingsPage() {
     setBankAccountsInitialized(true);
   }
 
-  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors, isSubmitting, isDirty } } = useForm({
     values: settings
       ? {
           company_name: settings.company_name || "",
@@ -284,69 +299,74 @@ export default function InvoiceSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6">
-        <p>{t("loadingSettings")}</p>
-      </div>
+      <section className="w-full p-4 sm:p-6">
+        <LoadingBlock label={t("loadingSettings")} testId="invoice-settings-loading" />
+      </section>
     );
   }
 
+  const inputClass = cn(settingsInputClass, settingsFieldWidth);
+  const selectClass = cn("h-[34px] text-[13px]", settingsFieldWidth);
+
   const renderBankAccountForm = (isEditing: boolean) => (
-    <Card className="p-4 space-y-4 border-dashed">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>{t("settings.bankName")} *</Label>
-          <Input
+    <div className="flex flex-col gap-3 border-b bg-muted/20 px-4 py-3.5 last:border-b-0" data-testid="bank-account-form">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <label className="flex min-w-0 flex-col gap-1.5">
+          <span className="text-[13px] font-medium">{t("settings.bankName")} *</span>
+          <input
+            className={settingsInputClass}
             value={editForm.bank_name}
             onChange={(e) => setEditForm({ ...editForm, bank_name: e.target.value })}
             placeholder={t("settings.bankName")}
           />
-        </div>
-        <div className="space-y-2">
-          <Label>{t("settings.accountNumber")} *</Label>
-          <Input
+        </label>
+        <label className="flex min-w-0 flex-col gap-1.5">
+          <span className="text-[13px] font-medium">{t("settings.accountNumber")} *</span>
+          <input
+            className={settingsInputClass}
             value={editForm.account_number}
             onChange={(e) => setEditForm({ ...editForm, account_number: e.target.value })}
             placeholder={t("settings.accountNumber")}
           />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>{t("settings.iban")}</Label>
-          <Input
+        </label>
+        <label className="flex min-w-0 flex-col gap-1.5">
+          <span className="text-[13px] font-medium">{t("settings.iban")}</span>
+          <input
+            className={settingsInputClass}
             value={editForm.iban}
             onChange={(e) => setEditForm({ ...editForm, iban: e.target.value })}
             placeholder={t("settings.iban")}
           />
-        </div>
-        <div className="space-y-2">
-          <Label>{t("settings.swiftCode")}</Label>
-          <Input
+        </label>
+        <label className="flex min-w-0 flex-col gap-1.5">
+          <span className="text-[13px] font-medium">{t("settings.swiftCode")}</span>
+          <input
+            className={settingsInputClass}
             value={editForm.swift}
             onChange={(e) => setEditForm({ ...editForm, swift: e.target.value })}
             placeholder={t("settings.swiftCode")}
           />
-        </div>
+        </label>
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-2">
         <Checkbox
           id="is_default"
           checked={editForm.is_default}
           onCheckedChange={(checked) => setEditForm({ ...editForm, is_default: !!checked })}
         />
-        <Label htmlFor="is_default" className="cursor-pointer">
+        <Label htmlFor="is_default" className="cursor-pointer text-[13px] font-normal">
           {t("settings.setAsDefault")}
         </Label>
       </div>
 
-      <div className="flex gap-2 justify-end">
-        <Button type="button" variant="outline" onClick={cancelEditing}>
+      <div className="flex flex-wrap justify-end gap-2">
+        <button type="button" className={rdButton.outline} onClick={cancelEditing}>
           {t("actions.cancel")}
-        </Button>
-        <Button
+        </button>
+        <button
           type="button"
+          className={rdButton.primary}
           onClick={isEditing ? handleUpdateAccount : handleAddAccount}
           disabled={!editForm.bank_name || !editForm.account_number || savingBankAccounts}
         >
@@ -355,507 +375,311 @@ export default function InvoiceSettingsPage() {
             : isEditing
             ? t("settings.saveSettings")
             : t("settings.addBankAccount")}
-        </Button>
+        </button>
       </div>
-    </Card>
+    </div>
   );
 
-  return (
-    <div className="p-4 sm:p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">{t("settings.title")}</h1>
-        <p className="text-muted-foreground">{t("settings.subtitle")}</p>
+  const renderImageRow = (
+    type: "logo" | "badge" | "signature",
+    label: string,
+    hint: string,
+    src: string | null | undefined,
+    alt: string,
+    uploading: boolean,
+    removeLabel: string
+  ) => (
+    <FieldRow label={label} help={hint}>
+      <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+        {src ? (
+          <div className="relative">
+            <img src={src} alt={alt} className="h-16 w-auto max-w-[160px] rounded-md border object-contain" />
+            <button
+              type="button"
+              className="absolute -end-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-white shadow-sm hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => handleRemoveFile(type)}
+              aria-label={removeLabel}
+              title={removeLabel}
+            >
+              <X className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          </div>
+        ) : (
+          <div className="flex h-16 w-24 items-center justify-center rounded-md border-2 border-dashed text-muted-foreground">
+            <ImageIcon className="h-6 w-6" aria-hidden />
+          </div>
+        )}
+        <Input
+          type="file"
+          accept="image/*"
+          onChange={(e) => handleFileUpload(e.target.files?.[0] || null, type)}
+          disabled={uploading}
+          className="h-[34px] w-full max-w-[240px] text-[13px]"
+        />
       </div>
+    </FieldRow>
+  );
 
-      <Tabs defaultValue="company" className="space-y-6">
-        <TabsList className="w-full flex flex-wrap h-auto gap-1 sm:inline-flex sm:flex-nowrap sm:h-10">
-          <TabsTrigger value="company" className="text-xs sm:text-sm flex-1 sm:flex-none">{t("settings.tabs.company")}</TabsTrigger>
-          <TabsTrigger value="branding" className="text-xs sm:text-sm flex-1 sm:flex-none">{t("settings.tabs.branding")}</TabsTrigger>
-          <TabsTrigger value="defaults" className="text-xs sm:text-sm flex-1 sm:flex-none">{t("settings.tabs.defaults")}</TabsTrigger>
-          <TabsTrigger value="bankAccounts" className="text-xs sm:text-sm flex-1 sm:flex-none">{t("settings.tabs.bankAccounts")}</TabsTrigger>
-          <TabsTrigger value="email" className="text-xs sm:text-sm flex-1 sm:flex-none">{t("settings.tabs.email")}</TabsTrigger>
-        </TabsList>
+  const TABS: { value: InvoiceTab; label: string }[] = [
+    { value: "company", label: t("settings.tabs.company") },
+    { value: "branding", label: t("settings.tabs.branding") },
+    { value: "defaults", label: t("settings.tabs.defaults") },
+    { value: "bankAccounts", label: t("settings.tabs.bankAccounts") },
+    { value: "email", label: t("settings.tabs.email") },
+  ];
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          {/* Company Information Tab */}
-          <TabsContent value="company" className="space-y-6">
-            <Card className="p-6 space-y-4">
-              <h3 className="text-lg font-semibold">{t("settings.companyInfo")}</h3>
+  return (
+    <SettingsFormPage icon={Receipt} title={t("settings.title")} description={t("settings.subtitle")} testId="invoice-settings-page">
+      <Segmented size="md" value={tab} onChange={setTab} options={TABS} ariaLabel={t("settings.title")} className="max-w-full self-start" testId="invoice-settings-tabs" />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="company_name">{t("settings.form.companyName")} *</Label>
-                  <Input
-                    id="company_name"
-                    {...register("company_name", { required: t("form.required") })}
-                  />
-                  {errors.company_name && (
-                    <p className="text-sm text-destructive">{errors.company_name.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tax_id">{t("settings.form.taxId")}</Label>
-                  <Input id="tax_id" {...register("tax_id")} />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address">{t("settings.form.address")}</Label>
-                <Textarea id="address" {...register("address")} rows={3} />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">{t("settings.form.phone")}</Label>
-                  <Input id="phone" type="tel" {...register("phone")} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">{t("settings.form.email")}</Label>
-                  <Input id="email" type="email" {...register("email")} />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="website">{t("settings.form.website")}</Label>
-                <Input id="website" type="url" {...register("website")} />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="client_itemlist">{t("settings.form.clientItemList")}</Label>
-                <Select
-                  key={`itemlist-select-${availableItemLists?.length ?? "loading"}`}
-                  value={clientItemListValue?.toString() || "none"}
-                  onValueChange={(value) => {
-                    setValue("client_itemlist", value === "none" ? null : parseInt(value), { shouldDirty: true });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("settings.form.selectItemList")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">—</SelectItem>
-                    {availableItemLists?.map((itemList: any) => (
-                      <SelectItem key={itemList.id} value={itemList.id.toString()}>
-                        {itemList.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {t("settings.form.clientItemListHint")}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="materials_itemlist">{t("settings.form.materialsItemList")}</Label>
-                <Select
-                  key={`materials-select-${availableItemLists?.length ?? "loading"}`}
-                  value={materialsItemListValue?.toString() || "none"}
-                  onValueChange={(value) => {
-                    setValue("materials_itemlist", value === "none" ? null : parseInt(value), { shouldDirty: true });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("settings.form.selectItemList")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">—</SelectItem>
-                    {availableItemLists?.map((itemList: any) => (
-                      <SelectItem key={itemList.id} value={itemList.id.toString()}>
-                        {itemList.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {t("settings.form.materialsItemListHint")}
-                </p>
-              </div>
-            </Card>
-          </TabsContent>
-
-          {/* Branding Tab */}
-          <TabsContent value="branding" className="space-y-6">
-            <Card className="p-6 space-y-6">
-              <h3 className="text-lg font-semibold">{t("settings.branding")}</h3>
-
-              {/* Logo */}
-              <div className="space-y-3">
-                <Label>{t("settings.form.logo")}</Label>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  {settings?.logo ? (
-                    <div className="relative">
-                      <img
-                        src={settings.logo}
-                        alt="Logo"
-                        className="h-20 w-auto object-contain border rounded"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6"
-                        onClick={() => handleRemoveFile("logo")}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="h-20 w-32 border-2 border-dashed rounded flex items-center justify-center text-muted-foreground">
-                      <ImageIcon className="h-8 w-8" />
-                    </div>
-                  )}
-                  <div>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileUpload(e.target.files?.[0] || null, "logo")}
-                      disabled={uploadingLogo}
-                      className="max-w-xs"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t("settings.form.logoHint")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Badge */}
-              <div className="space-y-3">
-                <Label>{t("settings.form.badge")}</Label>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  {settings?.badge ? (
-                    <div className="relative">
-                      <img
-                        src={settings.badge}
-                        alt="Badge"
-                        className="h-20 w-auto object-contain border rounded"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6"
-                        onClick={() => handleRemoveFile("badge")}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="h-20 w-32 border-2 border-dashed rounded flex items-center justify-center text-muted-foreground">
-                      <ImageIcon className="h-8 w-8" />
-                    </div>
-                  )}
-                  <div>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileUpload(e.target.files?.[0] || null, "badge")}
-                      disabled={uploadingBadge}
-                      className="max-w-xs"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t("settings.form.badgeHint")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Signature */}
-              <div className="space-y-3">
-                <Label>{t("settings.form.signature")}</Label>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  {settings?.signature ? (
-                    <div className="relative">
-                      <img
-                        src={settings.signature}
-                        alt="Signature"
-                        className="h-20 w-auto object-contain border rounded"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6"
-                        onClick={() => handleRemoveFile("signature")}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="h-20 w-32 border-2 border-dashed rounded flex items-center justify-center text-muted-foreground">
-                      <ImageIcon className="h-8 w-8" />
-                    </div>
-                  )}
-                  <div>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        handleFileUpload(e.target.files?.[0] || null, "signature")
-                      }
-                      disabled={uploadingSignature}
-                      className="max-w-xs"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t("settings.form.signatureHint")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
-
-          {/* Invoice Defaults Tab */}
-          <TabsContent value="defaults" className="space-y-6">
-            <Card className="p-6 space-y-4">
-              <h3 className="text-lg font-semibold">{t("settings.invoiceConfig")}</h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="invoice_prefix">{t("settings.form.invoicePrefix")}</Label>
-                  <Input id="invoice_prefix" {...register("invoice_prefix")} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="starting_number">
-                    {t("settings.form.nextInvoiceNumber")}
-                  </Label>
-                  <Input
-                    id="starting_number"
-                    type="number"
-                    {...register("starting_number")}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="default_currency">{t("settings.form.defaultCurrency")}</Label>
-                  <Select
-                    value={defaultCurrencyValue || "GEL"}
-                    onValueChange={(value) => setValue("default_currency", value, { shouldDirty: true })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="GEL">GEL (₾)</SelectItem>
-                      <SelectItem value="USD">USD ($)</SelectItem>
-                      <SelectItem value="EUR">EUR (€)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="default_tax_rate">{t("settings.form.defaultTaxRate")}</Label>
-                  <Input
-                    id="default_tax_rate"
-                    type="number"
-                    step="0.01"
-                    {...register("default_tax_rate")}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="default_due_days">{t("settings.form.defaultDueDays")}</Label>
-                  <Input id="default_due_days" type="number" {...register("default_due_days")} />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="default_terms">
-                  {t("settings.form.defaultTerms")}
-                </Label>
-                <Textarea
-                  id="default_terms"
-                  {...register("default_terms")}
-                  rows={6}
-                  placeholder={t("settings.form.defaultTermsPlaceholder")}
+      <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className="contents">
+        {/* Company Information Tab */}
+        {tab === "company" && (
+          <SettingsSection title={t("settings.companyInfo")}>
+            <FieldRow label={`${t("settings.form.companyName")} *`} htmlFor="company_name">
+              <div className={cn("flex flex-col gap-1", settingsFieldWidth)}>
+                <input
+                  id="company_name"
+                  className={settingsInputClass}
+                  aria-invalid={!!errors.company_name}
+                  {...register("company_name", { required: t("form.required") })}
                 />
+                {errors.company_name && (
+                  <p className="text-xs text-destructive">{errors.company_name.message as string}</p>
+                )}
               </div>
-            </Card>
-          </TabsContent>
+            </FieldRow>
+            <FieldRow label={t("settings.form.taxId")} htmlFor="tax_id">
+              <input id="tax_id" className={inputClass} {...register("tax_id")} />
+            </FieldRow>
+            <FieldRow label={t("settings.form.address")} htmlFor="address">
+              <Textarea id="address" {...register("address")} rows={3} className={cn("text-[13px]", settingsFieldWidth)} />
+            </FieldRow>
+            <FieldRow label={t("settings.form.phone")} htmlFor="phone">
+              <input id="phone" type="tel" className={inputClass} {...register("phone")} />
+            </FieldRow>
+            <FieldRow label={t("settings.form.email")} htmlFor="email">
+              <input id="email" type="email" className={inputClass} {...register("email")} />
+            </FieldRow>
+            <FieldRow label={t("settings.form.website")} htmlFor="website">
+              <input id="website" type="url" className={inputClass} {...register("website")} />
+            </FieldRow>
+            <FieldRow label={t("settings.form.clientItemList")} help={t("settings.form.clientItemListHint")} htmlFor="client_itemlist">
+              <Select
+                key={`itemlist-select-${availableItemLists?.length ?? "loading"}`}
+                value={clientItemListValue?.toString() || "none"}
+                onValueChange={(value) => {
+                  setValue("client_itemlist", value === "none" ? null : parseInt(value), { shouldDirty: true });
+                }}
+              >
+                <SelectTrigger id="client_itemlist" className={selectClass}>
+                  <SelectValue placeholder={t("settings.form.selectItemList")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">—</SelectItem>
+                  {availableItemLists?.map((itemList: any) => (
+                    <SelectItem key={itemList.id} value={itemList.id.toString()}>
+                      {itemList.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <FieldRow label={t("settings.form.materialsItemList")} help={t("settings.form.materialsItemListHint")} htmlFor="materials_itemlist">
+              <Select
+                key={`materials-select-${availableItemLists?.length ?? "loading"}`}
+                value={materialsItemListValue?.toString() || "none"}
+                onValueChange={(value) => {
+                  setValue("materials_itemlist", value === "none" ? null : parseInt(value), { shouldDirty: true });
+                }}
+              >
+                <SelectTrigger id="materials_itemlist" className={selectClass}>
+                  <SelectValue placeholder={t("settings.form.selectItemList")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">—</SelectItem>
+                  {availableItemLists?.map((itemList: any) => (
+                    <SelectItem key={itemList.id} value={itemList.id.toString()}>
+                      {itemList.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FieldRow>
+          </SettingsSection>
+        )}
 
-          {/* Email Settings Tab */}
-          <TabsContent value="email" className="space-y-6">
-            <Card className="p-6 space-y-4">
-              <h3 className="text-lg font-semibold">{t("settings.emailSettings")}</h3>
+        {/* Branding Tab: uploads and removals apply at once */}
+        {tab === "branding" && (
+          <SettingsSection title={t("settings.branding")}>
+            {renderImageRow("logo", t("settings.form.logo"), t("settings.form.logoHint"), settings?.logo, "Logo", uploadingLogo, t("settings.removeLogo"))}
+            {renderImageRow("badge", t("settings.form.badge"), t("settings.form.badgeHint"), settings?.badge, "Badge", uploadingBadge, t("settings.removeBadge"))}
+            {renderImageRow("signature", t("settings.form.signature"), t("settings.form.signatureHint"), settings?.signature, "Signature", uploadingSignature, t("settings.removeSignature"))}
+          </SettingsSection>
+        )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email_from">{t("settings.form.emailFrom")}</Label>
-                  <Input id="email_from" type="email" {...register("email_from")} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email_cc">{t("settings.form.emailCc")}</Label>
-                  <Input id="email_cc" type="email" {...register("email_cc")} />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email_subject_template">
-                  {t("settings.form.emailSubject")}
-                </Label>
-                <Input id="email_subject_template" {...register("email_subject_template")} />
-                <p className="text-xs text-muted-foreground">
-                  {t("settings.form.emailSubjectHint")}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email_message_template">
-                  {t("settings.form.emailMessage")}
-                </Label>
-                <Textarea
-                  id="email_message_template"
-                  {...register("email_message_template")}
-                  rows={8}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t("settings.form.emailMessageHint")}
-                </p>
-              </div>
-            </Card>
-          </TabsContent>
-
-          {/* Save Button (for all tabs except bankAccounts) */}
-          <TabsContent value="company">
-            <div className="flex justify-end mt-6">
-              <Button type="submit" disabled={isSubmitting} size="lg">
-                {isSubmitting ? t("settings.saving") : t("settings.saveSettings")}
-              </Button>
+        {/* Invoice Defaults Tab */}
+        {tab === "defaults" && (
+          <SettingsSection title={t("settings.invoiceConfig")}>
+            <FieldRow label={t("settings.form.invoicePrefix")} htmlFor="invoice_prefix">
+              <input id="invoice_prefix" className={inputClass} {...register("invoice_prefix")} />
+            </FieldRow>
+            <FieldRow label={t("settings.form.nextInvoiceNumber")} htmlFor="starting_number">
+              <input id="starting_number" type="number" className={cn(settingsInputClass, "w-32")} {...register("starting_number")} />
+            </FieldRow>
+            <FieldRow label={t("settings.form.defaultCurrency")} htmlFor="default_currency">
+              <Select
+                value={defaultCurrencyValue || "GEL"}
+                onValueChange={(value) => setValue("default_currency", value, { shouldDirty: true })}
+              >
+                <SelectTrigger id="default_currency" className={cn("h-[34px] w-40 text-[13px]")}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="GEL">GEL (₾)</SelectItem>
+                  <SelectItem value="USD">USD ($)</SelectItem>
+                  <SelectItem value="EUR">EUR (€)</SelectItem>
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <FieldRow label={t("settings.form.defaultTaxRate")} htmlFor="default_tax_rate">
+              <input id="default_tax_rate" type="number" step="0.01" className={cn(settingsInputClass, "w-32")} {...register("default_tax_rate")} />
+            </FieldRow>
+            <FieldRow label={t("settings.form.defaultDueDays")} htmlFor="default_due_days">
+              <input id="default_due_days" type="number" className={cn(settingsInputClass, "w-32")} {...register("default_due_days")} />
+            </FieldRow>
+            <div className="flex flex-col gap-2 px-4 py-3.5">
+              <label htmlFor="default_terms" className="text-[13px] font-medium">
+                {t("settings.form.defaultTerms")}
+              </label>
+              <Textarea
+                id="default_terms"
+                {...register("default_terms")}
+                rows={6}
+                className="text-[13px]"
+                placeholder={t("settings.form.defaultTermsPlaceholder")}
+              />
             </div>
-          </TabsContent>
-          <TabsContent value="branding">
-            <div className="flex justify-end mt-6">
-              <Button type="submit" disabled={isSubmitting} size="lg">
-                {isSubmitting ? t("settings.saving") : t("settings.saveSettings")}
-              </Button>
-            </div>
-          </TabsContent>
-          <TabsContent value="defaults">
-            <div className="flex justify-end mt-6">
-              <Button type="submit" disabled={isSubmitting} size="lg">
-                {isSubmitting ? t("settings.saving") : t("settings.saveSettings")}
-              </Button>
-            </div>
-          </TabsContent>
-          <TabsContent value="email">
-            <div className="flex justify-end mt-6">
-              <Button type="submit" disabled={isSubmitting} size="lg">
-                {isSubmitting ? t("settings.saving") : t("settings.saveSettings")}
-              </Button>
-            </div>
-          </TabsContent>
-        </form>
+          </SettingsSection>
+        )}
 
-        {/* Bank Accounts Tab (outside form - saves independently) */}
-        <TabsContent value="bankAccounts" className="space-y-6">
-          <Card className="p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
-              <h3 className="text-lg font-semibold">{t("settings.bankAccounts")}</h3>
-              {!showAddForm && editingIndex === null && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowAddForm(true);
-                    setEditForm(emptyAccount);
-                  }}
+        {/* Email Settings Tab */}
+        {tab === "email" && (
+          <SettingsSection title={t("settings.emailSettings")}>
+            <FieldRow label={t("settings.form.emailFrom")} htmlFor="email_from">
+              <input id="email_from" type="email" className={inputClass} {...register("email_from")} />
+            </FieldRow>
+            <FieldRow label={t("settings.form.emailCc")} htmlFor="email_cc">
+              <input id="email_cc" type="email" className={inputClass} {...register("email_cc")} />
+            </FieldRow>
+            <FieldRow label={t("settings.form.emailSubject")} help={t("settings.form.emailSubjectHint")} htmlFor="email_subject_template">
+              <input id="email_subject_template" className={inputClass} {...register("email_subject_template")} />
+            </FieldRow>
+            <div className="flex flex-col gap-2 px-4 py-3.5">
+              <label htmlFor="email_message_template" className="text-[13px] font-medium">
+                {t("settings.form.emailMessage")}
+              </label>
+              <Textarea id="email_message_template" {...register("email_message_template")} rows={8} className="text-[13px]" />
+              <p className="text-xs leading-[17px] text-muted-foreground">{t("settings.form.emailMessageHint")}</p>
+            </div>
+          </SettingsSection>
+        )}
+      </form>
+
+      {/* Bank Accounts Tab (outside the form - saves independently, at once) */}
+      {tab === "bankAccounts" && (
+        <SettingsSection
+          title={t("settings.bankAccounts")}
+          actions={
+            !showAddForm && editingIndex === null ? (
+              <ActionButton
+                icon={Plus}
+                onClick={() => {
+                  setShowAddForm(true);
+                  setEditForm(emptyAccount);
+                }}
+              >
+                {t("settings.addBankAccount")}
+              </ActionButton>
+            ) : undefined
+          }
+        >
+          {bankAccounts.length === 0 && !showAddForm ? (
+            <EmptyBlock icon={Building2} title={t("settings.noBankAccounts")} description={t("settings.noBankAccountsHint")} />
+          ) : (
+            bankAccounts.map((account, index) =>
+              editingIndex === index ? (
+                <div key={index}>{renderBankAccountForm(true)}</div>
+              ) : (
+                <div
+                  key={index}
+                  className="flex flex-col gap-2 border-b px-4 py-3 last:border-b-0 sm:flex-row sm:items-center"
+                  data-testid="bank-account-row"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t("settings.addBankAccount")}
-                </Button>
-              )}
-            </div>
-
-            {/* Existing bank accounts list */}
-            {bankAccounts.length === 0 && !showAddForm ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Building2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p className="font-medium">{t("settings.noBankAccounts")}</p>
-                <p className="text-sm mt-1">{t("settings.noBankAccountsHint")}</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {bankAccounts.map((account, index) => (
-                  <div key={index}>
-                    {editingIndex === index ? (
-                      renderBankAccountForm(true)
-                    ) : (
-                      <Card className="p-4">
-                        <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-2">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{account.bank_name}</span>
-                              {account.is_default && (
-                                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                                  {t("settings.defaultAccount")}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {account.account_number}
-                            </p>
-                            {account.iban && (
-                              <p className="text-sm text-muted-foreground">
-                                IBAN: {account.iban}
-                              </p>
-                            )}
-                            {account.swift && (
-                              <p className="text-sm text-muted-foreground">
-                                SWIFT: {account.swift}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {!account.is_default && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleSetDefault(index)}
-                              >
-                                {t("settings.setAsDefault")}
-                              </Button>
-                            )}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => startEditing(index)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => handleRemoveAccount(index)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[7px] bg-primary/10 text-primary">
+                    <Building2 className="h-4 w-4" aria-hidden />
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="text-[13px] font-medium">{account.bank_name}</span>
+                      {account.is_default && <TonePill tone="info">{t("settings.defaultAccount")}</TonePill>}
+                    </span>
+                    <span className="break-all font-mono text-xs text-muted-foreground">{account.account_number}</span>
+                    {account.iban && <span className="break-all text-xs text-muted-foreground">IBAN: {account.iban}</span>}
+                    {account.swift && <span className="text-xs text-muted-foreground">SWIFT: {account.swift}</span>}
+                  </div>
+                  <div className="flex items-center justify-end gap-1">
+                    {!account.is_default && (
+                      <button type="button" className={rdButton.outlineSm} onClick={() => handleSetDefault(index)}>
+                        {t("settings.setAsDefault")}
+                      </button>
                     )}
+                    <button
+                      type="button"
+                      className={rdButton.ghostIconSm}
+                      onClick={() => startEditing(index)}
+                      aria-label={t("settings.editBankAccount")}
+                      title={t("settings.editBankAccount")}
+                    >
+                      <Pencil className="h-3.5 w-3.5" aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      className={cn(rdButton.ghostIconSm, "text-destructive hover:text-destructive")}
+                      onClick={() => handleRemoveAccount(index)}
+                      aria-label={t("settings.removeBankAccount")}
+                      title={t("settings.removeBankAccount")}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              )
+            )
+          )}
+          {showAddForm && renderBankAccountForm(false)}
+        </SettingsSection>
+      )}
 
-            {/* Add new account form */}
-            {showAddForm && renderBankAccountForm(false)}
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+      {/* The Save of the company / branding / defaults / email tabs, now in the save bar:
+          it submits the same form (handleSubmit(onSubmit)). Bank accounts save on their own. */}
+      {tab !== "bankAccounts" && (
+        <StickySaveBar
+          mode="always"
+          formId={FORM_ID}
+          dirty={isDirty}
+          saving={isSubmitting}
+          onDiscard={() => reset()}
+          labels={{
+            unsaved: t("settings.saveBar.unsaved"),
+            discard: t("settings.saveBar.discard"),
+            save: t("settings.saveSettings"),
+            saving: t("settings.saving"),
+            saved: t("settings.saveBar.saved"),
+          }}
+          testId="invoice-settings-savebar"
+        />
+      )}
+    </SettingsFormPage>
   );
 }

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit, Trash2, Star, X } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Edit, Trash2, Star, X, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,6 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import type { Column } from "@/components/redesign/data-table";
+import { EmptyBlock } from "@/components/redesign/states";
+import { rdButton } from "@/components/redesign/buttons";
+import { SettingsListPage, AvatarCell, BadgeCell } from "@/components/redesign/settings";
 import {
   Select,
   SelectContent,
@@ -24,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { getApiErrorMessage } from "@/lib/utils";
+import { cn, getApiErrorMessage } from "@/lib/utils";
 import { useMyAccess } from "@/hooks/useMyAccess";
 import { useTranslations } from "next-intl";
 import {
@@ -40,6 +43,11 @@ import type {
   PatchedTicketFormRequest,
   ItemListMinimal,
 } from "@/api/generated/interfaces";
+
+// Empty badge cells take no room on the two-line phone rows (no stray "·").
+const EMPTY_HIDDEN = "@max-3xl:empty:hidden";
+// ...and the first visible cell of that line gets no leading "·" either.
+const AFTER_EMPTY = "[:first-child:empty+&]:before:content-none [:first-child:empty+:empty+&]:before:content-none";
 
 export default function TicketFormsPage() {
   const t = useTranslations('settings.ticketFormsPage');
@@ -70,10 +78,6 @@ export default function TicketFormsPage() {
   useEffect(() => {
     loadData();
   }, []);
-
-  useEffect(() => {
-    // formData changed
-  }, [formData]);
 
   const loadData = async () => {
     try {
@@ -222,114 +226,160 @@ export default function TicketFormsPage() {
     }));
   };
 
-  return (
-    <div className="container mx-auto py-6">
-      <Card>
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-3">
-          <CardTitle>{t('title')}</CardTitle>
-          {canManageSettings && (
-            <Button onClick={handleCreate}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('createForm')}
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p className="text-muted-foreground">{t('loading')}</p>
-          ) : forms.length === 0 ? (
-            <p className="text-muted-foreground">
-              {t('noFormsFound')}
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {forms.map((form) => (
-                <div
-                  key={form.id}
-                  className="flex flex-col sm:flex-row items-start sm:items-center gap-3 border rounded-lg p-4"
-                >
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <h3 className="font-semibold">{form.title}</h3>
-                      {form.is_default && (
-                        <Badge variant="default">
-                          <Star className="h-3 w-3 mr-1" />
-                          {t('default')}
-                        </Badge>
-                      )}
-                      {!form.is_active && (
-                        <Badge variant="secondary">{t('inactive')}</Badge>
-                      )}
-                      {form.parent_form && (
-                        <Badge variant="outline" className="bg-blue-50">
-                          Child of: {form.parent_form.title}
-                        </Badge>
-                      )}
-                      {form.child_forms && form.child_forms.length > 0 && (
-                        <Badge variant="outline" className="bg-green-50">
-                          Has {form.child_forms.length} child form(s)
-                        </Badge>
-                      )}
-                    </div>
-                    {form.description && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {form.description}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                      {form.item_lists && form.item_lists.length > 0 && (
-                        <span>{form.item_lists.length} {t('attachedLists')}</span>
-                      )}
-                      <span>{form.submissions_count} {t('submissions')}</span>
-                      <span>{t('created')}: {new Date(form.created_at).toLocaleDateString()}</span>
-                    </div>
-                    {form.item_lists && form.item_lists.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {form.item_lists.map((list: any) => (
-                          <Badge key={list.id} variant="outline">
-                            {list.title}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                    {canManageSettings && !form.is_default && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSetDefault(form.id)}
-                      >
-                        <Star className="h-4 w-4 mr-2" />
-                        {t('setDefault')}
-                      </Button>
-                    )}
-                    {canManageSettings && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(form)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {canManageSettings && !form.is_default && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(form.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
+  const columns: Column<any>[] = [
+    {
+      id: "form",
+      header: t("columns.form"),
+      width: "minmax(0,1.5fr)",
+      mobile: "title",
+      cell: (form) => (
+        <AvatarCell name={form.title} sub={form.description || undefined} shape="square" icon={FileText} />
+      ),
+    },
+    {
+      id: "status",
+      header: t("columns.status"),
+      width: "minmax(0,1.1fr)",
+      className: EMPTY_HIDDEN,
+      cell: (form) => {
+        const badges = [
+          form.is_default && (
+            <BadgeCell key="default" tone="info">
+              <Star className="me-1 inline h-3 w-3 align-[-2px]" aria-hidden />
+              {t("default")}
+            </BadgeCell>
+          ),
+          !form.is_active && (
+            <BadgeCell key="inactive" tone="neutral">
+              {t("inactive")}
+            </BadgeCell>
+          ),
+          form.parent_form && (
+            <BadgeCell key="parent" tone="violet">
+              {t("childOf", { title: form.parent_form.title })}
+            </BadgeCell>
+          ),
+          form.child_forms && form.child_forms.length > 0 && (
+            <BadgeCell key="children" tone="success">
+              {t("childCount", { count: form.child_forms.length })}
+            </BadgeCell>
+          ),
+        ].filter(Boolean);
+        return badges.length ? <span className="flex min-w-0 flex-wrap gap-1">{badges}</span> : null;
+      },
+    },
+    {
+      id: "lists",
+      header: t("columns.lists"),
+      width: "minmax(0,1.2fr)",
+      className: cn(EMPTY_HIDDEN, AFTER_EMPTY),
+      cell: (form) =>
+        form.item_lists && form.item_lists.length > 0 ? (
+          <span className="flex min-w-0 flex-col gap-1">
+            <span className="text-xs text-muted-foreground">
+              {form.item_lists.length} {t("attachedLists")}
+            </span>
+            <span className="flex min-w-0 flex-wrap gap-1">
+              {form.item_lists.map((list: any) => (
+                <BadgeCell key={list.id} tone="neutral">
+                  {list.title}
+                </BadgeCell>
               ))}
-            </div>
+            </span>
+          </span>
+        ) : null,
+    },
+    {
+      id: "submissions",
+      header: t("columns.submissions"),
+      width: "96px",
+      align: "end",
+      className: AFTER_EMPTY,
+      cell: (form) => (
+        <span className="tabular-nums">
+          {form.submissions_count} <span className="@3xl:hidden">{t("submissions")}</span>
+        </span>
+      ),
+    },
+    {
+      id: "created",
+      header: t("columns.created"),
+      width: "96px",
+      muted: true,
+      cell: (form) => (
+        <span>
+          <span className="@3xl:hidden">{t("created")}: </span>
+          {new Date(form.created_at).toLocaleDateString()}
+        </span>
+      ),
+    },
+  ];
+  if (canManageSettings) {
+    columns.push({
+      id: "actions",
+      header: "",
+      width: "224px",
+      align: "end",
+      mobile: "actions",
+      cell: (form) => (
+        <span className="flex items-center justify-end gap-1">
+          {!form.is_default && (
+            <button type="button" className={rdButton.outlineSm} onClick={() => handleSetDefault(form.id)}>
+              <Star className="h-3.5 w-3.5" aria-hidden />
+              {t("setDefault")}
+            </button>
           )}
-        </CardContent>
-      </Card>
+          <button
+            type="button"
+            className={rdButton.ghostIconSm}
+            onClick={() => handleEdit(form)}
+            aria-label={tCommon("edit")}
+            title={tCommon("edit")}
+          >
+            <Edit className="h-3.5 w-3.5" aria-hidden />
+          </button>
+          {!form.is_default && (
+            <button
+              type="button"
+              className={cn(rdButton.ghostIconSm, "hover:text-destructive")}
+              onClick={() => handleDelete(form.id)}
+              aria-label={tCommon("delete")}
+              title={tCommon("delete")}
+            >
+              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          )}
+        </span>
+      ),
+    });
+  }
 
+  return (
+    <SettingsListPage
+      icon={FileText}
+      title={t("title")}
+      description={t("pageDescription")}
+      newAction={
+        canManageSettings
+          ? { label: t("createForm"), onClick: handleCreate, testId: "ticket-forms-new" }
+          : null
+      }
+      columns={columns}
+      rows={loading ? undefined : forms}
+      rowKey={(form) => form.id}
+      onRowClick={canManageSettings ? (form) => handleEdit(form) : undefined}
+      loading={loading}
+      renderError={() => null}
+      empty={<EmptyBlock icon={FileText} title={t("noFormsFound")} />}
+      countLabel={
+        canManageSettings
+          ? `${t("count", { count: forms.length })} · ${t("clickToEdit")}`
+          : t("count", { count: forms.length })
+      }
+      ariaLabel={t("title")}
+      idPrefix="ticket-forms"
+      testId="ticket-forms-page"
+    >
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent key={editingForm?.id || 'new'} className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -368,7 +418,7 @@ export default function TicketFormsPage() {
 
             {/* Parent Form Selector */}
             <div>
-              <Label htmlFor="parent_form">Parent Form (Optional)</Label>
+              <Label htmlFor="parent_form">{t('parentFormLabel')}</Label>
               <Select
                 value={formData.parent_form_id?.toString() || "none"}
                 onValueChange={(value) =>
@@ -376,10 +426,10 @@ export default function TicketFormsPage() {
                 }
               >
                 <SelectTrigger id="parent_form">
-                  <SelectValue placeholder="Select parent form (optional)" />
+                  <SelectValue placeholder={t('parentFormPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No Parent (Root Form)</SelectItem>
+                  <SelectItem value="none">{t('parentFormNone')}</SelectItem>
                   {forms
                     .filter((f) => f.id !== editingForm?.id) // Don't allow selecting itself
                     .map((form) => (
@@ -390,7 +440,7 @@ export default function TicketFormsPage() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                If set, this form will be a child form that assigned users need to fill after the parent form is completed.
+                {t('parentFormHint')}
               </p>
             </div>
 
@@ -434,7 +484,7 @@ export default function TicketFormsPage() {
             {/* Custom Fields Section */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label>Custom Fields</Label>
+                <Label>{t('customFields.title')}</Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -442,13 +492,13 @@ export default function TicketFormsPage() {
                   onClick={addCustomField}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Field
+                  {t('customFields.add')}
                 </Button>
               </div>
               <div className="border rounded-lg p-3 space-y-3 max-h-96 overflow-y-auto">
                 {formData.custom_fields.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    No custom fields defined. Click &quot;Add Field&quot; to create one.
+                    {t('customFields.empty')}
                   </p>
                 ) : (
                   formData.custom_fields.map((field, index) => (
@@ -460,31 +510,31 @@ export default function TicketFormsPage() {
                         <div className="flex-1 space-y-2">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
-                              <Label className="text-xs">Field Name (ID)</Label>
+                              <Label className="text-xs">{t('customFields.name')}</Label>
                               <Input
                                 value={field.name}
                                 onChange={(e) =>
                                   updateCustomField(index, { name: e.target.value })
                                 }
-                                placeholder="e.g., delivery_address"
+                                placeholder={t('customFields.namePlaceholder')}
                                 className="h-8 text-sm"
                               />
                             </div>
                             <div>
-                              <Label className="text-xs">Label</Label>
+                              <Label className="text-xs">{t('customFields.label')}</Label>
                               <Input
                                 value={field.label}
                                 onChange={(e) =>
                                   updateCustomField(index, { label: e.target.value })
                                 }
-                                placeholder="e.g., Delivery Address"
+                                placeholder={t('customFields.labelPlaceholder')}
                                 className="h-8 text-sm"
                               />
                             </div>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
-                              <Label className="text-xs">Type</Label>
+                              <Label className="text-xs">{t('customFields.type')}</Label>
                               <Select
                                 value={field.type}
                                 onValueChange={(value) =>
@@ -498,15 +548,15 @@ export default function TicketFormsPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="string">
-                                    Text (Single Line)
+                                    {t('customFields.types.string')}
                                   </SelectItem>
                                   <SelectItem value="text">
-                                    Text (Multi Line)
+                                    {t('customFields.types.text')}
                                   </SelectItem>
-                                  <SelectItem value="number">Number</SelectItem>
-                                  <SelectItem value="date">Date</SelectItem>
+                                  <SelectItem value="number">{t('customFields.types.number')}</SelectItem>
+                                  <SelectItem value="date">{t('customFields.types.date')}</SelectItem>
                                   <SelectItem value="signature">
-                                    Signature (Image Upload)
+                                    {t('customFields.types.signature')}
                                   </SelectItem>
                                 </SelectContent>
                               </Select>
@@ -528,7 +578,7 @@ export default function TicketFormsPage() {
                                   htmlFor={`required-${index}`}
                                   className="text-xs"
                                 >
-                                  Required
+                                  {t('customFields.required')}
                                 </Label>
                               </div>
                             </div>
@@ -572,6 +622,6 @@ export default function TicketFormsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </SettingsListPage>
   );
 }

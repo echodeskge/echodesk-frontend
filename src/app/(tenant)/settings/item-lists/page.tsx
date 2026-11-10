@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, List, X } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,6 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import type { Column } from "@/components/redesign/data-table";
+import { EmptyBlock } from "@/components/redesign/states";
+import { rdButton } from "@/components/redesign/buttons";
+import { SettingsListPage, AvatarCell, BadgeCell } from "@/components/redesign/settings";
 import {
   Select,
   SelectContent,
@@ -24,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { getApiErrorMessage } from "@/lib/utils";
+import { cn, getApiErrorMessage } from "@/lib/utils";
 import { useMyAccess } from "@/hooks/useMyAccess";
 import { useTranslations } from "next-intl";
 import {
@@ -35,6 +38,7 @@ import {
 } from "@/api/generated/api";
 import type { ItemList, PatchedItemListRequest } from "@/api/generated/interfaces";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface CustomField {
   name: string;
@@ -43,8 +47,14 @@ interface CustomField {
   required: boolean;
 }
 
+// Empty badge cells take no room on the two-line phone rows, and the first
+// visible cell after them gets no leading "·".
+const EMPTY_HIDDEN = "@max-3xl:empty:hidden";
+const AFTER_EMPTY = "[:first-child:empty+&]:before:content-none";
+
 export default function ItemListsPage() {
   const t = useTranslations('settings.itemListsPage');
+  const router = useRouter();
   // Writes need staff or manage_settings; others get read-only lists.
   const { canManageSettings } = useMyAccess();
   const tCommon = useTranslations('common');
@@ -179,105 +189,135 @@ export default function ItemListsPage() {
     }
   };
 
-  return (
-    <div className="w-full py-4 sm:py-6 px-4 sm:px-6">
-      <Card>
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-3">
-          <CardTitle>{t('title')}</CardTitle>
-          {canManageSettings && (
-            <Button onClick={handleCreate}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('createList')}
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p className="text-muted-foreground">{t('loading')}</p>
-          ) : itemLists.length === 0 ? (
-            <p className="text-muted-foreground">
-              {t('noListsFound')}
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {itemLists.map((list) => (
-                <div
-                  key={list.id}
-                  className="flex flex-col sm:flex-row items-start sm:items-center gap-3 border rounded-lg p-4"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold">{list.title}</h3>
-                      {!list.is_active && (
-                        <Badge variant="secondary">{t('inactive')}</Badge>
-                      )}
-                      {list.is_public && (
-                        <Badge variant="outline" className="text-green-600 border-green-600">Public</Badge>
-                      )}
-                    </div>
-                    {list.description && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {list.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{list.items_count} {t('items')}</span>
-                      {list.custom_fields_schema &&
-                        Array.isArray(list.custom_fields_schema) &&
-                        list.custom_fields_schema.length > 0 && (
-                          <span>
-                            {list.custom_fields_schema.length} {t('customFields')}
-                          </span>
-                        )}
-                      <span>
-                        {t('created')}: {new Date(list.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    {list.custom_fields_schema &&
-                      Array.isArray(list.custom_fields_schema) &&
-                      list.custom_fields_schema.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {list.custom_fields_schema.map((field: CustomField, idx: number) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              {field.label} ({field.type})
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Link href={`/settings/item-lists/${list.id}`}>
-                      <Button variant="outline" size="sm">
-                        <List className="h-4 w-4 mr-2" />
-                        {t('manageItems')}
-                      </Button>
-                    </Link>
-                    {canManageSettings && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(list)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(list.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+  const fieldsOf = (list: any): CustomField[] =>
+    list.custom_fields_schema && Array.isArray(list.custom_fields_schema) ? list.custom_fields_schema : [];
 
+  const columns: Column<any>[] = [
+    {
+      id: "list",
+      header: t("columns.list"),
+      width: "minmax(0,1.5fr)",
+      mobile: "title",
+      cell: (list) => <AvatarCell name={list.title} sub={list.description || undefined} shape="square" icon={List} />,
+    },
+    {
+      id: "status",
+      header: t("columns.status"),
+      width: "minmax(0,0.8fr)",
+      className: EMPTY_HIDDEN,
+      cell: (list) =>
+        !list.is_active || list.is_public ? (
+          <span className="flex min-w-0 flex-wrap gap-1">
+            {!list.is_active && <BadgeCell tone="neutral">{t("inactive")}</BadgeCell>}
+            {list.is_public && <BadgeCell tone="success">{t("public")}</BadgeCell>}
+          </span>
+        ) : null,
+    },
+    {
+      id: "items",
+      header: t("columns.items"),
+      width: "72px",
+      align: "end",
+      className: AFTER_EMPTY,
+      cell: (list) => (
+        <span className="tabular-nums">
+          {list.items_count} <span className="@3xl:hidden">{t("items")}</span>
+        </span>
+      ),
+    },
+    {
+      id: "fields",
+      header: t("columns.fields"),
+      width: "minmax(0,1.4fr)",
+      className: EMPTY_HIDDEN,
+      cell: (list) => {
+        const fields = fieldsOf(list);
+        return fields.length > 0 ? (
+          <span className="flex min-w-0 flex-col gap-1">
+            <span className="text-xs text-muted-foreground">
+              {fields.length} {t("customFields")}
+            </span>
+            <span className="flex min-w-0 flex-wrap gap-1">
+              {fields.map((field: CustomField, idx: number) => (
+                <BadgeCell key={idx} tone="neutral">
+                  {field.label} ({field.type})
+                </BadgeCell>
+              ))}
+            </span>
+          </span>
+        ) : null;
+      },
+    },
+    {
+      id: "created",
+      header: t("columns.created"),
+      width: "96px",
+      muted: true,
+      cell: (list) => (
+        <span>
+          <span className="@3xl:hidden">{t("created")}: </span>
+          {new Date(list.created_at).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      width: canManageSettings ? "224px" : "168px",
+      align: "end",
+      mobile: "actions",
+      cell: (list) => (
+        <span className="flex items-center justify-end gap-1">
+          <Link href={`/settings/item-lists/${list.id}`} className={rdButton.outlineSm}>
+            <List className="h-3.5 w-3.5" aria-hidden />
+            {t("manageItems")}
+          </Link>
+          {canManageSettings && (
+            <>
+              <button
+                type="button"
+                className={rdButton.ghostIconSm}
+                onClick={() => handleEdit(list)}
+                aria-label={tCommon("edit")}
+                title={tCommon("edit")}
+              >
+                <Edit className="h-3.5 w-3.5" aria-hidden />
+              </button>
+              <button
+                type="button"
+                className={cn(rdButton.ghostIconSm, "hover:text-destructive")}
+                onClick={() => handleDelete(list.id)}
+                aria-label={tCommon("delete")}
+                title={tCommon("delete")}
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            </>
+          )}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <SettingsListPage
+      icon={List}
+      title={t("title")}
+      description={t("pageDescription")}
+      newAction={canManageSettings ? { label: t("createList"), onClick: handleCreate, testId: "item-lists-new" } : null}
+      columns={columns}
+      rows={loading ? undefined : itemLists}
+      rowKey={(list) => list.id}
+      // A row opens the list's items, like its "Manage items" link.
+      onRowClick={(list) => router.push(`/settings/item-lists/${list.id}`)}
+      loading={loading}
+      renderError={() => null}
+      empty={<EmptyBlock icon={List} title={t("noListsFound")} />}
+      countLabel={`${t("count", { count: itemLists.length })} · ${t("clickToOpen")}`}
+      ariaLabel={t("title")}
+      idPrefix="item-lists"
+      testId="item-lists-page"
+    >
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -362,7 +402,7 @@ export default function ItemListsPage() {
                   setFormData({ ...formData, is_public: e.target.checked })
                 }
               />
-              <Label htmlFor="is_public">Public (visible to ecommerce clients)</Label>
+              <Label htmlFor="is_public">{t('publicLabel')}</Label>
             </div>
 
             {/* Custom Fields Section */}
@@ -511,6 +551,6 @@ export default function ItemListsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </SettingsListPage>
   );
 }

@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import DOMPurify from "dompurify";
-import { Plus, Edit, Trash2, ArrowLeft } from "lucide-react";
+import { Edit, Trash2, ArrowLeft, List, CornerDownRight } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,7 +16,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -26,16 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { toast } from "sonner";
-import { getApiErrorMessage } from "@/lib/utils";
+import { cn, getApiErrorMessage } from "@/lib/utils";
+import { DataTable, type Column } from "@/components/redesign/data-table";
+import { EmptyBlock, LoadingBlock } from "@/components/redesign/states";
+import { rdButton } from "@/components/redesign/buttons";
+import { SettingsPage, ListActionButton, ActionButton, BadgeCell } from "@/components/redesign/settings";
+import { useSettingsSubCrumb } from "../../_lib/settings-crumb";
+import { useMyAccess } from "@/hooks/useMyAccess";
 import {
   itemListsRetrieve,
   listItemsCreate,
@@ -65,6 +61,8 @@ interface CustomField {
 export default function ItemListDetailPage() {
   const t = useTranslations("settings.itemListsPage.detailPage");
   const tCommon = useTranslations("common");
+  // Writes need staff or manage_settings (the API refuses them otherwise); others get a read-only list.
+  const { canManageSettings } = useMyAccess();
   const params = useParams();
   const router = useRouter();
   const listId = parseInt(params.id as string);
@@ -117,7 +115,7 @@ export default function ItemListDetailPage() {
       const response = await itemListsRetrieve(listId);
       setItemList(response);
     } catch (error) {
-      toast.error(getApiErrorMessage(error, t("failedToSaveItem")));
+      toast.error(getApiErrorMessage(error, t("failedToLoad")));
     } finally {
       setLoading(false);
     }
@@ -229,174 +227,223 @@ export default function ItemListDetailPage() {
     }
   };
 
+  // "Settings / Item lists / <list>" in the app header.
+  useSettingsSubCrumb(itemList?.title);
+
   if (loading) {
     return (
-      <div className="container mx-auto py-6">
-        <Card>
-          <CardContent className="p-6">
-            <p>{tCommon("loading")}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <section className="w-full p-4 sm:p-6">
+        <LoadingBlock label={tCommon("loading")} testId="item-list-loading" />
+      </section>
     );
   }
 
   if (!itemList) {
     return (
-      <div className="container mx-auto py-6">
-        <Card>
-          <CardContent className="p-6">
-            <p>{t("itemListNotFound")}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <section className="w-full p-4 sm:p-6">
+        <div className="max-w-[1040px] rounded-[10px] border bg-card">
+          <EmptyBlock
+            icon={List}
+            title={t("itemListNotFound")}
+            action={
+              <ActionButton icon={ArrowLeft} onClick={() => router.back()}>
+                {t("back")}
+              </ActionButton>
+            }
+          />
+        </div>
+      </section>
     );
   }
 
   const rootItems = Array.isArray(itemList.root_items)
     ? itemList.root_items
     : itemList.items?.filter((item: any) => !item.parent) || [];
+  const fieldsSchema = (itemList.custom_fields_schema as CustomField[]) || [];
+  // Root items with their (active) children under them, indented by depth.
+  const rows: { item: any; depth: number }[] = [];
+  const walk = (items: any[], depth: number) => {
+    for (const item of items) {
+      rows.push({ item, depth });
+      if (Array.isArray(item.children) && item.children.length > 0) walk(item.children, depth + 1);
+    }
+  };
+  walk(rootItems, 0);
+
+  const renderFieldValue = (item: any, field: CustomField) => {
+    const value = item.custom_data?.[field.name];
+    if (value === undefined || value === null || value === "") {
+      return <span className="text-muted-foreground">-</span>;
+    }
+    if (field.type === "boolean") {
+      return <BadgeCell tone={value ? "success" : "neutral"}>{value ? t("yes") : tCommon("no")}</BadgeCell>;
+    }
+    if (field.type === "gallery") {
+      const urls = value.split(",").filter((url: string) => url.trim());
+      return (
+        <span className="flex gap-1">
+          {urls.slice(0, 3).map((url: string, idx: number) => (
+            <span key={idx} className="h-8 w-8 shrink-0 overflow-hidden rounded-md border">
+              <img
+                src={url.trim()}
+                alt=""
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            </span>
+          ))}
+          {urls.length > 3 && (
+            <span className="flex h-8 w-8 items-center justify-center rounded-md border bg-muted text-[11px]">
+              +{urls.length - 3}
+            </span>
+          )}
+        </span>
+      );
+    }
+    if (field.type === "wysiwyg") {
+      return (
+        <span className="block max-w-xs">
+          <span
+            className="prose prose-sm line-clamp-2 block text-[13px] dark:prose-invert"
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }}
+          />
+        </span>
+      );
+    }
+    return <span className="truncate">{value}</span>;
+  };
+
+  const columns: Column<{ item: any; depth: number }>[] = [
+    {
+      id: "label",
+      header: t("label"),
+      width: "minmax(0,1.4fr)",
+      mobile: "title",
+      cell: ({ item, depth }) =>
+        depth > 0 ? (
+          <span className="flex min-w-0 items-center gap-1.5" style={{ paddingInlineStart: (depth - 1) * 18 }}>
+            <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+            <span className="truncate">{item.label}</span>
+          </span>
+        ) : (
+          <span className="truncate font-medium">{item.label}</span>
+        ),
+    },
+    {
+      id: "customId",
+      header: t("customId"),
+      width: "minmax(0,0.7fr)",
+      mobile: "end",
+      cell: ({ item }) =>
+        item.custom_id ? (
+          <span className="inline-flex h-5 max-w-full items-center truncate rounded border px-1.5 font-mono text-[11px]">
+            {item.custom_id}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        ),
+    },
+    ...fieldsSchema.map(
+      (field): Column<{ item: any; depth: number }> => ({
+        id: `field-${field.name}`,
+        header: field.label,
+        width: "minmax(0,1fr)",
+        cell: ({ item }) => (
+          <span className="flex min-w-0 items-center gap-1">
+            <span className="text-xs text-muted-foreground @3xl:hidden">{field.label}:</span>
+            {renderFieldValue(item, field)}
+          </span>
+        ),
+      })
+    ),
+    {
+      id: "status",
+      header: t("status"),
+      width: "96px",
+      cell: ({ item }) =>
+        item.is_active ? (
+          <BadgeCell tone="success" dot>
+            {t("active")}
+          </BadgeCell>
+        ) : (
+          <BadgeCell tone="neutral" dot>
+            {t("inactive")}
+          </BadgeCell>
+        ),
+    },
+  ];
+  if (canManageSettings) {
+    columns.push({
+      id: "actions",
+      header: "",
+      width: "72px",
+      align: "end",
+      mobile: "actions",
+      cell: ({ item }) => (
+        <span className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            className={rdButton.ghostIconSm}
+            onClick={() => handleEdit(item)}
+            aria-label={tCommon("edit")}
+            title={tCommon("edit")}
+          >
+            <Edit className="h-3.5 w-3.5" aria-hidden />
+          </button>
+          <button
+            type="button"
+            className={cn(rdButton.ghostIconSm, "hover:text-destructive")}
+            onClick={() => handleDelete(item.id)}
+            aria-label={tCommon("delete")}
+            title={tCommon("delete")}
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden />
+          </button>
+        </span>
+      ),
+    });
+  }
 
   return (
-    <div className="w-full py-6 px-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.back()}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <CardTitle>{itemList.title}</CardTitle>
-              {itemList.description && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {itemList.description}
-                </p>
-              )}
-            </div>
-          </div>
-          <Button onClick={handleCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t("addItem")}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {rootItems.length === 0 ? (
-            <p className="text-muted-foreground">
-              {t("noItemsFound")}
-            </p>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("label")}</TableHead>
-                    <TableHead>{t("customId")}</TableHead>
-                    {((itemList.custom_fields_schema as CustomField[]) || []).map(
-                      (field) => (
-                        <TableHead key={field.name}>{field.label}</TableHead>
-                      )
-                    )}
-                    <TableHead>{t("status")}</TableHead>
-                    <TableHead className="text-right">{t("actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rootItems.map((item: any) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.label}</TableCell>
-                      <TableCell>
-                        {item.custom_id ? (
-                          <Badge variant="outline">{item.custom_id}</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      {((itemList.custom_fields_schema as CustomField[]) || []).map(
-                        (field) => {
-                          const value = item.custom_data?.[field.name];
-                          return (
-                            <TableCell key={field.name}>
-                              {value !== undefined &&
-                              value !== null &&
-                              value !== "" ? (
-                                field.type === "boolean" ? (
-                                  <Badge variant={value ? "default" : "secondary"}>
-                                    {value ? t("yes") : tCommon("no")}
-                                  </Badge>
-                                ) : field.type === "gallery" ? (
-                                  <div className="flex gap-1">
-                                    {value.split(',').filter((url: string) => url.trim()).slice(0, 3).map((url: string, idx: number) => (
-                                      <div key={idx} className="w-10 h-10 rounded border overflow-hidden flex-shrink-0">
-                                        <img
-                                          src={url.trim()}
-                                          alt=""
-                                          className="w-full h-full object-cover"
-                                          onError={(e) => {
-                                            (e.target as HTMLImageElement).style.display = 'none';
-                                          }}
-                                        />
-                                      </div>
-                                    ))}
-                                    {value.split(',').filter((url: string) => url.trim()).length > 3 && (
-                                      <div className="w-10 h-10 rounded border flex items-center justify-center bg-muted text-xs">
-                                        +{value.split(',').filter((url: string) => url.trim()).length - 3}
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : field.type === "wysiwyg" ? (
-                                  <div className="max-w-xs">
-                                    <div
-                                      className="prose prose-sm line-clamp-2 text-sm"
-                                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <span>{value}</span>
-                                )
-                              ) : (
-                                <span className="text-muted-foreground">-</span>
-                              )}
-                            </TableCell>
-                          );
-                        }
-                      )}
-                      <TableCell>
-                        {item.is_active ? (
-                          <Badge variant="default">{t("active")}</Badge>
-                        ) : (
-                          <Badge variant="secondary">{t("status")}</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(item)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(item.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+    <SettingsPage
+      icon={List}
+      title={itemList.title}
+      description={itemList.description || undefined}
+      width="list"
+      gap={16}
+      testId="item-list-detail-page"
+      action={
+        <div className="flex flex-wrap items-center gap-2">
+          <ActionButton icon={ArrowLeft} onClick={() => router.back()} className="h-8">
+            {t("back")}
+          </ActionButton>
+          {canManageSettings && (
+            <ListActionButton action={{ label: t("addItem"), onClick: handleCreate, testId: "item-list-add-item" }} />
           )}
-        </CardContent>
-      </Card>
+        </div>
+      }
+    >
+      <DataTable
+        variant="card"
+        density="comfortable"
+        columns={columns}
+        rows={rows}
+        rowKey={(row) => row.item.id}
+        onRowClick={canManageSettings ? (row) => handleEdit(row.item) : undefined}
+        renderError={() => null}
+        empty={<EmptyBlock icon={List} title={t("noItemsFound")} />}
+        ariaLabel={itemList.title}
+        idPrefix="item-list-items"
+      />
+      {rows.length > 0 && (
+        <span className="text-xs tabular-nums text-muted-foreground" data-testid="item-list-items-count">
+          {canManageSettings
+            ? `${t("count", { count: rows.length })} · ${t("clickToEdit")}`
+            : t("count", { count: rows.length })}
+        </span>
+      )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -604,6 +651,6 @@ export default function ItemListDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </SettingsPage>
   );
 }
