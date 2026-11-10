@@ -99,6 +99,17 @@
           "missed": "Missed",
           "voicemail": "Voicemail"
         }
+      },
+      "push": "Push",
+      "settings": {
+        "pushNotifications": "Push Notifications",
+        "pushEnabled": "Push notifications are enabled",
+        "pushAvailable": "Push notifications are available",
+        "pushBlocked": "Push notifications are blocked",
+        "pushRequiresPermission": "Push notifications require permission",
+        "pushDefaultDesc": "Click the toggle to enable push notifications",
+        "testPush": "Send Test Push Notification",
+        "testPushFailed": "Could not send the test notification. Turn push notifications off and on again, then retry."
       }
     },
     "subscription": {
