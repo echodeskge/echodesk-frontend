@@ -1,0 +1,54 @@
+{
+  "en": {
+    "callsSettings": {
+      "sip": {
+        "loadFailed": "Failed to load SIP configurations",
+        "loadOneFailed": "Failed to load SIP configuration",
+        "created": "SIP configuration created successfully",
+        "updated": "SIP configuration updated successfully",
+        "saveFailed": "Failed to save SIP configuration",
+        "deleteConfirm": "Are you sure you want to delete this SIP configuration?",
+        "deleted": "SIP configuration deleted successfully",
+        "deleteFailed": "Failed to delete SIP configuration",
+        "defaultUpdated": "Default SIP configuration updated",
+        "defaultFailed": "Failed to set default SIP configuration",
+        "testOk": "Connection successful",
+        "testFailed": "Connection failed",
+        "testError": "Connection test failed",
+        "defaultSuffix": "(Default)",
+        "hourRange": "{day} {from}:00 – {to}:00"
+      }
+    },
+    "calls": {
+      "settings": {
+        "saveAssignmentFailed": "Failed to save assignment"
+      }
+    }
+  },
+  "ka": {
+    "callsSettings": {
+      "sip": {
+        "loadFailed": "SIP კონფიგურაციების ჩატვირთვა ვერ მოხერხდა",
+        "loadOneFailed": "SIP კონფიგურაციის ჩატვირთვა ვერ მოხერხდა",
+        "created": "SIP კონფიგურაცია შეიქმნა",
+        "updated": "SIP კონფიგურაცია განახლდა",
+        "saveFailed": "SIP კონფიგურაციის შენახვა ვერ მოხერხდა",
+        "deleteConfirm": "დარწმუნებული ხართ, რომ გსურთ ამ SIP კონფიგურაციის წაშლა?",
+        "deleted": "SIP კონფიგურაცია წაიშალა",
+        "deleteFailed": "SIP კონფიგურაციის წაშლა ვერ მოხერხდა",
+        "defaultUpdated": "ნაგულისხმევი SIP კონფიგურაცია განახლდა",
+        "defaultFailed": "ნაგულისხმევი SIP კონფიგურაციის დაყენება ვერ მოხერხდა",
+        "testOk": "კავშირი წარმატებულია",
+        "testFailed": "კავშირი ვერ დამყარდა",
+        "testError": "კავშირის შემოწმება ვერ მოხერხდა",
+        "defaultSuffix": "(ნაგულისხმევი)",
+        "hourRange": "{day} {from}:00 – {to}:00"
+      }
+    },
+    "calls": {
+      "settings": {
+        "saveAssignmentFailed": "მინიჭების შენახვა ვერ მოხერხდა"
+      }
+    }
+  }
+}

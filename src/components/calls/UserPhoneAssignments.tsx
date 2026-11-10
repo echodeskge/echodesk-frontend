@@ -164,7 +164,7 @@ export function UserPhoneAssignments({ sipConfigId, sipConfigName }: UserPhoneAs
       fetchAssignments();
     } catch (err: any) {
       console.error("Failed to save assignment:", err);
-      alert(err.response?.data?.detail || "Failed to save assignment");
+      alert(err.response?.data?.detail || t("settings.saveAssignmentFailed"));
     } finally {
       setSaving(false);
     }

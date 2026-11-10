@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
 import { SipConfigForm } from "@/components/calls/SipConfigForm";
 import { SipConfigList } from "@/components/calls/SipConfigList";
@@ -59,15 +59,10 @@ const TIMEZONES = [
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
-const DAY_LABELS: Record<string, string> = {
-  monday: 'Mon',
-  tuesday: 'Tue',
-  wednesday: 'Wed',
-  thursday: 'Thu',
-  friday: 'Fri',
-  saturday: 'Sat',
-  sunday: 'Sun',
-};
+/** Weekday name in the UI locale (index 0 = Monday; 2024-01-01 was a Monday, UTC). */
+function dayLabel(index: number, locale: string, weekday: 'short' | 'long'): string {
+  return new Intl.DateTimeFormat(locale, { weekday, timeZone: 'UTC' }).format(new Date(Date.UTC(2024, 0, 1 + index)));
+}
 
 type WorkingHoursSchedule = Record<string, number[]>;
 
@@ -190,6 +185,7 @@ function WorkingHoursGrid({
   disabled?: boolean;
 }) {
   const ts = useTranslations("callsSettings");
+  const locale = useLocale();
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionMode, setSelectionMode] = useState<'select' | 'deselect'>('select');
 
@@ -249,10 +245,10 @@ function WorkingHoursGrid({
         </div>
 
         {/* Day rows */}
-        {DAYS.map(day => (
+        {DAYS.map((day, dayIndex) => (
           <div key={day} className="flex mb-px">
             <div className="w-20 shrink-0 text-sm font-medium capitalize py-1">
-              {DAY_LABELS[day]}
+              {dayLabel(dayIndex, locale, 'short')}
             </div>
             <div className="flex flex-1 gap-px">
               {HOURS.map(hour => (
@@ -268,7 +264,7 @@ function WorkingHoursGrid({
                   `}
                   onMouseDown={() => handleMouseDown(day, hour)}
                   onMouseEnter={() => handleMouseEnter(day, hour)}
-                  title={`${day.charAt(0).toUpperCase() + day.slice(1)} ${hour}:00 - ${hour + 1}:00`}
+                  title={ts('sip.hourRange', { day: dayLabel(dayIndex, locale, 'long'), from: hour, to: hour + 1 })}
                 />
               ))}
             </div>
@@ -456,7 +452,7 @@ export default function CallSettingsPage() {
       setError("");
     } catch (err: unknown) {
       console.error("Failed to fetch SIP configs:", err);
-      setError("Failed to load SIP configurations");
+      setError(ts("sip.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -513,8 +509,8 @@ export default function CallSettingsPage() {
     } catch (error) {
       console.error("Error loading SIP configuration:", error);
       toast({
-        title: "Error",
-        description: "Failed to load SIP configuration",
+        title: ts("error"),
+        description: ts("sip.loadOneFailed"),
         variant: "destructive",
       });
     }
@@ -547,8 +543,8 @@ export default function CallSettingsPage() {
       if (editingConfig) {
         await sipConfigurationsUpdate(editingConfig.id, configForm as any);
         toast({
-          title: "Success",
-          description: "SIP configuration updated successfully",
+          title: ts("success"),
+          description: ts("sip.updated"),
         });
       } else {
         // The form asks for the trunk password on create (it is required
@@ -561,8 +557,8 @@ export default function CallSettingsPage() {
         } as SipConfiguration;
         await sipConfigurationsCreate(createData);
         toast({
-          title: "Success",
-          description: "SIP configuration created successfully",
+          title: ts("success"),
+          description: ts("sip.created"),
         });
       }
 
@@ -572,8 +568,8 @@ export default function CallSettingsPage() {
     } catch (err: unknown) {
       console.error("Failed to save SIP config:", err);
       toast({
-        title: "Error",
-        description: "Failed to save SIP configuration",
+        title: ts("error"),
+        description: ts("sip.saveFailed"),
         variant: "destructive",
       });
     } finally {
@@ -582,7 +578,7 @@ export default function CallSettingsPage() {
   };
 
   const deleteConfig = async (configId: number) => {
-    if (!confirm("Are you sure you want to delete this SIP configuration?")) {
+    if (!confirm(ts("sip.deleteConfirm"))) {
       return;
     }
 
@@ -592,14 +588,14 @@ export default function CallSettingsPage() {
       await fetchSipConfigs();
       setError("");
       toast({
-        title: "Success",
-        description: "SIP configuration deleted successfully",
+        title: ts("success"),
+        description: ts("sip.deleted"),
       });
     } catch (err: unknown) {
       console.error("Failed to delete SIP config:", err);
       toast({
-        title: "Error",
-        description: "Failed to delete SIP configuration",
+        title: ts("error"),
+        description: ts("sip.deleteFailed"),
         variant: "destructive",
       });
     } finally {
@@ -615,14 +611,14 @@ export default function CallSettingsPage() {
       await fetchSipConfigs();
       setError("");
       toast({
-        title: "Success",
-        description: "Default SIP configuration updated",
+        title: ts("success"),
+        description: ts("sip.defaultUpdated"),
       });
     } catch (err: unknown) {
       console.error("Failed to set default SIP config:", err);
       toast({
-        title: "Error",
-        description: "Failed to set default SIP configuration",
+        title: ts("error"),
+        description: ts("sip.defaultFailed"),
         variant: "destructive",
       });
     } finally {
@@ -639,15 +635,15 @@ export default function CallSettingsPage() {
         fullConfig as any
       );
       toast({
-        title: result.success ? "Connection Successful" : "Connection Failed",
+        title: result.success ? ts("sip.testOk") : ts("sip.testFailed"),
         description: result.message || "",
         variant: result.success ? "default" : "destructive",
       });
     } catch (err: unknown) {
       console.error("Failed to test SIP config:", err);
       toast({
-        title: "Error",
-        description: "Connection test failed",
+        title: ts("error"),
+        description: ts("sip.testError"),
         variant: "destructive",
       });
     } finally {
@@ -931,7 +927,7 @@ export default function CallSettingsPage() {
                     <SelectContent>
                       {sipConfigs.map((config) => (
                         <SelectItem key={config.id} value={String(config.id)}>
-                          {config.name} {config.is_default ? "(Default)" : ""}
+                          {config.name} {config.is_default ? ts("sip.defaultSuffix") : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1255,7 +1251,7 @@ export default function CallSettingsPage() {
                     <SelectContent>
                       {sipConfigs.map((config) => (
                         <SelectItem key={config.id} value={String(config.id)}>
-                          {config.name} {config.is_default ? "(Default)" : ""}
+                          {config.name} {config.is_default ? ts("sip.defaultSuffix") : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
