@@ -48,7 +48,6 @@ import type {
   CallEndReason,
   CallError,
   CallStateValue,
-  CallStatus,
   MissedCall,
   BusyRejectedCall,
   OpenRailOptions,
