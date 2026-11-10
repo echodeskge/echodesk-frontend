@@ -16,7 +16,7 @@ import {
   DOCK,
   announceDockPopoverOpened,
   onDockPopoverOpened,
-  useDialpadPanelOpen,
+  useCallRailWidth,
 } from './floatingDock';
 import { useTeamChatWebSocket, type SentMessageMeta } from './useTeamChatWebSocket';
 import {
@@ -90,13 +90,13 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
   const viewportWidth = useViewportWidth();
   const isCompact = viewportWidth < DOCK.COMPACT_BREAKPOINT;
 
-  // When the dialpad popup is open, panels open to its left so it never
-  // covers the chat being typed in.
-  const dialpadPanelOpen = useDialpadPanelOpen();
-  const panelShift = dialpadPanelOpen && !isCompact ? DOCK.DIALPAD_PANEL_WIDTH + DOCK.PANEL_GAP : 0;
+  // While the call rail is open the whole dock sits left of it (each floating
+  // element reads useDockRight / useDockPanelRight), so fewer windows fit.
+  const railWidth = useCallRailWidth();
+  const panelShift = isCompact ? 0 : railWidth;
 
-  // Windows that no longer fit (incl. while shifted left by the dialpad
-  // popup) become bubbles instead of running off the left edge.
+  // Windows that no longer fit (incl. while shifted left by the call rail)
+  // become bubbles instead of running off the left edge.
   useEffect(() => {
     setMaxOpen(computeMaxOpenChats(viewportWidth, panelShift));
   }, [viewportWidth, panelShift, setMaxOpen]);
@@ -432,7 +432,6 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
         conversations={conversations}
         onlineUsers={onlineUsers}
         isConnected={isConnected}
-        rightOffset={panelShift}
       />
 
       {/* Floating Chat Windows */}
@@ -441,7 +440,6 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
           key={chat.id}
           chat={chat}
           index={arr.length - 1 - idx} // Reverse index: last item = 0 (rightmost)
-          rightOffset={panelShift}
           isCompact={isCompact}
           currentUserId={currentUserId}
           isOnline={onlineUsers.has(chat.user.id)}

@@ -4,7 +4,7 @@
  * - no board switcher, header search or collaboration indicators on /tickets;
  * - the layout no longer opens the ticket board socket (FE-02's wrapper does);
  * - the global "+" still opens the create sheet with no board;
- * - TicketCreateSheet, BoardAdminHost and IncomingCallSidebar stay mounted;
+ * - TicketCreateSheet, BoardAdminHost and the call rail stay mounted;
  * - notifications still route ticket_id -> /tickets/{id};
  * - BoardContext follows /tickets?board= and falls back to an accessible board;
  * - the layout imports useBoardsLite, not @/hooks/useBoards (F16).
@@ -94,7 +94,6 @@ vi.mock("@/contexts/SubscriptionContext", () => ({
   useSubscription: () => ({ hasFeature: () => true, subscription: null, loading: false }),
 }));
 vi.mock("@/contexts/CallContext", () => ({ CallProvider: pass }));
-vi.mock("@/contexts/IncomingCallSidebarContext", () => ({ IncomingCallSidebarProvider: pass }));
 vi.mock("@/contexts/TicketCreateContext", () => ({
   TicketCreateProvider: pass,
   useTicketCreate: () => ({ openTicketCreate: h.openTicketCreate }),
@@ -159,8 +158,8 @@ vi.mock("@/components/TicketCreateSheet", () => ({ TicketCreateSheet: () => <div
 vi.mock("@/components/BugReportDialog", () => ({ BugReportDialog: () => null }));
 vi.mock("@/components/TeamChat", () => ({ TeamChatWidget: () => null }));
 vi.mock("@/components/calls/DialpadWidget", () => ({ default: () => null }));
-vi.mock("@/components/calls/IncomingCallSidebar", () => ({
-  IncomingCallSidebar: () => <div data-testid="incoming-call-sidebar" />,
+vi.mock("@/components/calls/rail/call-rail", () => ({
+  CallRail: () => <div data-testid="call-rail" />,
 }));
 vi.mock("@/components/PushNotificationPrompt", () => ({ PushNotificationPrompt: () => null }));
 vi.mock("@/components/social/StaleAssignmentReminder", () => ({ default: () => null }));
@@ -230,10 +229,10 @@ describe("tenant layout (FE-03 shell)", () => {
     expect(h.openTicketCreate).toHaveBeenCalledWith();
   });
 
-  it("keeps TicketCreateSheet, BoardAdminHost and IncomingCallSidebar mounted, without the old modals", async () => {
+  it("keeps TicketCreateSheet, BoardAdminHost and the call rail mounted, without the old modals", async () => {
     renderLayout();
     expect(await screen.findByTestId("ticket-create-sheet")).toBeInTheDocument();
-    expect(await screen.findByTestId("incoming-call-sidebar")).toBeInTheDocument();
+    expect(await screen.findByTestId("call-rail")).toBeInTheDocument();
     // The host wraps the whole shell, so the sidebar can reach useBoardAdmin().
     const host = screen.getByTestId("board-admin-host");
     expect(host).toContainElement(screen.getByTestId("app-sidebar"));

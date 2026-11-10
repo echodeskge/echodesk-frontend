@@ -1,48 +1,26 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 import { Eye, Phone, PhoneIncoming, PhoneOff } from "lucide-react";
-import { useCall } from "@/contexts/CallContext";
-import { useIncomingCallSidebar } from "@/contexts/IncomingCallSidebarContext";
 import { callInitials } from "./call-format";
-
-const AUTO_DISMISS_MS = 30000; // Auto-dismiss after 30 seconds
+import { useCallActions, useCallState } from "./rail/use-rail-call";
 
 /**
- * Incoming-call toast (top-right stack in DialpadWidget, every page): caller, Accept / Decline and
- * "caller details". Announced to screen readers (role="alert"). Hides after
- * 30s; the call keeps ringing in the softphone.
+ * Incoming-call toast (top-right stack in DialpadWidget, every page): caller,
+ * Accept / Decline and "View" (opens the call rail). Announced to screen
+ * readers (role="alert"). Stays for as long as the call rings (U1), but is
+ * not shown while the rail is open: the rail carries the same Accept /
+ * Decline and, below `md`, is a full-screen sheet the toast would sit on.
  */
 export function IncomingCallNotification() {
   const t = useTranslations("calls");
-  const { activeCall, handleAcceptCall, handleRejectCall } = useCall();
-  const { openSidebar } = useIncomingCallSidebar();
-  const [dismissed, setDismissed] = useState(false);
+  const { activeCall, rail } = useCallState();
+  const { acceptCall, rejectCall, openRail } = useCallActions();
 
-  // Auto-dismiss after 30 seconds
-  useEffect(() => {
-    if (activeCall?.direction === "incoming" && activeCall.status === "ringing") {
-      setDismissed(false);
-      const timer = setTimeout(() => setDismissed(true), AUTO_DISMISS_MS);
-      return () => clearTimeout(timer);
-    }
-  }, [activeCall?.id, activeCall?.status, activeCall?.direction]);
-
-  if (
-    !activeCall ||
-    activeCall.direction !== "incoming" ||
-    activeCall.status !== "ringing" ||
-    dismissed
-  ) {
+  if (!activeCall || activeCall.direction !== "incoming" || activeCall.status !== "ringing" || rail.mode === "open") {
     return null;
   }
-
-  const handleViewDetails = () => {
-    if (activeCall.logId) {
-      openSidebar(activeCall.logId, activeCall.number, activeCall.callerName);
-    }
-  };
 
   const caller = activeCall.callerName || activeCall.number;
   const ring = { ["--ring-c" as string]: "var(--green)" } as CSSProperties;
@@ -73,10 +51,11 @@ export function IncomingCallNotification() {
         </div>
         <button
           type="button"
-          onClick={handleViewDetails}
+          onClick={() => openRail()}
           title={t("callDetail.viewDetails")}
           aria-label={t("callDetail.viewDetails")}
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          data-testid="incoming-call-view"
         >
           <Eye className="h-4 w-4" />
         </button>
@@ -84,7 +63,9 @@ export function IncomingCallNotification() {
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
-          onClick={handleRejectCall}
+          onClick={() => {
+            void rejectCall();
+          }}
           className="flex h-8 items-center justify-center gap-1.5 rounded-md bg-destructive text-[13px] font-medium text-white transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <PhoneOff className="h-3.5 w-3.5" aria-hidden />
@@ -92,7 +73,9 @@ export function IncomingCallNotification() {
         </button>
         <button
           type="button"
-          onClick={handleAcceptCall}
+          onClick={() => {
+            void acceptCall();
+          }}
           className="flex h-8 items-center justify-center gap-1.5 rounded-md bg-ed-green text-[13px] font-medium text-white transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <Phone className="h-3.5 w-3.5" aria-hidden />

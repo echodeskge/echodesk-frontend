@@ -1,377 +1,116 @@
 /**
- * Tests for IncomingCallNotification component.
- * Verifies conditional rendering, caller info display, accept/reject buttons,
- * auto-dismiss after 30 seconds, and translated text usage.
+ * IncomingCallNotification: shown only for an incoming ringing call while the
+ * rail is not open; no 30 s auto-hide (U1); Accept / Decline wired; "View"
+ * opens the rail.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { NextIntlClientProvider } from "next-intl";
 import React from "react";
 
-// ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
+import en from "@/i18n/messages/en.json";
+import ka from "@/i18n/messages/ka.json";
+import type { CallActionsValue, CallStateValue } from "@/contexts/call-types";
 
-vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => {
-    const translations: Record<string, string> = {
-      incomingCall: "Incoming Call",
-      "phone.incomingCall": "Incoming call",
-      "phone.unknownCaller": "Unknown caller",
-      "phone.incomingFrom": "Incoming call from {caller}",
-      accept: "Accept",
-      decline: "Decline",
-      "callDetail.viewDetails": "View caller details",
-    };
-    return translations[key] || key;
-  },
+const h = vi.hoisted(() => ({
+  state: null as unknown as CallStateValue,
+  actions: null as unknown as CallActionsValue,
 }));
 
-const mockHandleAcceptCall = vi.fn();
-const mockHandleRejectCall = vi.fn();
-
-const mockCallContextValue = {
-  activeCall: null as any,
-  callDuration: 0,
-  sipRegistered: false,
-  sipConnecting: false,
-  activeSipConfig: null,
-  dialNumber: "",
-  error: "",
-  loading: false,
-  isDialpadOpen: false,
-  setDialNumber: vi.fn(),
-  makeCall: vi.fn(),
-  handleAcceptCall: mockHandleAcceptCall,
-  handleRejectCall: mockHandleRejectCall,
-  handleEndCall: vi.fn(),
-  handleToggleHold: vi.fn(),
-  handleToggleMute: vi.fn(),
-  setError: vi.fn(),
-  setIsDialpadOpen: vi.fn(),
-  toggleDialpad: vi.fn(),
-  callEndedCounter: 0,
-  sendDTMF: vi.fn(),
-  transferCall: vi.fn(),
-  startAttendedTransfer: vi.fn(),
-  completeTransfer: vi.fn(),
-  cancelTransfer: vi.fn(),
-  mergeConference: vi.fn(),
-  missedCall: null,
-  clearMissedCall: vi.fn(),
-};
-
-vi.mock("@/contexts/CallContext", () => ({
-  useCall: () => mockCallContextValue,
-}));
-
-const mockOpenSidebar = vi.fn();
-vi.mock("@/contexts/IncomingCallSidebarContext", () => ({
-  useIncomingCallSidebar: () => ({
-    isOpen: false,
-    callLogId: null,
-    phoneNumber: null,
-    clientName: null,
-    openSidebar: mockOpenSidebar,
-    closeSidebar: vi.fn(),
-  }),
+vi.mock("@/components/calls/rail/use-rail-call", () => ({
+  useCallState: () => h.state,
+  useCallActions: () => h.actions,
+  useRailAdapterEffects: () => {},
 }));
 
 import { IncomingCallNotification } from "@/components/calls/IncomingCallNotification";
+import { makeActions, makeActiveCall, makeState } from "./rail/rail-test-utils";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+const closedRail = { mode: "closed" as const, prefill: null, autoDial: false };
+const openRail = { mode: "open" as const, prefill: null, autoDial: false };
+const ringing = (overrides = {}) => makeActiveCall({ status: "ringing", callerName: "John Doe", startTime: undefined, ...overrides });
 
-function makeIncomingRingingCall(overrides: Record<string, any> = {}) {
-  return {
-    id: "test-call-1",
-    logId: 42,
-    number: "+995555123456",
-    callerName: "John Doe",
-    direction: "incoming" as const,
-    status: "ringing" as const,
-    duration: 0,
-    transferPhase: "idle" as const,
-    consultationCall: null,
-    ...overrides,
-  };
+function renderToast(locale = "en", messages: Record<string, unknown> = en) {
+  return render(
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      <IncomingCallNotification />
+    </NextIntlClientProvider>
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+beforeEach(() => {
+  h.state = makeState({ rail: closedRail, activeCall: ringing() });
+  h.actions = makeActions();
+});
+afterEach(() => vi.useRealTimers());
 
-describe("IncomingCallNotification", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.useRealTimers();
-
-    // Reset to no active call
-    mockCallContextValue.activeCall = null;
+describe("not rendered", () => {
+  it.each([
+    ["no active call", { activeCall: null }],
+    ["outgoing", { activeCall: ringing({ direction: "outgoing" }) }],
+    ["active", { activeCall: ringing({ status: "active" }) }],
+    ["connecting", { activeCall: ringing({ status: "connecting" }) }],
+    ["ending", { activeCall: ringing({ status: "ending" }) }],
+  ])("%s", (_label, overrides) => {
+    h.state = makeState({ rail: closedRail, ...overrides });
+    const { container } = renderToast();
+    expect(container.firstChild).toBeNull();
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
+  it("while the call rail is open (the rail has Accept / Decline; on mobile it is a full-screen sheet)", () => {
+    h.state = makeState({ rail: openRail, activeCall: ringing() });
+    const { container } = renderToast();
+    expect(container.firstChild).toBeNull();
+  });
+});
+
+describe("rendered for an incoming ringing call", () => {
+  it("shows the caller name, number and direction, announced assertively", () => {
+    renderToast();
+    expect(screen.getByText("John Doe")).toBeInTheDocument();
+    expect(screen.getByText("+995555123456")).toBeInTheDocument();
+    expect(screen.getByText("Incoming call")).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveAttribute("aria-live", "assertive");
+    expect(alert).toHaveAttribute("aria-label", "Incoming call from John Doe");
   });
 
-  // -----------------------------------------------------------------------
-  // Conditional rendering — not shown
-  // -----------------------------------------------------------------------
-
-  describe("not rendered", () => {
-    it("returns null when no active call", () => {
-      mockCallContextValue.activeCall = null;
-
-      const { container } = render(<IncomingCallNotification />);
-      expect(container.firstChild).toBeNull();
-    });
-
-    it("returns null when call is outgoing", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall({
-        direction: "outgoing",
-      });
-
-      const { container } = render(<IncomingCallNotification />);
-      expect(container.firstChild).toBeNull();
-    });
-
-    it("returns null when call is not ringing (active)", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall({
-        status: "active",
-      });
-
-      const { container } = render(<IncomingCallNotification />);
-      expect(container.firstChild).toBeNull();
-    });
-
-    it("returns null when call is not ringing (connecting)", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall({
-        status: "connecting",
-      });
-
-      const { container } = render(<IncomingCallNotification />);
-      expect(container.firstChild).toBeNull();
-    });
-
-    it("returns null when call is not ringing (ending)", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall({
-        status: "ending",
-      });
-
-      const { container } = render(<IncomingCallNotification />);
-      expect(container.firstChild).toBeNull();
-    });
+  it("falls back to 'Unknown caller'", () => {
+    h.state = makeState({ rail: closedRail, activeCall: ringing({ callerName: undefined }) });
+    renderToast();
+    expect(screen.getByText("Unknown caller")).toBeInTheDocument();
   });
 
-  // -----------------------------------------------------------------------
-  // Rendered when incoming + ringing
-  // -----------------------------------------------------------------------
-
-  describe("shows when incoming and ringing", () => {
-    it("renders the notification card", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall();
-
-      render(<IncomingCallNotification />);
-
-      // The notification should be visible
-      expect(screen.getByText("John Doe")).toBeInTheDocument();
+  it("stays as long as the call rings (no 30 s auto-hide)", () => {
+    vi.useFakeTimers();
+    renderToast();
+    act(() => {
+      vi.advanceTimersByTime(31_000);
     });
-
-    it("shows caller name", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall({
-        callerName: "Jane Smith",
-      });
-
-      render(<IncomingCallNotification />);
-
-      expect(screen.getByText("Jane Smith")).toBeInTheDocument();
-    });
-
-    it("shows phone number", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall({
-        number: "+995574303444",
-      });
-
-      render(<IncomingCallNotification />);
-
-      expect(screen.getByText("+995574303444")).toBeInTheDocument();
-    });
-
-    it("shows 'Unknown caller' when no caller name", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall({
-        callerName: undefined,
-      });
-
-      render(<IncomingCallNotification />);
-
-      expect(screen.getByText("Unknown caller")).toBeInTheDocument();
-      expect(screen.getByText("Incoming call")).toBeInTheDocument();
-    });
-
-    it("is announced to assistive tech (role=alert, aria-live=assertive)", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall();
-
-      render(<IncomingCallNotification />);
-
-      const alert = screen.getByRole("alert");
-      expect(alert).toHaveAttribute("aria-live", "assertive");
-      expect(alert).toHaveAttribute("aria-label", "Incoming call from {caller}");
-    });
+    expect(screen.getByText("John Doe")).toBeInTheDocument();
   });
 
-  // -----------------------------------------------------------------------
-  // Accept / Decline buttons
-  // -----------------------------------------------------------------------
-
-  describe("accept and decline buttons", () => {
-    it("renders Accept button", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall();
-
-      render(<IncomingCallNotification />);
-
-      expect(screen.getByText("Accept")).toBeInTheDocument();
-    });
-
-    it("renders Decline button", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall();
-
-      render(<IncomingCallNotification />);
-
-      expect(screen.getByText("Decline")).toBeInTheDocument();
-    });
-
-    it("calls handleAcceptCall when Accept is clicked", async () => {
-      const user = userEvent.setup();
-      mockCallContextValue.activeCall = makeIncomingRingingCall();
-
-      render(<IncomingCallNotification />);
-
-      await user.click(screen.getByText("Accept"));
-
-      expect(mockHandleAcceptCall).toHaveBeenCalledTimes(1);
-    });
-
-    it("calls handleRejectCall when Decline is clicked", async () => {
-      const user = userEvent.setup();
-      mockCallContextValue.activeCall = makeIncomingRingingCall();
-
-      render(<IncomingCallNotification />);
-
-      await user.click(screen.getByText("Decline"));
-
-      expect(mockHandleRejectCall).toHaveBeenCalledTimes(1);
-    });
+  it("Accept / Decline go to CallContext", async () => {
+    const user = userEvent.setup();
+    renderToast();
+    await user.click(screen.getByText("Accept"));
+    await user.click(screen.getByText("Decline"));
+    expect(h.actions.acceptCall).toHaveBeenCalledTimes(1);
+    expect(h.actions.rejectCall).toHaveBeenCalledTimes(1);
   });
 
-  // -----------------------------------------------------------------------
-  // Auto-dismiss after 30 seconds
-  // -----------------------------------------------------------------------
-
-  describe("auto-dismiss", () => {
-    it("auto-dismisses after 30 seconds", () => {
-      vi.useFakeTimers();
-      mockCallContextValue.activeCall = makeIncomingRingingCall();
-
-      const { container } = render(<IncomingCallNotification />);
-
-      // Should be visible initially
-      expect(screen.getByText("John Doe")).toBeInTheDocument();
-
-      // Advance past 30 seconds
-      act(() => {
-        vi.advanceTimersByTime(30100);
-      });
-
-      // After auto-dismiss, the component should return null
-      expect(container.firstChild).toBeNull();
-
-      vi.useRealTimers();
-    });
-
-    it("does not auto-dismiss before 30 seconds", () => {
-      vi.useFakeTimers();
-      mockCallContextValue.activeCall = makeIncomingRingingCall();
-
-      render(<IncomingCallNotification />);
-
-      // Advance 29 seconds
-      act(() => {
-        vi.advanceTimersByTime(29000);
-      });
-
-      // Should still be visible
-      expect(screen.getByText("John Doe")).toBeInTheDocument();
-
-      vi.useRealTimers();
-    });
+  it("View opens the rail", async () => {
+    const user = userEvent.setup();
+    renderToast();
+    await user.click(screen.getByTestId("incoming-call-view"));
+    expect(h.actions.openRail).toHaveBeenCalledTimes(1);
+    expect(h.actions.openRail).toHaveBeenCalledWith();
   });
 
-  // -----------------------------------------------------------------------
-  // Translation usage
-  // -----------------------------------------------------------------------
-
-  describe("uses translated text", () => {
-    it("uses t('accept') for accept button text", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall();
-
-      render(<IncomingCallNotification />);
-
-      // Our mock translates 'accept' to 'Accept'
-      expect(screen.getByText("Accept")).toBeInTheDocument();
-    });
-
-    it("uses t('decline') for decline button text", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall();
-
-      render(<IncomingCallNotification />);
-
-      expect(screen.getByText("Decline")).toBeInTheDocument();
-    });
-
-    it("uses t('phone.unknownCaller') as fallback when no caller name", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall({
-        callerName: undefined,
-      });
-
-      render(<IncomingCallNotification />);
-
-      expect(screen.getByText("Unknown caller")).toBeInTheDocument();
-    });
-  });
-
-  // -----------------------------------------------------------------------
-  // View details button
-  // -----------------------------------------------------------------------
-
-  describe("view details button", () => {
-    it("renders view details button", () => {
-      mockCallContextValue.activeCall = makeIncomingRingingCall();
-
-      render(<IncomingCallNotification />);
-
-      const viewDetailsButton = screen.getByTitle("View caller details");
-      expect(viewDetailsButton).toBeInTheDocument();
-    });
-
-    it("calls openSidebar with call info when view details is clicked", async () => {
-      const user = userEvent.setup();
-      mockCallContextValue.activeCall = makeIncomingRingingCall({
-        logId: 42,
-        number: "+995555123456",
-        callerName: "John Doe",
-      });
-
-      render(<IncomingCallNotification />);
-
-      const viewDetailsButton = screen.getByTitle("View caller details");
-      await user.click(viewDetailsButton);
-
-      expect(mockOpenSidebar).toHaveBeenCalledWith(
-        42,
-        "+995555123456",
-        "John Doe"
-      );
-    });
+  it("renders in Georgian", () => {
+    renderToast("ka", ka);
+    expect(screen.getByText(ka.calls.accept)).toBeInTheDocument();
+    expect(screen.getByText(ka.calls.decline)).toBeInTheDocument();
   });
 });

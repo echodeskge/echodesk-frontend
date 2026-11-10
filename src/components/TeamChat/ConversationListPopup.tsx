@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { LAYOUT, useFloatingChat } from './FloatingChatContext';
-import { DOCK_PANEL_RIGHT, panelMaxHeight } from './floatingDock';
+import { panelMaxHeight, useDockPanelRight } from './floatingDock';
 import type { TeamChatUser, TeamChatConversation } from './types';
 
 interface ConversationListPopupProps {
@@ -31,6 +31,7 @@ export function ConversationListPopup({
   const { state, openChat, closeList, closeAllChats } = useFloatingChat();
   const [searchQuery, setSearchQuery] = useState('');
   const popupRef = useRef<HTMLDivElement>(null);
+  const dockPanelRight = useDockPanelRight();
 
   // Close on click outside (the launcher toggles it itself)
   useEffect(() => {
@@ -118,7 +119,7 @@ export function ConversationListPopup({
   };
 
   // Opens beside the dock column so it never covers the launchers or bubbles.
-  const right = DOCK_PANEL_RIGHT + rightOffset;
+  const right = dockPanelRight + rightOffset;
   const bottom = LAYOUT.MAIN_ICON.bottom;
 
   return (

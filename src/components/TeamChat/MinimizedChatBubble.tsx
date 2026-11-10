@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LAYOUT, useFloatingChat, type MinimizedChat } from './FloatingChatContext';
-import { dockSlotBottom, firstBubbleSlot, useDialpadPresent } from './floatingDock';
+import { dockSlotBottom, firstBubbleSlot, useDialpadPresent, useDockRight } from './floatingDock';
 import {
   Tooltip,
   TooltipContent,
@@ -21,6 +21,7 @@ interface MinimizedChatBubbleProps {
 
 export function MinimizedChatBubble({ chat, index, isOnline }: MinimizedChatBubbleProps) {
   const { maximizeChat, closeChat } = useFloatingChat();
+  const dockRight = useDockRight();
 
   const getInitials = (name: string) => {
     return name
@@ -59,7 +60,7 @@ export function MinimizedChatBubble({ chat, index, isOnline }: MinimizedChatBubb
               'animate-in slide-in-from-right-4 fade-in duration-200'
             )}
             style={{
-              right: LAYOUT.MAIN_ICON.right + (LAYOUT.MAIN_ICON.size - LAYOUT.BUBBLE.size) / 2,
+              right: dockRight + (LAYOUT.MAIN_ICON.size - LAYOUT.BUBBLE.size) / 2,
               bottom: bottomPosition,
               zIndex: LAYOUT.Z_INDEX.bubble,
             }}
