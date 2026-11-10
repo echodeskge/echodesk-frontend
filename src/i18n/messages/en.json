@@ -2532,6 +2532,28 @@
       "statusFailed": "Failed to update order status",
       "markedPaid": "Order marked as paid",
       "markPaidFailed": "Failed to mark as paid"
+    },
+    "cleaned": {
+      "viewLabel": "Active or cleaned orders",
+      "active": "Active",
+      "cleaned": "Cleaned",
+      "pill": "Cleaned",
+      "banner": "These orders are hidden from staff, statistics and customers.",
+      "restore": "Restore",
+      "restoreSelected": "Restore selected",
+      "restoreAll": "Restore all",
+      "restoreAllTitle": "Restore all cleaned orders?",
+      "restoreAllDescription": "Every cleaned order will show again in the order list, statistics, exports and to its customer.",
+      "cancel": "Cancel",
+      "noCleaned": "No cleaned orders",
+      "noCleanedHint": "Orders hidden from Settings → E-commerce appear here.",
+      "detailBanner": "This order is cleaned (hidden from staff, statistics and customers) by {name} on {date}.",
+      "detailBannerNoName": "This order is cleaned (hidden from staff, statistics and customers) since {date}.",
+      "toast": {
+        "restored": "{count, plural, one {# order restored} other {# orders restored}}",
+        "restoredOne": "Order restored",
+        "restoreFailed": "Couldn't restore the orders"
+      }
     }
   },
   "ecommerceAnalytics": {
@@ -4379,6 +4401,37 @@
       "mapsStep4": "Go to <strong>APIs & Services → Credentials → + Create Credentials → API key</strong>. Copy the key (starts with <code>AIzaSy…</code>).",
       "mapsStep5": "Click the new key to edit. Under <strong>Application restrictions</strong> select <strong>HTTP referrers</strong> and add your storefront domains: <code>https://refurb.ge/*</code>, <code>https://*.ecommerce.echodesk.ge/*</code>. Under <strong>API restrictions</strong> limit it to the three APIs above.",
       "mapsStep6": "Paste the key in the field above and save."
+    },
+    "orders": {
+      "title": "Orders",
+      "hint": "Hide test or old orders without deleting them",
+      "countsLabel": "Order list",
+      "countsHelp": "Cleaned orders are hidden from staff, statistics, exports and customers. They can be restored at any time.",
+      "counts": "{visible, plural, one {# order} other {# orders}} · {cleaned} cleaned",
+      "countsFailed": "Couldn't load the order counts",
+      "viewCleaned": "View cleaned orders",
+      "clean": {
+        "label": "Clean order list",
+        "help": "Hides the orders you pick from every list and report. Nothing is deleted.",
+        "action": "Clean…"
+      },
+      "dialog": {
+        "title": "Clean order list",
+        "description": "Choose which orders to hide. They stay in the database and can be restored from the cleaned list.",
+        "statuses": "Statuses",
+        "allStatuses": "No status selected: all statuses are included.",
+        "createdBefore": "Created before",
+        "anyDate": "Leave empty to include orders from any date.",
+        "count": "{count, plural, =0 {No orders match these filters} one {# order will be hidden} other {# orders will be hidden}}",
+        "counting": "Counting matching orders…",
+        "countFailed": "Couldn't count the matching orders",
+        "cancel": "Cancel",
+        "confirm": "Hide orders"
+      },
+      "toast": {
+        "cleaned": "{count, plural, one {# order hidden} other {# orders hidden}}",
+        "cleanFailed": "Couldn't clean the order list"
+      }
     }
   },
   "landing": {
