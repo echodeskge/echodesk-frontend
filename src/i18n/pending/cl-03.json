@@ -52,9 +52,7 @@
         "primaryHint": "Used when the user has several extensions",
         "activeAssignmentHint": "Inactive extensions cannot register",
         "noUsers": "No users to assign",
-        "closeDialog": "Close",
-        "removeAssignment": "Remove assignment",
-        "assignmentsCount": "{count, plural, =1 {1 extension} other {# extensions}}"
+        "removeAssignment": "Remove assignment"
       }
     }
   },
@@ -111,9 +109,7 @@
         "primaryHint": "გამოიყენება, როცა მომხმარებელს რამდენიმე ხაზი აქვს",
         "activeAssignmentHint": "არააქტიური ხაზები ვერ რეგისტრირდება",
         "noUsers": "მისანიჭებელი მომხმარებლები არ არის",
-        "closeDialog": "დახურვა",
-        "removeAssignment": "მინიჭების წაშლა",
-        "assignmentsCount": "{count, plural, =1 {1 ხაზი} other {# ხაზი}}"
+        "removeAssignment": "მინიჭების წაშლა"
       }
     }
   }
