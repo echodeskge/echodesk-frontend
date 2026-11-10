@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import type { UserFilters } from "../UserManagement";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { rdButton } from "@/components/redesign/buttons";
+import { settingsInputClass } from "@/components/redesign/settings";
+import { cn } from "@/lib/utils";
 import { Search, X, Filter, ChevronDown, ChevronUp } from "lucide-react";
 
 interface UserFiltersProps {
@@ -79,239 +78,193 @@ export default function UserFilters({
     );
   };
 
+  // A removable chip of the active filters row.
+  const chip = (key: string, text: string, onRemove: () => void) => (
+    <span
+      key={key}
+      className="inline-flex h-6 max-w-full items-center gap-1 rounded-full border bg-muted/60 ps-2.5 pe-1 text-xs"
+    >
+      <span className="truncate">{text}</span>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={t("ui.agents.removeFilter")}
+        title={t("ui.agents.removeFilter")}
+        className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-destructive"
+      >
+        <X className="h-3 w-3" aria-hidden />
+      </button>
+    </span>
+  );
+
+  const trigger = "h-8 text-[13px]";
+
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex flex-wrap gap-4 items-end">
-          {/* Search */}
-          <div className="flex-1 min-w-[250px]">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder={t("ui.filters.search")}
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </div>
-
-          {/* Role Filter */}
-          <div className="space-y-1">
-            <Select
-              value={filters.role || "all"}
-              onValueChange={(value) => onFiltersChange({ role: value === "all" ? "" : value })}
-            >
-              <SelectTrigger className="w-[170px]">
-                <SelectValue placeholder={t("ui.filters.allRoles")} />
-              </SelectTrigger>
-              <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
-                {roleOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Status Filter */}
-          <div className="space-y-1">
-            <Select
-              value={filters.status || "all"}
-              onValueChange={(value) => onFiltersChange({ status: value === "all" ? "" : value })}
-            >
-              <SelectTrigger className="w-[170px]">
-                <SelectValue placeholder={t("ui.filters.allStatus")} />
-              </SelectTrigger>
-              <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              {showAdvanced ? (
-                <>
-                  <ChevronUp className="h-4 w-4 ml-1" />
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                </>
-              )}
-            </Button>
-
-            {hasActiveFilters() && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={clearFilters}
-              >
-                <X className="h-4 w-4 mr-2" />
-                {t("ui.filters.clear")}
-              </Button>
-            )}
-          </div>
+    <div className="flex min-w-0 flex-col gap-2.5" data-testid="users-filters">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        {/* Search */}
+        <div className="relative min-w-[200px] flex-1 basis-[240px]">
+          <Search className="pointer-events-none absolute start-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <input
+            type="text"
+            placeholder={t("ui.filters.search")}
+            aria-label={t("ui.filters.search")}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className={cn(settingsInputClass, "h-8 ps-8")}
+          />
         </div>
 
-        {/* Advanced Filters */}
-        {showAdvanced && (
-          <div className="mt-4 pt-4 border-t">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="department" className="text-xs uppercase text-muted-foreground">
-                  {t("ui.filters.department")}
-                </Label>
-                <Input
-                  type="text"
-                  id="department"
-                  placeholder={t("ui.filters.departmentPlaceholder")}
-                  value={filters.department}
-                  onChange={(e) => onFiltersChange({ department: e.target.value })}
-                />
-              </div>
+        {/* Role Filter */}
+        <Select
+          value={filters.role || "all"}
+          onValueChange={(value) => onFiltersChange({ role: value === "all" ? "" : value })}
+        >
+          <SelectTrigger className={cn(trigger, "w-[calc(50%-4px)] sm:w-[160px]")} aria-label={t("ui.filters.allRoles")}>
+            <SelectValue placeholder={t("ui.filters.allRoles")} />
+          </SelectTrigger>
+          <SelectContent>
+            {roleOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-              <div className="space-y-2">
-                <Label htmlFor="isActive" className="text-xs uppercase text-muted-foreground">
-                  {t("ui.filters.accountStatus")}
-                </Label>
-                <Select
-                  value={filters.isActive === null ? "all" : filters.isActive.toString()}
-                  onValueChange={(value) =>
-                    onFiltersChange({
-                      isActive: value === "all" ? null : value === "true",
-                    })
-                  }
-                >
-                  <SelectTrigger id="isActive">
-                    <SelectValue placeholder={t("ui.filters.allAccounts")} />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
-                    <SelectItem value="all">{t("ui.filters.allAccounts")}</SelectItem>
-                    <SelectItem value="true">{t("ui.filters.activeAccounts")}</SelectItem>
-                    <SelectItem value="false">{t("ui.filters.inactiveAccounts")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* Status Filter */}
+        <Select
+          value={filters.status || "all"}
+          onValueChange={(value) => onFiltersChange({ status: value === "all" ? "" : value })}
+        >
+          <SelectTrigger className={cn(trigger, "w-[calc(50%-4px)] sm:w-[160px]")} aria-label={t("ui.filters.allStatus")}>
+            <SelectValue placeholder={t("ui.filters.allStatus")} />
+          </SelectTrigger>
+          <SelectContent>
+            {statusOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-              <div className="space-y-2">
-                <Label htmlFor="isStaff" className="text-xs uppercase text-muted-foreground">
-                  {t("ui.filters.staffStatus")}
-                </Label>
-                <Select
-                  value={filters.isStaff === null ? "all" : filters.isStaff.toString()}
-                  onValueChange={(value) =>
-                    onFiltersChange({
-                      isStaff: value === "all" ? null : value === "true",
-                    })
-                  }
-                >
-                  <SelectTrigger id="isStaff">
-                    <SelectValue placeholder={t("ui.filters.allUsers")} />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
-                    <SelectItem value="all">{t("ui.filters.allUsers")}</SelectItem>
-                    <SelectItem value="true">{t("ui.filters.staffMembers")}</SelectItem>
-                    <SelectItem value="false">{t("ui.filters.regularUsers")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Actions */}
+        <button
+          type="button"
+          className={cn(rdButton.outline, showAdvanced && "bg-accent")}
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          aria-expanded={showAdvanced}
+          aria-label={t("ui.agents.moreFilters")}
+          title={t("ui.agents.moreFilters")}
+        >
+          <Filter className="h-3.5 w-3.5" aria-hidden />
+          {showAdvanced ? <ChevronUp className="h-3.5 w-3.5" aria-hidden /> : <ChevronDown className="h-3.5 w-3.5" aria-hidden />}
+        </button>
 
-        {/* Active Filters */}
         {hasActiveFilters() && (
-          <div className="mt-4 pt-4 border-t flex flex-wrap gap-2 items-center">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              {t("ui.filters.active")}
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {filters.search && (
-                <Badge variant="secondary" className="gap-1">
-                  {t("ui.filters.chipSearch")}: &quot;{filters.search}&quot;
-                  <button
-                    onClick={() => onFiltersChange({ search: "" })}
-                    className="ml-1 hover:text-destructive"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )}
-              {filters.role && (
-                <Badge variant="secondary" className="gap-1">
-                  {t("ui.filters.chipRole")}: {roleOptions.find((r) => r.value === filters.role)?.label}
-                  <button
-                    onClick={() => onFiltersChange({ role: "" })}
-                    className="ml-1 hover:text-destructive"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )}
-              {filters.status && (
-                <Badge variant="secondary" className="gap-1">
-                  {t("ui.filters.chipStatus")}: {statusOptions.find((s) => s.value === filters.status)?.label}
-                  <button
-                    onClick={() => onFiltersChange({ status: "" })}
-                    className="ml-1 hover:text-destructive"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )}
-              {filters.department && (
-                <Badge variant="secondary" className="gap-1">
-                  {t("ui.filters.department")}: {filters.department}
-                  <button
-                    onClick={() => onFiltersChange({ department: "" })}
-                    className="ml-1 hover:text-destructive"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )}
-              {filters.isActive !== null && (
-                <Badge variant="secondary" className="gap-1">
-                  {t("ui.filters.chipAccount")}: {filters.isActive ? t("ui.status.active") : t("ui.status.inactive")}
-                  <button
-                    onClick={() => onFiltersChange({ isActive: null })}
-                    className="ml-1 hover:text-destructive"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )}
-              {filters.isStaff !== null && (
-                <Badge variant="secondary" className="gap-1">
-                  {t("ui.table.staff")}: {filters.isStaff ? t("ui.yes") : t("ui.no")}
-                  <button
-                    onClick={() => onFiltersChange({ isStaff: null })}
-                    className="ml-1 hover:text-destructive"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )}
-            </div>
-          </div>
+          <button type="button" className={rdButton.outline} onClick={clearFilters}>
+            <X className="h-3.5 w-3.5" aria-hidden />
+            {t("ui.filters.clear")}
+          </button>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Advanced Filters */}
+      {showAdvanced && (
+        <div className="grid grid-cols-1 gap-3 rounded-[10px] border bg-muted/20 p-3.5 md:grid-cols-3" data-testid="users-advanced-filters">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="department" className="text-[11px] font-medium uppercase tracking-[.03em] text-muted-foreground">
+              {t("ui.filters.department")}
+            </Label>
+            <input
+              type="text"
+              id="department"
+              placeholder={t("ui.filters.departmentPlaceholder")}
+              value={filters.department}
+              onChange={(e) => onFiltersChange({ department: e.target.value })}
+              className={settingsInputClass}
+            />
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="isActive" className="text-[11px] font-medium uppercase tracking-[.03em] text-muted-foreground">
+              {t("ui.filters.accountStatus")}
+            </Label>
+            <Select
+              value={filters.isActive === null ? "all" : filters.isActive.toString()}
+              onValueChange={(value) =>
+                onFiltersChange({
+                  isActive: value === "all" ? null : value === "true",
+                })
+              }
+            >
+              <SelectTrigger id="isActive" className="h-[34px] text-[13px]">
+                <SelectValue placeholder={t("ui.filters.allAccounts")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("ui.filters.allAccounts")}</SelectItem>
+                <SelectItem value="true">{t("ui.filters.activeAccounts")}</SelectItem>
+                <SelectItem value="false">{t("ui.filters.inactiveAccounts")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="isStaff" className="text-[11px] font-medium uppercase tracking-[.03em] text-muted-foreground">
+              {t("ui.filters.staffStatus")}
+            </Label>
+            <Select
+              value={filters.isStaff === null ? "all" : filters.isStaff.toString()}
+              onValueChange={(value) =>
+                onFiltersChange({
+                  isStaff: value === "all" ? null : value === "true",
+                })
+              }
+            >
+              <SelectTrigger id="isStaff" className="h-[34px] text-[13px]">
+                <SelectValue placeholder={t("ui.filters.allUsers")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("ui.filters.allUsers")}</SelectItem>
+                <SelectItem value="true">{t("ui.filters.staffMembers")}</SelectItem>
+                <SelectItem value="false">{t("ui.filters.regularUsers")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+
+      {/* Active Filters */}
+      {hasActiveFilters() && (
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5" data-testid="users-active-filters">
+          <span className="text-[11px] font-medium uppercase tracking-[.03em] text-muted-foreground">
+            {t("ui.filters.active")}
+          </span>
+          {filters.search &&
+            chip("search", `${t("ui.filters.chipSearch")}: "${filters.search}"`, () => onFiltersChange({ search: "" }))}
+          {filters.role &&
+            chip("role", `${t("ui.filters.chipRole")}: ${roleOptions.find((r) => r.value === filters.role)?.label}`, () =>
+              onFiltersChange({ role: "" })
+            )}
+          {filters.status &&
+            chip("status", `${t("ui.filters.chipStatus")}: ${statusOptions.find((s) => s.value === filters.status)?.label}`, () =>
+              onFiltersChange({ status: "" })
+            )}
+          {filters.department &&
+            chip("department", `${t("ui.filters.department")}: ${filters.department}`, () => onFiltersChange({ department: "" }))}
+          {filters.isActive !== null &&
+            chip(
+              "isActive",
+              `${t("ui.filters.chipAccount")}: ${filters.isActive ? t("ui.status.active") : t("ui.status.inactive")}`,
+              () => onFiltersChange({ isActive: null })
+            )}
+          {filters.isStaff !== null &&
+            chip("isStaff", `${t("ui.table.staff")}: ${filters.isStaff ? t("ui.yes") : t("ui.no")}`, () =>
+              onFiltersChange({ isStaff: null })
+            )}
+        </div>
+      )}
+    </div>
   );
 }

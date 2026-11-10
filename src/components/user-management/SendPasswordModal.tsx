@@ -9,8 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, Mail } from "lucide-react";
+import { rdButton } from "@/components/redesign/buttons";
+import { SettingsNote } from "@/components/redesign/settings";
+import { Mail } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 
 interface SendPasswordModalProps {
@@ -36,52 +37,47 @@ export default function SendPasswordModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-[17px]">
+            <Mail className="h-4 w-4 text-primary" />
             {t("sendNewPassword")}
           </DialogTitle>
-          <DialogDescription className="pt-2">
+          <DialogDescription className="pt-1 text-[13px]">
             {t("sendNewPasswordConfirm")}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4">
-          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{t("name")}:</span>
-              <span className="text-sm font-medium">{userName}</span>
+        <div className="flex flex-col gap-3 py-2">
+          <div className="flex flex-col gap-1.5 rounded-[10px] border bg-muted/35 px-3.5 py-3 text-[13px]">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="text-muted-foreground">{t("name")}:</span>
+              <span className="truncate font-medium">{userName}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{t("email")}:</span>
-              <span className="text-sm font-medium">{userEmail}</span>
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="text-muted-foreground">{t("email")}:</span>
+              <span className="truncate font-medium">{userEmail}</span>
             </div>
           </div>
 
-          <div className="mt-4 flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
-            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-800 dark:text-amber-200">
-              {t("sendNewPasswordWarning")}
-            </p>
-          </div>
+          <SettingsNote tone="warning">{t("sendNewPasswordWarning")}</SettingsNote>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+        <DialogFooter className="gap-2">
+          <button type="button" className={rdButton.outline} onClick={onClose} disabled={isLoading}>
             {t("cancel")}
-          </Button>
-          <Button onClick={onConfirm} disabled={isLoading}>
+          </button>
+          <button type="button" className={rdButton.primary} onClick={onConfirm} disabled={isLoading}>
             {isLoading ? (
               <>
-                <Spinner className="h-4 w-4 mr-2" />
+                <Spinner className="h-3.5 w-3.5" />
                 {t("sending")}
               </>
             ) : (
               <>
-                <Mail className="h-4 w-4 mr-2" />
+                <Mail className="h-3.5 w-3.5" />
                 {t("sendPassword")}
               </>
             )}
-          </Button>
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

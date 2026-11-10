@@ -11,7 +11,7 @@ import {
 import { usersPartialUpdate, usersSendNewPasswordCreate, usersSetStaffCreate, bookingsAdminStaffCreate, usersBulkActionCreate } from "@/api/generated/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, userKeys } from "@/hooks/api/useUsers";
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, userKeys, type UserListFilters } from "@/hooks/api/useUsers";
 import { getApiErrorMessage } from "@/lib/utils";
 import {
   formatBulkBlocked,
@@ -27,10 +27,9 @@ import UserForm from "./user-management/UserForm";
 import UserDetailsModal from "./user-management/UserDetailsModal";
 import UserFilters from "./user-management/UserFilters";
 import SendPasswordModal from "./user-management/SendPasswordModal";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Spinner } from "@/components/ui/spinner";
-import { Plus, XCircle } from "lucide-react";
+import { SettingsPage, ListActionButton, SettingsNote } from "@/components/redesign/settings";
+import { LoadingBlock } from "@/components/redesign/states";
+import { UserPlus, Users } from "lucide-react";
 
 export interface UserFilters {
   search: string;
@@ -93,9 +92,17 @@ export default function UserManagement() {
   });
 
   // Use React Query hook for users
+  // role / status / account / staff go to the API (department is a free-text
+  // input while the API filters by department id, so it is not sent).
   const { data: usersData, isLoading: loading, error: queryError } = useUsers({
     page: currentPage,
     search: filters.search || undefined,
+    filters: {
+      role: (filters.role || undefined) as UserListFilters["role"],
+      status: (filters.status || undefined) as UserListFilters["status"],
+      isActive: filters.isActive,
+      isStaff: filters.isStaff,
+    },
   });
 
   const users = usersData?.results || [];
@@ -277,40 +284,54 @@ export default function UserManagement() {
     : [];
   const hasBookingManagement = userFeatureKeys.includes('booking_management');
 
+  const header = {
+    icon: Users,
+    title: t("userManagement"),
+    description: t("ui.subtitle"),
+    width: "wide" as const,
+    gap: 16 as const,
+    testId: "settings-users",
+    action: (
+      <ListActionButton
+        action={{ label: t("addUser"), icon: UserPlus, onClick: () => setShowCreateForm(true), testId: "users-add" }}
+      />
+    ),
+  };
+
   if (loading && users.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex items-center space-x-2">
-          <Spinner className="h-8 w-8" />
-          <span className="text-muted-foreground">{tCommon("loading")}</span>
-        </div>
-      </div>
+      <SettingsPage {...header}>
+        <LoadingBlock label={tCommon("loading")} className="min-h-[300px]" testId="users-loading" />
+      </SettingsPage>
     );
   }
 
-  return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-[1400px] mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">{t("userManagement")}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t("ui.subtitle")}
-          </p>
-        </div>
-        <Button onClick={() => setShowCreateForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          {t("addUser")}
-        </Button>
-      </div>
+  // Design AGENTS stat strip, from the list already loaded (no extra call):
+  // the total is the API count; active / inactive count the rows on this page.
+  const activeOnPage = users.filter((u) => u.is_active).length;
+  const pageHint = pagination.totalPages > 1 ? t("ui.agents.onThisPage") : undefined;
+  const stats = [
+    { key: "total", label: t("ui.agents.statTotal"), value: pagination.count },
+    { key: "active", label: t("ui.agents.statActive"), value: activeOnPage, hint: pageHint },
+    { key: "inactive", label: t("ui.agents.statInactive"), value: users.length - activeOnPage, hint: pageHint },
+  ];
 
+  return (
+    <SettingsPage {...header}>
       {/* Error Alert */}
-      {error && (
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      {error && <SettingsNote tone="danger">{error}</SettingsNote>}
+
+      <div className="grid grid-cols-3 gap-2.5" data-testid="users-stats">
+        {stats.map((c) => (
+          <div key={c.key} className="flex min-w-0 flex-col gap-0.5 rounded-[10px] border px-3.5 py-3" data-testid={`users-stat-${c.key}`}>
+            <span className="line-clamp-2 break-words text-[11px] leading-[14px] text-muted-foreground" title={c.label}>
+              {c.label}
+            </span>
+            <span className="text-xl font-semibold leading-6 tabular-nums tracking-[-.02em]">{c.value}</span>
+            {c.hint && <span className="truncate text-[11px] text-muted-foreground">{c.hint}</span>}
+          </div>
+        ))}
+      </div>
 
       {/* Filters */}
       <UserFilters filters={filters} onFiltersChange={handleFiltersChange} />
@@ -386,6 +407,6 @@ export default function UserManagement() {
         userEmail={selectedUserForPassword?.email || ''}
         isLoading={sendPasswordLoading}
       />
-    </div>
+    </SettingsPage>
   );
 }

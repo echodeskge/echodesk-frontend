@@ -1,13 +1,17 @@
 "use client";
 
 import { User } from "@/api/generated/interfaces";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Spinner } from "@/components/ui/spinner";
+import { DataTable, type Column } from "@/components/redesign/data-table";
+import { EmptyBlock, LoadingBlock } from "@/components/redesign/states";
+import { TonePill } from "@/components/redesign/pill";
+import { TONE_DOT, type Tone } from "@/components/redesign/tones";
+import { rdButton } from "@/components/redesign/buttons";
+import { ToggleCell } from "@/components/redesign/settings";
+import { initials } from "@/app/(tenant)/tickets/_components/primitives/initials";
+import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
-import { Eye, Pencil, RotateCw, Lock, Unlock, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, Pencil, RotateCw, UserCheck, UserX, Trash2, ChevronLeft, ChevronRight, Users } from "lucide-react";
 
 interface PaginationInfo {
   count: number;
@@ -36,6 +40,27 @@ interface UserTableProps {
   onPageChange: (page: number) => void;
 }
 
+const KNOWN_STATUS = ["active", "inactive", "pending", "suspended"];
+const KNOWN_ROLES = ["admin", "manager", "agent", "viewer"];
+
+/** Status shown in the table (an inactive account is "inactive" whatever its status field says). */
+export const displayStatus = (user: User): string =>
+  user.is_active ? user.status?.toString() || "active" : "inactive";
+
+const STATUS_TONE: Record<string, Tone> = {
+  active: "success",
+  pending: "warning",
+  suspended: "danger",
+  inactive: "neutral",
+};
+
+const displayName = (user: User) => user.full_name || `${user.first_name} ${user.last_name}`;
+
+/**
+ * Design AGENTS table (settings / users): avatar with status dot, name and
+ * email; role; status; groups; staff (booking management only); row actions.
+ * Same handlers and selection as before the redesign.
+ */
 export default function UserTable({
   users,
   loading,
@@ -56,9 +81,9 @@ export default function UserTable({
   const t = useTranslations("users");
   // Known statuses are translated; anything else is shown as sent.
   const statusLabel = (status: string) =>
-    ["active", "inactive", "pending", "suspended"].includes(status.toLowerCase())
-      ? t(`ui.status.${status.toLowerCase()}`)
-      : status;
+    KNOWN_STATUS.includes(status.toLowerCase()) ? t(`ui.status.${status.toLowerCase()}`) : status;
+  const roleLabel = (role?: string) =>
+    !role ? t("ui.details.user") : KNOWN_ROLES.includes(role.toLowerCase()) ? t(`ui.roles.${role.toLowerCase()}`) : role;
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -76,11 +101,174 @@ export default function UserTable({
     }
   };
 
-  const isAllSelected =
-    users.length > 0 && selectedUsers.length === users.length;
-  const isIndeterminate =
-    selectedUsers.length > 0 && selectedUsers.length < users.length;
+  const isAllSelected = users.length > 0 && selectedUsers.length === users.length;
 
+  const columns: Column<User>[] = [
+    {
+      id: "select",
+      header: (
+        <Checkbox
+          checked={isAllSelected}
+          onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+          aria-label={t("ui.bulk.title")}
+        />
+      ),
+      width: "28px",
+      mobile: "end",
+      cell: (user) => (
+        <Checkbox
+          checked={selectedUsers.includes(user.id)}
+          onCheckedChange={(checked) => handleSelectUser(user.id, checked as boolean)}
+          aria-label={displayName(user)}
+        />
+      ),
+    },
+    {
+      id: "name",
+      header: t("ui.table.name"),
+      width: "minmax(0,1.4fr)",
+      mobile: "title",
+      cell: (user) => {
+        const status = displayStatus(user).toLowerCase();
+        return (
+          <span className="flex min-w-0 items-center gap-2.5">
+            <span className="relative shrink-0" aria-hidden>
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
+                {initials(displayName(user))}
+              </span>
+              <span
+                className={cn(
+                  "absolute -bottom-px -right-px h-2.5 w-2.5 rounded-full border-2 border-background",
+                  TONE_DOT[STATUS_TONE[status] ?? "neutral"]
+                )}
+              />
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate font-medium text-foreground">{displayName(user)}</span>
+              <span className="truncate text-[11px] text-muted-foreground">{user.email}</span>
+              {user.job_title && <span className="truncate text-[11px] text-muted-foreground">{user.job_title}</span>}
+            </span>
+          </span>
+        );
+      },
+    },
+    {
+      id: "role",
+      header: t("role"),
+      width: "120px",
+      mobile: "meta",
+      cell: (user) => (
+        <span
+          className="inline-flex h-6 max-w-full items-center rounded-full border px-2 text-xs text-foreground"
+          title={roleLabel(user.role?.toString())}
+        >
+          <span className="truncate">{roleLabel(user.role?.toString())}</span>
+        </span>
+      ),
+    },
+    {
+      id: "status",
+      header: t("ui.table.status"),
+      width: "100px",
+      mobile: "end",
+      cell: (user) => {
+        const status = displayStatus(user);
+        const tone = STATUS_TONE[status.toLowerCase()] ?? "neutral";
+        return (
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground">
+            <span aria-hidden className={cn("h-[7px] w-[7px] rounded-full", TONE_DOT[tone])} />
+            {statusLabel(status)}
+          </span>
+        );
+      },
+    },
+    {
+      id: "groups",
+      header: t("ui.table.groups"),
+      width: "minmax(0,1.6fr)",
+      mobile: "meta",
+      // Phones: the pills wrap inside line 2 instead of running past the card edge.
+      className: "max-w-full shrink",
+      cell: (user) =>
+        user.tenant_groups && user.tenant_groups.length > 0 ? (
+          <span className="flex min-w-0 flex-wrap gap-1">
+            {user.tenant_groups.map((group) => (
+              <TonePill key={group.id} tone="neutral" className="capitalize">
+                {group.name}
+              </TonePill>
+            ))}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">{t("ui.table.noGroups")}</span>
+        ),
+    },
+    ...(showStaffColumn
+      ? [
+          {
+            id: "staff",
+            header: t("ui.table.staff"),
+            width: "64px",
+            align: "center" as const,
+            mobile: "meta" as const,
+            cell: (user: User) => (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground @3xl:hidden">{t("ui.table.staff")}</span>
+                <ToggleCell
+                  checked={user.is_staff || false}
+                  disabled={!canToggleStaff || user.id === currentUserId}
+                  onCheckedChange={(checked) => onToggleStaff(user.id, checked)}
+                  label={user.is_staff ? t("ui.table.staffRemove") : t("ui.table.staffAdd")}
+                />
+              </span>
+            ),
+          },
+        ]
+      : []),
+    {
+      id: "actions",
+      header: <span className="sr-only">{t("ui.table.actions")}</span>,
+      width: "148px",
+      align: "end",
+      mobile: "actions",
+      cell: (user) => (
+        <span className="flex items-center gap-0.5">
+          <button type="button" onClick={() => onView(user)} title={t("ui.table.view")} aria-label={t("ui.table.view")} className={rdButton.ghostIconSm}>
+            <Eye className="h-3.5 w-3.5" />
+          </button>
+          <button type="button" onClick={() => onEdit(user)} title={t("ui.table.edit")} aria-label={t("ui.table.edit")} className={rdButton.ghostIconSm}>
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onSendNewPassword(user)}
+            title={t("sendNewPassword")}
+            aria-label={t("sendNewPassword")}
+            className={rdButton.ghostIconSm}
+          >
+            <RotateCw className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onChangeStatus(user.id, user.is_active ? "inactive" : "active")}
+            title={user.is_active ? t("ui.table.deactivate") : t("ui.table.activate")}
+            aria-label={user.is_active ? t("ui.table.deactivate") : t("ui.table.activate")}
+            className={rdButton.ghostIconSm}
+          >
+            {user.is_active ? <UserX className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(user.id)}
+            title={t("ui.table.delete")}
+            aria-label={t("ui.table.delete")}
+            className={cn(rdButton.ghostIconSm, "text-destructive hover:bg-destructive/10 hover:text-destructive")}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </span>
+      ),
+    },
+  ];
 
   const renderPagination = () => {
     const { currentPage, totalPages } = pagination;
@@ -98,44 +286,33 @@ export default function UserTable({
       pageNumbers.push(i);
     }
 
+    const pageButton = (page: number) => (
+      <button
+        key={page}
+        type="button"
+        onClick={() => onPageChange(page)}
+        aria-current={page === currentPage ? "page" : undefined}
+        className={cn(page === currentPage ? rdButton.primarySm : rdButton.outlineSm, "min-w-7 tabular-nums")}
+      >
+        {page}
+      </button>
+    );
+
     return (
       <>
         {startPage > 1 && (
           <>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(1)}
-            >
-              1
-            </Button>
-            {startPage > 2 && <span className="px-2 text-muted-foreground">...</span>}
+            {pageButton(1)}
+            {startPage > 2 && <span className="px-1 text-muted-foreground">...</span>}
           </>
         )}
 
-        {pageNumbers.map((page) => (
-          <Button
-            key={page}
-            variant={page === currentPage ? "default" : "outline"}
-            size="sm"
-            onClick={() => onPageChange(page)}
-          >
-            {page}
-          </Button>
-        ))}
+        {pageNumbers.map(pageButton)}
 
         {endPage < totalPages && (
           <>
-            {endPage < totalPages - 1 && (
-              <span className="px-2 text-muted-foreground">...</span>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(totalPages)}
-            >
-              {totalPages}
-            </Button>
+            {endPage < totalPages - 1 && <span className="px-1 text-muted-foreground">...</span>}
+            {pageButton(totalPages)}
           </>
         )}
       </>
@@ -143,201 +320,70 @@ export default function UserTable({
   };
 
   return (
-    <Card>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="p-3 text-left">
-                  <Checkbox
-                    checked={isAllSelected}
-                    onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
-                  />
-                </th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">{t("ui.table.name")}</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">{t("ui.table.email")}</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">{t("ui.table.groups")}</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">{t("ui.table.status")}</th>
-                {showStaffColumn && (
-                  <th className="p-3 text-center font-semibold text-muted-foreground">{t("ui.table.staff")}</th>
-                )}
-                <th className="p-3 text-left font-semibold text-muted-foreground">{t("ui.table.actions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={showStaffColumn ? 7 : 6} className="p-10 text-center text-muted-foreground">
-                    <div className="flex items-center justify-center space-x-2">
-                      <Spinner className="h-6 w-6" />
-                      <span>{t("ui.table.loading")}</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={showStaffColumn ? 7 : 6} className="p-10 text-center text-muted-foreground">
-                    {t("ui.table.empty")}
-                  </td>
-                </tr>
-              ) : (
-                users.map((user) => (
-                  <tr
-                    key={user.id}
-                    className={`border-b transition-colors hover:bg-muted/50 ${
-                      selectedUsers.includes(user.id) ? "bg-muted/50" : ""
-                    }`}
-                  >
-                    <td className="p-3">
-                      <Checkbox
-                        checked={selectedUsers.includes(user.id)}
-                        onCheckedChange={(checked) =>
-                          handleSelectUser(user.id, checked as boolean)
-                        }
-                      />
-                    </td>
-                    <td className="p-3">
-                      <div className="cursor-pointer" onClick={() => onView(user)}>
-                        <div className="font-medium text-foreground">
-                          {user.full_name ||
-                            `${user.first_name} ${user.last_name}`}
-                        </div>
-                        {user.job_title && (
-                          <div className="text-xs text-muted-foreground mt-0.5">{user.job_title}</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-3 text-muted-foreground">{user.email}</td>
-                    <td className="p-3">
-                      {user.tenant_groups && user.tenant_groups.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {user.tenant_groups.map((group) => (
-                            <Badge key={group.id} variant="secondary" className="capitalize">
-                              {group.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">{t("ui.table.noGroups")}</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <Badge
-                        variant={user.is_active ? "default" : "destructive"}
-                        className="capitalize"
-                      >
-                        {statusLabel(user.is_active ? user.status?.toString() || "active" : "inactive")}
-                      </Badge>
-                    </td>
-                    {showStaffColumn && (
-                      <td className="p-3 text-center">
-                        <Checkbox
-                          checked={user.is_staff || false}
-                          disabled={!canToggleStaff || user.id === currentUserId}
-                          onCheckedChange={(checked) =>
-                            onToggleStaff(user.id, checked as boolean)
-                          }
-                          title={user.is_staff ? t("ui.table.staffRemove") : t("ui.table.staffAdd")}
-                        />
-                      </td>
-                    )}
-                    <td className="p-3">
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onView(user)}
-                          title={t("ui.table.view")}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onEdit(user)}
-                          title={t("ui.table.edit")}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onSendNewPassword(user)}
-                          title={t("sendNewPassword")}
-                          className="h-8 w-8 p-0"
-                        >
-                          <RotateCw className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            onChangeStatus(
-                              user.id,
-                              user.is_active ? "inactive" : "active"
-                            )
-                          }
-                          title={user.is_active ? t("ui.table.deactivate") : t("ui.table.activate")}
-                          className="h-8 w-8 p-0"
-                        >
-                          {user.is_active ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDelete(user.id)}
-                          title={t("ui.table.delete")}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
+    <div className="flex min-w-0 flex-col gap-2.5">
+      <DataTable
+        variant="card"
+        density="comfortable"
+        columns={columns}
+        rows={loading ? [] : users}
+        rowKey={(user) => user.id}
+        onRowClick={onView}
+        isRowSelected={(user) => selectedUsers.includes(user.id)}
+        rowClassName={() => "@3xl:min-h-14"}
+        empty={
+          loading ? (
+            <LoadingBlock label={t("ui.table.loading")} testId="users-table-loading" />
+          ) : (
+            <EmptyBlock icon={Users} title={t("ui.table.empty")} testId="users-table-empty" />
+          )
+        }
+        renderError={() => null}
+        ariaLabel={t("userManagement")}
+        idPrefix="users"
+        testId="users-table"
+      />
 
-      {pagination.totalPages > 1 && (
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 border-t bg-muted/30">
-          <div className="text-sm text-muted-foreground">
+      {pagination.totalPages > 1 ? (
+        <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center" data-testid="users-pagination">
+          <span className="text-xs text-muted-foreground tabular-nums">
             {t("ui.table.showing", {
               from: (pagination.currentPage - 1) * 20 + 1,
               to: Math.min(pagination.currentPage * 20, pagination.count),
               count: pagination.count,
             })}
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
+          </span>
+          <div className="flex flex-wrap items-center gap-1">
+            <button
+              type="button"
+              className={rdButton.outlineSm}
               onClick={() => onPageChange(pagination.currentPage - 1)}
               disabled={pagination.currentPage === 1}
             >
-              <ChevronLeft className="h-4 w-4 mr-1" />
+              <ChevronLeft className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden />
               {t("ui.table.previous")}
-            </Button>
+            </button>
 
             {renderPagination()}
 
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
+              className={rdButton.outlineSm}
               onClick={() => onPageChange(pagination.currentPage + 1)}
               disabled={pagination.currentPage === pagination.totalPages}
             >
               {t("ui.table.next")}
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
+              <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden />
+            </button>
           </div>
         </div>
+      ) : (
+        !loading &&
+        users.length > 0 && (
+          <span className="text-xs text-muted-foreground tabular-nums" data-testid="users-count">
+            {t("ui.agents.countLine", { count: pagination.count || users.length })}
+          </span>
+        )
       )}
-    </Card>
+    </div>
   );
 }

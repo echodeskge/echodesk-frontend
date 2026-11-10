@@ -12,7 +12,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render as rtlRender, screen, within } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { NextIntlClientProvider } from "next-intl";
-import en from "@/i18n/messages/en.json";
+// en catalog plus the settings redesign keys still pending integration (pending/st-*.json).
+import { messages } from "../../settings/st-helpers";
+const en = messages.en;
 
 // The components read their labels from the "users" messages (English here).
 const render = (ui: ReactElement) =>
@@ -369,7 +371,8 @@ describe("UserTable", () => {
   it("shows staff column when showStaffColumn is true", () => {
     render(<UserTable {...defaultProps} showStaffColumn={true} />);
 
-    expect(screen.getByText("Staff")).toBeInTheDocument();
+    // Header cell (each row also has a phone-only "Staff" caption next to its switch).
+    expect(screen.getByRole("columnheader", { name: "Staff" })).toBeInTheDocument();
   });
 
   it("hides staff column by default", () => {
