@@ -262,12 +262,12 @@ export default function TicketFormsPage() {
                       )}
                       {form.parent_form && (
                         <Badge variant="outline" className="bg-blue-50">
-                          Child of: {form.parent_form.title}
+                          {t('childOf', { title: form.parent_form.title })}
                         </Badge>
                       )}
                       {form.child_forms && form.child_forms.length > 0 && (
                         <Badge variant="outline" className="bg-green-50">
-                          Has {form.child_forms.length} child form(s)
+                          {t('childCount', { count: form.child_forms.length })}
                         </Badge>
                       )}
                     </div>
@@ -368,7 +368,7 @@ export default function TicketFormsPage() {
 
             {/* Parent Form Selector */}
             <div>
-              <Label htmlFor="parent_form">Parent Form (Optional)</Label>
+              <Label htmlFor="parent_form">{t('parentFormLabel')}</Label>
               <Select
                 value={formData.parent_form_id?.toString() || "none"}
                 onValueChange={(value) =>
@@ -376,10 +376,10 @@ export default function TicketFormsPage() {
                 }
               >
                 <SelectTrigger id="parent_form">
-                  <SelectValue placeholder="Select parent form (optional)" />
+                  <SelectValue placeholder={t('parentFormPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No Parent (Root Form)</SelectItem>
+                  <SelectItem value="none">{t('parentFormNone')}</SelectItem>
                   {forms
                     .filter((f) => f.id !== editingForm?.id) // Don't allow selecting itself
                     .map((form) => (
@@ -390,7 +390,7 @@ export default function TicketFormsPage() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                If set, this form will be a child form that assigned users need to fill after the parent form is completed.
+                {t('parentFormHint')}
               </p>
             </div>
 
@@ -434,7 +434,7 @@ export default function TicketFormsPage() {
             {/* Custom Fields Section */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label>Custom Fields</Label>
+                <Label>{t('customFields.title')}</Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -442,13 +442,13 @@ export default function TicketFormsPage() {
                   onClick={addCustomField}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Field
+                  {t('customFields.add')}
                 </Button>
               </div>
               <div className="border rounded-lg p-3 space-y-3 max-h-96 overflow-y-auto">
                 {formData.custom_fields.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    No custom fields defined. Click &quot;Add Field&quot; to create one.
+                    {t('customFields.empty')}
                   </p>
                 ) : (
                   formData.custom_fields.map((field, index) => (
@@ -460,31 +460,31 @@ export default function TicketFormsPage() {
                         <div className="flex-1 space-y-2">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
-                              <Label className="text-xs">Field Name (ID)</Label>
+                              <Label className="text-xs">{t('customFields.name')}</Label>
                               <Input
                                 value={field.name}
                                 onChange={(e) =>
                                   updateCustomField(index, { name: e.target.value })
                                 }
-                                placeholder="e.g., delivery_address"
+                                placeholder={t('customFields.namePlaceholder')}
                                 className="h-8 text-sm"
                               />
                             </div>
                             <div>
-                              <Label className="text-xs">Label</Label>
+                              <Label className="text-xs">{t('customFields.label')}</Label>
                               <Input
                                 value={field.label}
                                 onChange={(e) =>
                                   updateCustomField(index, { label: e.target.value })
                                 }
-                                placeholder="e.g., Delivery Address"
+                                placeholder={t('customFields.labelPlaceholder')}
                                 className="h-8 text-sm"
                               />
                             </div>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
-                              <Label className="text-xs">Type</Label>
+                              <Label className="text-xs">{t('customFields.type')}</Label>
                               <Select
                                 value={field.type}
                                 onValueChange={(value) =>
@@ -498,15 +498,15 @@ export default function TicketFormsPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="string">
-                                    Text (Single Line)
+                                    {t('customFields.types.string')}
                                   </SelectItem>
                                   <SelectItem value="text">
-                                    Text (Multi Line)
+                                    {t('customFields.types.text')}
                                   </SelectItem>
-                                  <SelectItem value="number">Number</SelectItem>
-                                  <SelectItem value="date">Date</SelectItem>
+                                  <SelectItem value="number">{t('customFields.types.number')}</SelectItem>
+                                  <SelectItem value="date">{t('customFields.types.date')}</SelectItem>
                                   <SelectItem value="signature">
-                                    Signature (Image Upload)
+                                    {t('customFields.types.signature')}
                                   </SelectItem>
                                 </SelectContent>
                               </Select>
@@ -528,7 +528,7 @@ export default function TicketFormsPage() {
                                   htmlFor={`required-${index}`}
                                   className="text-xs"
                                 >
-                                  Required
+                                  {t('customFields.required')}
                                 </Label>
                               </div>
                             </div>

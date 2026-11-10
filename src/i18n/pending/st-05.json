@@ -1,0 +1,62 @@
+{
+  "en": {
+    "settings": {
+      "ticketFormsPage": {
+        "childOf": "Child of: {title}",
+        "childCount": "{count, plural, one {Has # child form} other {Has # child forms}}",
+        "parentFormLabel": "Parent form (optional)",
+        "parentFormPlaceholder": "Select parent form (optional)",
+        "parentFormNone": "No parent (root form)",
+        "parentFormHint": "If set, this form will be a child form that assigned users need to fill after the parent form is completed.",
+        "customFields": {
+          "title": "Custom fields",
+          "add": "Add Field",
+          "empty": "No custom fields defined. Click \"Add Field\" to create one.",
+          "name": "Field name (ID)",
+          "namePlaceholder": "e.g., delivery_address",
+          "label": "Label",
+          "labelPlaceholder": "e.g., Delivery Address",
+          "type": "Type",
+          "required": "Required",
+          "types": {
+            "string": "Text (single line)",
+            "text": "Text (multi line)",
+            "number": "Number",
+            "date": "Date",
+            "signature": "Signature (image upload)"
+          }
+        }
+      }
+    }
+  },
+  "ka": {
+    "settings": {
+      "ticketFormsPage": {
+        "childOf": "მშობელი ფორმა: {title}",
+        "childCount": "{count, plural, one {აქვს # შვილობილი ფორმა} other {აქვს # შვილობილი ფორმა}}",
+        "parentFormLabel": "მშობელი ფორმა (არჩევითი)",
+        "parentFormPlaceholder": "აირჩიეთ მშობელი ფორმა (არჩევითი)",
+        "parentFormNone": "მშობლის გარეშე (ძირითადი ფორმა)",
+        "parentFormHint": "თუ მითითებულია, ეს ფორმა შვილობილი იქნება: მინიჭებულმა მომხმარებლებმა ის მშობელი ფორმის დასრულების შემდეგ უნდა შეავსონ.",
+        "customFields": {
+          "title": "დამატებითი ველები",
+          "add": "ველის დამატება",
+          "empty": "დამატებითი ველები არ არის. ახლის შესაქმნელად დააჭირეთ „ველის დამატებას“.",
+          "name": "ველის სახელი (იდენტიფიკატორი)",
+          "namePlaceholder": "მაგ., delivery_address",
+          "label": "წარწერა",
+          "labelPlaceholder": "მაგ., მიწოდების მისამართი",
+          "type": "ტიპი",
+          "required": "სავალდებულო",
+          "types": {
+            "string": "ტექსტი (ერთი ხაზი)",
+            "text": "ტექსტი (რამდენიმე ხაზი)",
+            "number": "რიცხვი",
+            "date": "თარიღი",
+            "signature": "ხელმოწერა (სურათის ატვირთვა)"
+          }
+        }
+      }
+    }
+  }
+}
