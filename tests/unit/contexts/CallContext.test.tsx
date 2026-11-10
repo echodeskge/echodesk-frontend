@@ -251,7 +251,7 @@ describe("CallContext flows", () => {
     mockSipToggleHold.mockResolvedValue(undefined);
     mockSipToggleMute.mockReturnValue(true);
     mockSipSendDTMF.mockReturnValue(true);
-    mockSipTransferCall.mockResolvedValue(undefined);
+    mockSipTransferCall.mockImplementation(async (_n: string, onAccepted?: () => void) => onAccepted?.());
     mockSipStartConsultation.mockResolvedValue(undefined);
     mockSipCompleteAttendedTransfer.mockResolvedValue(undefined);
     mockSipCancelConsultation.mockResolvedValue(undefined);
@@ -649,7 +649,7 @@ describe("CallContext flows", () => {
       });
       expect(order).toEqual(["dial", "log"]);
       expect(mockSipMakeCall).toHaveBeenCalledWith("101");
-      expect(mockInitiateCall).toHaveBeenCalledWith({ recipient_number: "101" });
+      expect(mockInitiateCall).toHaveBeenCalledWith({ recipient_number: "101", sip_call_id: "out-1" });
       expect(result.current.state.activeCall).toMatchObject({ direction: "outgoing", status: "active", sipCallId: "out-1" });
       expect(result.current.state.dialNumber).toBe("");
       expect(result.current.state.rail.mode).toBe("open");
@@ -865,7 +865,7 @@ describe("CallContext flows", () => {
       await act(async () => {
         await result.current.actions.transferCall("102");
       });
-      expect(mockSipTransferCall).toHaveBeenCalledWith("102");
+      expect(mockSipTransferCall).toHaveBeenCalledWith("102", expect.any(Function));
       expect(result.current.state.error).toBeNull();
       await waitFor(() => expect(mockTransferCall).toHaveBeenCalledWith(42, { transfer_to: "102" }));
       expect(mockEndCall).not.toHaveBeenCalled();

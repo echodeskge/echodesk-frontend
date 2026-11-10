@@ -913,8 +913,10 @@ export class SipService {
    * ourselves with reason `transferred`. A refused REFER (4xx/6xx) rejects
    * with `transferFailed` and the call carries on. The NOTIFYs that report
    * the target's progress are acknowledged and otherwise ignored.
+   * `onAccepted` runs after the 202 and before our BYE, while the leg still
+   * exists for the caller (CallContext settles the call log there).
    */
-  async transferCall(targetNumber: string): Promise<void> {
+  async transferCall(targetNumber: string, onAccepted?: () => void): Promise<void> {
     const leg = this.main;
     const userAgent = this.userAgent;
     if (!leg || !userAgent || leg.session.state !== SessionState.Established) {
@@ -936,6 +938,7 @@ export class SipService {
         })
         .catch((error) => reject(new SipCallError('transferFailed', undefined, error)));
     });
+    onAccepted?.();
     if (this.main !== leg || leg.session.state !== SessionState.Established) return;
     leg.reason = 'transferred';
     leg.session.bye().catch(() => {});

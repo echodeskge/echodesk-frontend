@@ -34,6 +34,7 @@ import {
   callLogsMergeConferenceCreate,
 } from '@/api/generated/api';
 import type {
+  CallInitiateRequest,
   CallLog,
   CallLogCreateRequest,
   MySoftphoneConfig,
@@ -1111,7 +1112,9 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       if (readActiveCall()?.id !== callId) return; // already ended
       updateCall((prev) => (prev && prev.id === callId ? { ...prev, sipCallId } : prev));
-      startLog(callId, () => callLogsInitiateCallCreate({ recipient_number: target }));
+      // `sip_call_id` is the contract field (the generated type lags behind).
+      const body: CallInitiateRequest & { sip_call_id?: string } = { recipient_number: target, sip_call_id: sipCallId };
+      startLog(callId, () => callLogsInitiateCallCreate(body));
     },
     [abandonLog, bumpCallEnded, readActiveCall, reserveLog, setDialNumber, setError, startLog, updateCall, updateRail]
   );
@@ -1205,14 +1208,16 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!sip || !current || current.status !== 'active') {
         failWith(new SipCallError('noActiveCall'), 'transferFailed');
       }
+      const callId = current!.id;
       try {
-        await sip!.transferCall(targetNumber);
+        // Once the PBX accepted the REFER, settle our leg as transferred
+        // before the SIP leg ends (its 'transferred' end writes nothing).
+        await sip!.transferCall(targetNumber, () =>
+          queueLogWrite(callId, (logId) => callLogsTransferCallCreate(logId, { transfer_to: targetNumber }), true)
+        );
       } catch (err) {
         failWith(err, 'transferFailed');
       }
-      // The PBX accepted the REFER: settle our leg as transferred (the SIP
-      // leg ends with reason 'transferred', which writes nothing itself).
-      queueLogWrite(current!.id, (logId) => callLogsTransferCallCreate(logId, { transfer_to: targetNumber }), true);
     },
     [failWith, queueLogWrite]
   );

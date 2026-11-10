@@ -1027,11 +1027,14 @@ describe("SipService", () => {
       await establishedOutgoing(service);
       const onEnded = vi.fn();
       service.on("onCallEnded", onEnded);
-      await service.transferCall("102");
+      const onAccepted = vi.fn(() => expect(mockByeFn).not.toHaveBeenCalled());
+      await service.transferCall("102", onAccepted);
       expect(mockReferFn).toHaveBeenCalledWith(
         expect.objectContaining({ user: "102", host: "pbx.example.test" }),
         expect.objectContaining({ requestDelegate: expect.any(Object), onNotify: expect.any(Function) })
       );
+      // The hook runs on the 202, before our BYE (the caller settles the log there).
+      expect(onAccepted).toHaveBeenCalledTimes(1);
       // Asterisk does not BYE the transferor after a blind transfer: we do.
       expect(mockByeFn).toHaveBeenCalledTimes(1);
       await flush();
@@ -1057,7 +1060,9 @@ describe("SipService", () => {
       mockReferFn.mockImplementationOnce(async (_t: unknown, options: { requestDelegate: { onReject: (r: unknown) => void } }) => {
         options.requestDelegate.onReject({ message: { statusCode: 603 } });
       });
-      await expect(service.transferCall("102")).rejects.toMatchObject({ key: "transferFailed", params: { code: 603 } });
+      const onAccepted = vi.fn();
+      await expect(service.transferCall("102", onAccepted)).rejects.toMatchObject({ key: "transferFailed", params: { code: 603 } });
+      expect(onAccepted).not.toHaveBeenCalled();
       expect(mockByeFn).not.toHaveBeenCalled();
       expect(onEnded).not.toHaveBeenCalled();
     });
