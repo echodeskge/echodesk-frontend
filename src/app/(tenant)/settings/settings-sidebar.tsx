@@ -1,281 +1,78 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
-import { useSubscription } from "@/contexts/SubscriptionContext"
-import { useAuth } from "@/contexts/AuthContext"
-import { useUserProfile } from "@/hooks/useUserProfile"
-import { profileHasPermission } from "@/lib/backendPermissions"
-import {
-  Settings,
-  Palette,
-  List,
-  FileText,
-  CreditCard,
-  Shield,
-  MessageSquare,
-  Phone,
-  Headset,
-  ShoppingBag,
-  Receipt,
-  Calendar,
-  CalendarDays,
-  Link2,
-  Sparkles,
-  BarChart3,
-  Users,
-  UsersRound,
-  Bell,
-} from "lucide-react"
+import type { SettingsNavItem } from "./_lib/settings-nav"
+import { useFilteredSettingsGroups } from "./_lib/use-settings-nav"
+import { SettingsNoResults } from "./_components/settings-nav-list"
 
-interface SettingsNavItem {
-  id: string
-  href: string
-  icon: React.ElementType
-  labelKey: string
-  /** Visible when the user has any of these feature keys. */
-  featureKey?: string | string[]
-  staffOnly?: boolean
-  // Shown to staff/superusers and to holders of any of these permissions
-  // (mirrors the backend gate of the page's API).
-  anyPermission?: string[]
-  // Where the link goes for users who see the item without
-  // can_manage_settings (the first page they may open).
-  hrefWithoutManageSettings?: string
+// The nav items and their gates live in _lib/settings-nav.ts (unchanged gate
+// fields + the design group / description); the gate code is in
+// _lib/use-settings-nav.tsx (moved from here unchanged).
+
+interface NavProps {
+  items: SettingsNavItem[]
+  activeId?: string
+  linkFor: (item: SettingsNavItem) => string
 }
 
-const settingsNav: SettingsNavItem[] = [
-  {
-    id: "general",
-    href: "/settings/general",
-    icon: Settings,
-    labelKey: "nav.general",
-  },
-  {
-    id: "appearance",
-    href: "/settings/appearance",
-    icon: Palette,
-    labelKey: "nav.appearance",
-  },
-  {
-    id: "notifications",
-    href: "/settings/notifications",
-    icon: Bell,
-    labelKey: "nav.notifications",
-  },
-  {
-    id: "social",
-    href: "/settings/social",
-    icon: MessageSquare,
-    labelKey: "nav.social",
-    featureKey: "social_integrations",
-  },
-  {
-    id: "social-connections",
-    href: "/settings/social/connections",
-    icon: Link2,
-    labelKey: "nav.socialConnections",
-    featureKey: "social_integrations",
-  },
-  {
-    id: "social-auto-posting",
-    href: "/settings/social/auto-posting",
-    icon: Sparkles,
-    labelKey: "nav.autoPosting",
-    featureKey: "social_integrations",
-  },
-  {
-    id: "templates",
-    href: "/settings/templates",
-    icon: FileText,
-    labelKey: "nav.templates",
-    featureKey: "social_integrations",
-  },
-  {
-    id: "social-rating-statistics",
-    href: "/settings/social/rating-statistics",
-    icon: BarChart3,
-    labelKey: "nav.ratingStatistics",
-    featureKey: "social_integrations",
-    staffOnly: true,
-  },
-  {
-    id: "calls",
-    href: "/settings/calls",
-    icon: Phone,
-    labelKey: "nav.calls",
-    featureKey: "ip_calling",
-    // SIP configuration + extensions: PBX admins (staff or manage_settings).
-    anyPermission: ["can_manage_settings"],
-  },
-  {
-    id: "pbx",
-    href: "/settings/pbx",
-    icon: Headset,
-    labelKey: "nav.pbx",
-    featureKey: "ip_calling",
-    // PBX config (manage_settings) or its statistics tab (view_reports).
-    anyPermission: ["can_manage_settings", "can_view_reports"],
-    // view_reports-only users can open just the statistics tab.
-    hrefWithoutManageSettings: "/settings/pbx/statistics",
-  },
-  {
-    id: "ecommerce",
-    href: "/settings/ecommerce",
-    icon: ShoppingBag,
-    labelKey: "nav.ecommerce",
-    featureKey: "ecommerce_crm",
-  },
-  {
-    id: "invoices",
-    href: "/settings/invoices",
-    icon: Receipt,
-    labelKey: "nav.invoices",
-    featureKey: "invoice_management",
-  },
-  {
-    id: "bookings",
-    href: "/settings/bookings",
-    icon: Calendar,
-    labelKey: "nav.bookings",
-    featureKey: "booking_management",
-  },
-  {
-    id: "leave",
-    href: "/settings/leave",
-    icon: CalendarDays,
-    labelKey: "nav.leave",
-    featureKey: "leave_management",
-  },
-  {
-    id: "item-lists",
-    href: "/settings/item-lists",
-    icon: List,
-    labelKey: "nav.itemLists",
-    // Lists also back e-commerce (store branches, homepage sections), so
-    // e-commerce-only workspaces need them too.
-    featureKey: ["ticket_management", "ecommerce_crm"],
-  },
-  {
-    id: "ticket-forms",
-    href: "/settings/ticket-forms",
-    icon: FileText,
-    labelKey: "nav.ticketForms",
-    featureKey: "ticket_management",
-  },
-  {
-    id: "users",
-    href: "/settings/users",
-    icon: Users,
-    labelKey: "nav.users",
-  },
-  {
-    id: "groups",
-    href: "/settings/groups",
-    icon: UsersRound,
-    labelKey: "nav.groups",
-  },
-  {
-    id: "subscription",
-    href: "/settings/subscription",
-    icon: CreditCard,
-    labelKey: "nav.subscription",
-    staffOnly: true,
-  },
-  {
-    id: "security",
-    href: "/settings/security",
-    icon: Shield,
-    labelKey: "nav.security",
-    staffOnly: true,
-  },
-]
-
-/** Desktop-only settings sidebar — hidden on mobile (main sidebar handles mobile nav) */
-export function SettingsSidebar() {
-  const pathname = usePathname()
+/**
+ * Design settings nav (desktop column): group labels (26px, 11px uppercase),
+ * items with a 26px icon tile, 13px label; the active item is raised.
+ * Hidden below `md`, where the settings home is the nav.
+ */
+export function SettingsSidebar({ items, activeId, linkFor }: NavProps) {
   const t = useTranslations("settings")
-  const { hasFeature } = useSubscription()
-  const { user } = useAuth()
-  const { data: userProfile } = useUserProfile()
-
-  const isStaffOrAdmin = user?.is_staff || user?.is_superuser
-
-  // Use feature_keys from user profile (same as main sidebar)
-  const userFeatureKeys: string[] = userProfile?.feature_keys
-    ? typeof userProfile.feature_keys === "string"
-      ? JSON.parse(userProfile.feature_keys)
-      : userProfile.feature_keys
-    : []
-
-  const hasFeatureAccess = (keyOrKeys: string | string[]): boolean => {
-    if (Array.isArray(keyOrKeys)) return keyOrKeys.some((key) => hasFeatureAccess(key))
-    const key = keyOrKeys
-    // Staff/superadmin see everything
-    if (isStaffOrAdmin && userFeatureKeys.length === 0) return true
-    // Check user's feature_keys first (from group), then fall back to subscription
-    if (userFeatureKeys.length > 0) return userFeatureKeys.includes(key)
-    return hasFeature(key as any)
-  }
-
-  // Same rule as the backend's has_permission(): bare codenames from the
-  // profile's permissions_list (role grants included), plus the staff bypass.
-  const hasBackendPermission = (permission: string) =>
-    profileHasPermission(userProfile as never, permission)
-  const canManageSettings = isStaffOrAdmin || hasBackendPermission("can_manage_settings")
-  const linkFor = (item: SettingsNavItem): string =>
-    !canManageSettings && item.hrefWithoutManageSettings ? item.hrefWithoutManageSettings : item.href
-
-  const visibleItems = settingsNav.filter((item) => {
-    if (item.staffOnly && !isStaffOrAdmin) return false
-    if (
-      item.anyPermission &&
-      !isStaffOrAdmin &&
-      !item.anyPermission.some((p) => hasBackendPermission(p))
-    )
-      return false
-    if (item.featureKey && !hasFeatureAccess(item.featureKey)) return false
-    return true
-  })
-
-  // Only one item is active: the one with the longest matching href. A plain
-  // prefix match would light up "/settings/social" together with its
-  // sub-pages ("/settings/social/connections", …).
-  const activeId = visibleItems
-    .filter((item) => pathname === item.href || pathname.startsWith(item.href + "/"))
-    .sort((a, b) => b.href.length - a.href.length)[0]?.id
-
+  const { query, groups } = useFilteredSettingsGroups(items)
   return (
-    <nav className="hidden md:block w-56 flex-shrink-0 border-r bg-muted/30 overflow-y-auto">
-      <div className="p-4 pb-2">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-          {t("title")}
-        </h2>
-      </div>
-      <div className="px-2 pb-4 space-y-0.5">
-        {visibleItems.map((item) => {
-          const Icon = item.icon
-          const isActive = item.id === activeId
-
-          return (
-            <Link
-              key={item.id}
-              href={linkFor(item)}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                isActive
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4 flex-shrink-0" />
-              <span className="truncate">{t(item.labelKey)}</span>
-            </Link>
-          )
-        })}
-      </div>
+    <nav
+      aria-label={t("title")}
+      className="hidden w-[232px] shrink-0 flex-col gap-0.5 overflow-y-auto border-e bg-muted/30 px-2.5 py-3 md:flex"
+      data-testid="settings-nav"
+    >
+      {groups.map(({ group, items: groupItems }, gi) => (
+        <div key={group} className="flex flex-col gap-0.5" role="group" aria-labelledby={`settings-nav-${group}`}>
+          <div
+            id={`settings-nav-${group}`}
+            className={cn(
+              "flex h-[26px] items-center px-2.5 text-[11px] font-semibold uppercase tracking-[.05em] text-muted-foreground",
+              gi > 0 && "mt-2.5"
+            )}
+          >
+            {t(`navGroups.${group}`)}
+          </div>
+          {groupItems.map((item) => {
+            const Icon = item.icon
+            const active = item.id === activeId
+            return (
+              <Link
+                key={item.id}
+                href={linkFor(item)}
+                aria-current={active ? "page" : undefined}
+                data-testid={`settings-nav-${item.id}`}
+                className={cn(
+                  "flex min-h-[34px] items-center gap-2.5 rounded-lg px-2.5 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  active
+                    ? "bg-background font-medium text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.06)]"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md",
+                    active ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" aria-hidden />
+                </span>
+                <span className="min-w-0 flex-1 truncate">{t(item.labelKey)}</span>
+              </Link>
+            )
+          })}
+        </div>
+      ))}
+      {groups.length === 0 && <SettingsNoResults query={query} className="py-8" />}
     </nav>
   )
 }

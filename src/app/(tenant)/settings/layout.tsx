@@ -1,20 +1,17 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { pickRouteMessages } from '@/lib/pick-messages';
-import { SettingsSidebar } from './settings-sidebar';
+import { SettingsShell } from './_components/settings-shell';
 
 const NAMESPACES = ['settings', 'social', 'autoPosting', 'ecommerceSettings', 'ecommerceUi', 'invoices', 'bookingSettings', 'leave', 'users', 'groups', 'callsSettings', 'calls', 'subscription', 'notificationPreferences', 'ratingStatistics', 'pbxSettings', 'imageGalleryPicker'];
 
+// Full-height settings shell (design Settings screen): grouped nav, header
+// breadcrumb + search, and the scrolling content column with the save bar slot.
 export default async function SettingsLayout({ children }: { children: React.ReactNode }) {
   const messages = await getMessages();
   return (
     <NextIntlClientProvider messages={pickRouteMessages(messages as Record<string, unknown>, NAMESPACES)}>
-      <div className="flex h-[calc(100vh-64px)]">
-        <SettingsSidebar />
-        <div className="flex-1 overflow-y-auto">
-          {children}
-        </div>
-      </div>
+      <SettingsShell>{children}</SettingsShell>
     </NextIntlClientProvider>
   );
 }
