@@ -3,19 +3,16 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Phone } from "lucide-react";
 import { UserPhoneAssignments } from "@/components/calls/UserPhoneAssignments";
 import { sipConfigurationsList } from "@/api/generated/api";
 import type { SipConfigurationList } from "@/api/generated/interfaces";
+import { PbxBlockHeader, PbxEmpty, usePbxStates } from "../_components/pbx-ui";
 
 export default function PbxExtensionsPage() {
   const t = useTranslations("pbxSettings.extensions");
+  const tCalls = useTranslations("callsSettings");
+  const { loading: loadingBlock } = usePbxStates();
 
   const { data, isLoading } = useQuery({
     queryKey: ["sip-configs-for-extensions"],
@@ -31,30 +28,26 @@ export default function PbxExtensionsPage() {
   const activeConfigs = configs.filter((c) => c.is_active);
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("title")}</CardTitle>
-          <CardDescription>{t("description")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">…</p>
-          ) : activeConfigs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">—</p>
-          ) : (
-            <div className="space-y-6">
-              {activeConfigs.map((config) => (
-                <UserPhoneAssignments
-                  key={config.id}
-                  sipConfigId={config.id}
-                  sipConfigName={config.name}
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    <div className="flex min-w-0 flex-col gap-3" data-testid="pbx-extensions">
+      <PbxBlockHeader title={t("title")} description={t("description")} />
+      {isLoading ? (
+        <div className="rounded-[10px] border bg-card">{loadingBlock}</div>
+      ) : activeConfigs.length === 0 ? (
+        <div className="rounded-[10px] border bg-card">
+          {/* Was a bare "—"; the existing "no SIP configuration" text says why. */}
+          <PbxEmpty icon={Phone} text={tCalls("noSipConfigs")} testId="pbx-extensions-empty" />
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {activeConfigs.map((config) => (
+            <UserPhoneAssignments
+              key={config.id}
+              sipConfigId={config.id}
+              sipConfigName={config.name}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

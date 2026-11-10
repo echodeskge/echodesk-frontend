@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+import { rdButton } from "@/components/redesign/buttons";
+import { TonePill } from "@/components/redesign/pill";
+import { SettingsSection, SettingsToggle } from "@/components/redesign/settings";
+import { initials } from "@/app/(tenant)/tickets/_components/primitives/initials";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Edit, Phone, User } from "lucide-react";
+import { Plus, Trash2, Pencil } from "lucide-react";
 import axios from "@/api/axios";
 
 interface PhoneAssignment {
@@ -55,6 +56,7 @@ interface UserPhoneAssignmentsProps {
 
 export function UserPhoneAssignments({ sipConfigId, sipConfigName }: UserPhoneAssignmentsProps) {
   const t = useTranslations("calls");
+  const tCommon = useTranslations("common");
   const [assignments, setAssignments] = useState<PhoneAssignment[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -186,54 +188,65 @@ export function UserPhoneAssignments({ sipConfigId, sipConfigName }: UserPhoneAs
     form.user && form.extension && form.phone_number && (editing || form.extension_password);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base">{t("settings.assignedUsers")}</CardTitle>
-            <CardDescription>{t("settings.assignedUsersDesc")}</CardDescription>
-          </div>
-          <Button size="sm" onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-1" />
-            {t("settings.assignUser")}
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <p className="text-sm text-muted-foreground">{t("settings.loading")}</p>
-        ) : assignments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("settings.noAssignments")}</p>
-        ) : (
-          <div className="space-y-3">
-            {assignments.map((a) => (
-              <div key={a.id} className="flex items-center justify-between p-3 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                    <User className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{a.user_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("settings.ext")} {a.extension} &middot; {a.phone_number}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {a.is_primary && <Badge variant="default">{t("settings.primary")}</Badge>}
-                  {!a.is_active && <Badge variant="secondary">{t("settings.inactive")}</Badge>}
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(a)}>
-                    <Edit className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(a.id)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
+    <SettingsSection
+      title={t("settings.assignedUsers")}
+      hint={sipConfigName}
+      testId={`phone-assignments-${sipConfigId}`}
+      actions={
+        <button type="button" className={cn(rdButton.primarySm, "px-2.5")} onClick={openCreate} data-testid="assign-user">
+          <Plus className="h-3.5 w-3.5" aria-hidden />
+          {t("settings.assignUser")}
+        </button>
+      }
+    >
+      <p className="border-b px-4 py-2.5 text-xs leading-[17px] text-muted-foreground">{t("settings.assignedUsersDesc")}</p>
+      {loading ? (
+        <p className="px-4 py-3.5 text-[13px] text-muted-foreground">{t("settings.loading")}</p>
+      ) : assignments.length === 0 ? (
+        <p className="px-4 py-6 text-center text-[13px] text-muted-foreground">{t("settings.noAssignments")}</p>
+      ) : (
+        <ul className="divide-y" data-testid="phone-assignment-list">
+          {assignments.map((a) => (
+            <li key={a.id} className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2" data-testid="phone-assignment-row">
+              <span
+                aria-hidden
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary"
+              >
+                {initials(a.user_name || a.user_email || "?")}
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-[13px] font-medium">{a.user_name}</span>
+                <span className="truncate text-[11px] text-muted-foreground tabular-nums">
+                  {t("settings.ext")} {a.extension} &middot; {a.phone_number}
+                </span>
+              </span>
+              <span className="ms-auto flex shrink-0 items-center gap-1">
+                {a.is_primary && <TonePill tone="info">{t("settings.primary")}</TonePill>}
+                {!a.is_active && <TonePill tone="neutral">{t("settings.inactive")}</TonePill>}
+                <button
+                  type="button"
+                  className={rdButton.ghostIconSm}
+                  onClick={() => openEdit(a)}
+                  aria-label={t("settings.editAssignment")}
+                  title={t("settings.editAssignment")}
+                >
+                  <Pencil className="h-3.5 w-3.5" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  className={cn(rdButton.ghostIconSm, "hover:bg-destructive/10 hover:text-destructive")}
+                  onClick={() => handleDelete(a.id)}
+                  aria-label={tCommon("delete")}
+                  title={tCommon("delete")}
+                  data-testid="assignment-delete"
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {/* Assign/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
@@ -249,9 +262,9 @@ export function UserPhoneAssignments({ sipConfigId, sipConfigName }: UserPhoneAs
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>{t("settings.selectUser")}</Label>
+              <Label className="text-[13px]">{t("settings.selectUser")}</Label>
               <Select value={form.user} onValueChange={(v) => setForm({ ...form, user: v })}>
-                <SelectTrigger>
+                <SelectTrigger className="h-[34px] text-[13px]">
                   <SelectValue placeholder={t("settings.selectUserPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -264,18 +277,20 @@ export function UserPhoneAssignments({ sipConfigId, sipConfigName }: UserPhoneAs
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>{t("settings.extension")}</Label>
+                <Label className="text-[13px]">{t("settings.extension")}</Label>
                 <Input
+                  className="h-[34px] text-[13px]"
                   value={form.extension}
                   onChange={(e) => setForm({ ...form, extension: e.target.value })}
                   placeholder="100"
                 />
               </div>
               <div className="space-y-2">
-                <Label>{t("settings.extensionPassword")}</Label>
+                <Label className="text-[13px]">{t("settings.extensionPassword")}</Label>
                 <Input
+                  className="h-[34px] text-[13px]"
                   type="password"
                   value={form.extension_password}
                   onChange={(e) => setForm({ ...form, extension_password: e.target.value })}
@@ -290,18 +305,20 @@ export function UserPhoneAssignments({ sipConfigId, sipConfigName }: UserPhoneAs
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>{t("settings.phoneNumber")}</Label>
+                <Label className="text-[13px]">{t("settings.phoneNumber")}</Label>
                 <Input
+                  className="h-[34px] text-[13px]"
                   value={form.phone_number}
                   onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
                   placeholder="+995322421219"
                 />
               </div>
               <div className="space-y-2">
-                <Label>{t("settings.displayName")}</Label>
+                <Label className="text-[13px]">{t("settings.displayName")}</Label>
                 <Input
+                  className="h-[34px] text-[13px]"
                   value={form.display_name}
                   onChange={(e) => setForm({ ...form, display_name: e.target.value })}
                   placeholder="Sales Team"
@@ -309,32 +326,32 @@ export function UserPhoneAssignments({ sipConfigId, sipConfigName }: UserPhoneAs
               </div>
             </div>
 
-            <div className="flex gap-6">
+            <div className="flex flex-wrap gap-x-6 gap-y-3">
               <div className="flex items-center space-x-2">
-                <Switch
+                <SettingsToggle
                   checked={form.is_primary}
                   onCheckedChange={(v) => setForm({ ...form, is_primary: v })}
                 />
-                <Label>{t("settings.primaryNumber")}</Label>
+                <Label className="text-[13px]">{t("settings.primaryNumber")}</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Switch
+                <SettingsToggle
                   checked={form.is_active}
                   onCheckedChange={(v) => setForm({ ...form, is_active: v })}
                 />
-                <Label>{t("settings.activeAssignment")}</Label>
+                <Label className="text-[13px]">{t("settings.activeAssignment")}</Label>
               </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("settings.cancel")}</Button>
-            <Button onClick={handleSave} disabled={!isValid || saving}>
+            <button type="button" className={rdButton.outline} onClick={() => setDialogOpen(false)}>{t("settings.cancel")}</button>
+            <button type="button" className={rdButton.primary} onClick={handleSave} disabled={!isValid || saving} data-testid="assignment-submit">
               {saving ? t("settings.saving") : editing ? t("settings.update") : t("settings.assign")}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </SettingsSection>
   );
 }

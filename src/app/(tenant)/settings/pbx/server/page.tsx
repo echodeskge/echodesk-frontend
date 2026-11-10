@@ -3,19 +3,26 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Copy, Pencil, RotateCw, Trash2 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Copy, Pencil, Plus, RotateCw, Server } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { rdButton } from "@/components/redesign/buttons";
+import { TonePill } from "@/components/redesign/pill";
+import type { Tone } from "@/components/redesign/tones";
+import { EmptyState } from "@/app/(tenant)/tickets/_components/primitives/empty-state";
+import {
+  ActionButton,
+  DangerZone,
+  FieldRow,
+  SettingsSection,
+  SettingsToggle,
+} from "@/components/redesign/settings";
+import { cn } from "@/lib/utils";
+import {
+  DialogField,
+  DialogSwitchRow,
+  dialogInputClass,
+  usePbxStates,
+} from "../_components/pbx-ui";
 import {
   Dialog,
   DialogContent,
@@ -59,18 +66,19 @@ const EMPTY_FORM: FormState = {
   use_tenant_prefix: false,
 };
 
-function statusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+function statusTone(status: string): Tone {
   switch (status) {
     case "active":
-      return "default";
+      return "success";
     case "provisioning":
+      return "info";
     case "pending":
-      return "secondary";
+      return "warning";
     case "error":
     case "revoked":
-      return "destructive";
+      return "danger";
     default:
-      return "outline";
+      return "neutral";
   }
 }
 
@@ -78,6 +86,7 @@ export default function PbxServerPage() {
   const t = useTranslations("pbxSettings.server");
   const tForm = useTranslations("pbxSettings.form");
   const tToast = useTranslations("pbxSettings.toast");
+  const { loading: loadingBlock } = usePbxStates();
 
   const { data, isLoading } = usePbxServers();
   const createMut = useCreatePbxServer();
@@ -199,90 +208,86 @@ export default function PbxServerPage() {
     (pbx as unknown as { install_command?: string } | null)?.install_command ?? "";
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between space-y-0">
-          <div>
-            <CardTitle>{t("title")}</CardTitle>
-            <CardDescription>{t("description")}</CardDescription>
-          </div>
-          {pbx ? (
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => openEdit(pbx)}>
-                <Pencil className="h-4 w-4 mr-2" />
-                {t("edit")}
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setDeleteOpen(true)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <Button size="sm" onClick={openCreate}>
-              {t("register")}
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground py-6">…</p>
-          ) : !pbx ? (
-            <p className="text-sm text-muted-foreground py-6">{t("notRegistered")}</p>
-          ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label={t("statusLabel")}>
-                  <Badge variant={statusVariant(String(pbx.status))}>
-                    {statusLabel(String(pbx.status))}
-                  </Badge>
-                </Field>
-                <Field label="FQDN">
-                  <span className="font-mono text-sm">{pbx.fqdn}</span>
-                </Field>
-                <Field label={t("lastSeen")}>
-                  <span className="text-sm">
-                    {pbx.last_seen_at
-                      ? new Date(pbx.last_seen_at).toLocaleString()
-                      : t("lastSeenNever")}
-                  </span>
-                </Field>
-                <Field label={t("asteriskVersion")}>
-                  <span className="font-mono text-sm">{pbx.asterisk_version || "—"}</span>
-                </Field>
-              </div>
+    <div className="flex min-w-0 flex-col gap-5" data-testid="pbx-server">
+      <SettingsSection
+        title={t("title")}
+        hint={t("description")}
+        actions={
+          pbx ? (
+            <ActionButton icon={Pencil} onClick={() => openEdit(pbx)} testId="pbx-server-edit">
+              {t("edit")}
+            </ActionButton>
+          ) : undefined
+        }
+      >
+        {isLoading ? (
+          loadingBlock
+        ) : !pbx ? (
+          <EmptyState
+            icon={Server}
+            title={t("notRegistered")}
+            action={
+              <button type="button" className={rdButton.primary} onClick={openCreate} data-testid="pbx-server-register">
+                <Plus className="h-3.5 w-3.5" aria-hidden />
+                {t("register")}
+              </button>
+            }
+          />
+        ) : (
+          <>
+            <FieldRow label={t("statusLabel")} align="center">
+              <TonePill tone={statusTone(String(pbx.status))} dot>
+                {statusLabel(String(pbx.status))}
+              </TonePill>
+            </FieldRow>
+            <FieldRow label={t("form.fqdn")} align="center">
+              <span className="break-all font-mono text-[13px]">{pbx.fqdn}</span>
+            </FieldRow>
+            <FieldRow label={t("lastSeen")} align="center">
+              <span className="text-[13px]">
+                {pbx.last_seen_at
+                  ? new Date(pbx.last_seen_at).toLocaleString()
+                  : t("lastSeenNever")}
+              </span>
+            </FieldRow>
+            <FieldRow label={t("asteriskVersion")} align="center">
+              <span className="font-mono text-[13px]">{pbx.asterisk_version || "—"}</span>
+            </FieldRow>
+          </>
+        )}
+      </SettingsSection>
 
-              {installCommand && String(pbx.status) !== "active" && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold">{t("installCommand")}</Label>
-                  <div className="flex items-stretch gap-2">
-                    <code className="flex-1 rounded-md border bg-muted px-3 py-2 text-xs font-mono overflow-x-auto whitespace-pre">
-                      {installCommand}
-                    </code>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyInstall(installCommand)}
-                    >
-                      <Copy className="h-4 w-4 mr-1" />
-                      {copied ? t("copied") : t("copy")}
-                    </Button>
-                  </div>
-                  <div className="pt-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleRegenerate}
-                      disabled={regenMut.isPending}
-                    >
-                      <RotateCw className="h-4 w-4 mr-2" />
-                      {t("regenerateToken")}
-                    </Button>
-                  </div>
-                </div>
-              )}
+      {pbx && installCommand && String(pbx.status) !== "active" && (
+        <SettingsSection title={t("installTitle")} hint={t("installCommand")} testId="pbx-server-install">
+          <div className="flex flex-col gap-3 px-4 py-3.5">
+            <code className="block max-w-full overflow-x-auto whitespace-pre rounded-md border bg-muted px-3 py-2 font-mono text-xs">
+              {installCommand}
+            </code>
+            <div className="flex flex-wrap gap-2">
+              <ActionButton icon={Copy} onClick={() => copyInstall(installCommand)} testId="pbx-server-copy">
+                {copied ? t("copied") : t("copy")}
+              </ActionButton>
+              <ActionButton
+                icon={RotateCw}
+                onClick={handleRegenerate}
+                disabled={regenMut.isPending}
+                testId="pbx-server-regenerate"
+              >
+                {t("regenerateToken")}
+              </ActionButton>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        </SettingsSection>
+      )}
+
+      {pbx && (
+        <DangerZone
+          label={t("deleteLabel")}
+          help={`${pbx.name} (${pbx.fqdn})`}
+          actionLabel={tForm("delete")}
+          onAction={() => setDeleteOpen(true)}
+        />
+      )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
@@ -291,76 +296,77 @@ export default function PbxServerPage() {
             <DialogDescription>{t("description")}</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="pbx-name">{t("form.name")}</Label>
+          <div className="flex flex-col gap-4 py-2">
+            <DialogField label={t("form.name")} htmlFor="pbx-name" help={t("form.nameHelp")}>
               <Input
                 id="pbx-name"
+                className={dialogInputClass}
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
-              <p className="text-xs text-muted-foreground">{t("form.nameHelp")}</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pbx-fqdn">{t("form.fqdn")}</Label>
+            </DialogField>
+            <DialogField label={t("form.fqdn")} htmlFor="pbx-fqdn" help={t("form.fqdnHelp")}>
               <Input
                 id="pbx-fqdn"
+                className={dialogInputClass}
                 value={form.fqdn}
                 onChange={(e) => setForm({ ...form, fqdn: e.target.value })}
                 placeholder="pbx.example.com"
               />
-              <p className="text-xs text-muted-foreground">{t("form.fqdnHelp")}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="pbx-ip">{t("form.publicIp")}</Label>
+            </DialogField>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <DialogField label={t("form.publicIp")} htmlFor="pbx-ip" help={t("form.publicIpHelp")}>
                 <Input
                   id="pbx-ip"
+                  className={dialogInputClass}
                   value={form.public_ip}
                   onChange={(e) => setForm({ ...form, public_ip: e.target.value })}
                   placeholder="1.2.3.4"
                 />
-                <p className="text-xs text-muted-foreground">{t("form.publicIpHelp")}</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="pbx-ami-port">{t("form.amiPort")}</Label>
+              </DialogField>
+              <DialogField label={t("form.amiPort")} htmlFor="pbx-ami-port">
                 <Input
                   id="pbx-ami-port"
                   type="number"
+                  className={dialogInputClass}
                   value={form.ami_port}
                   onChange={(e) =>
                     setForm({ ...form, ami_port: Number(e.target.value) || 5038 })
                   }
                 />
-              </div>
+              </DialogField>
             </div>
-            <div className="flex items-center gap-3 pt-2">
-              <Switch
-                id="pbx-prefix"
-                checked={form.use_tenant_prefix}
-                onCheckedChange={(v) => setForm({ ...form, use_tenant_prefix: v })}
-              />
-              <div>
-                <Label htmlFor="pbx-prefix">{t("form.usePrefix")}</Label>
-                <p className="text-xs text-muted-foreground">{t("form.usePrefixHelp")}</p>
-              </div>
-            </div>
+            <DialogSwitchRow
+              label={t("form.usePrefix")}
+              htmlFor="pbx-prefix"
+              help={t("form.usePrefixHelp")}
+              control={
+                <SettingsToggle
+                  id="pbx-prefix"
+                  checked={form.use_tenant_prefix}
+                  onCheckedChange={(v) => setForm({ ...form, use_tenant_prefix: v })}
+                />
+              }
+            />
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <button type="button" className={rdButton.outline} onClick={() => setDialogOpen(false)}>
               {tForm("cancel")}
-            </Button>
-            <Button
+            </button>
+            <button
+              type="button"
+              className={rdButton.primary}
               onClick={handleSubmit}
               disabled={createMut.isPending || updateMut.isPending}
+              data-testid="pbx-server-submit"
             >
               {createMut.isPending || updateMut.isPending
                 ? tForm("saving")
                 : pbx
                 ? tForm("update")
                 : tForm("create")}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -375,21 +381,16 @@ export default function PbxServerPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{tForm("cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleteMut.isPending}>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteMut.isPending}
+              className={cn("bg-destructive text-destructive-foreground hover:bg-destructive/90")}
+            >
               {deleteMut.isPending ? tForm("deleting") : tForm("confirmDelete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-1">{children}</div>
     </div>
   );
 }
