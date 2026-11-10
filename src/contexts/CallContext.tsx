@@ -10,7 +10,6 @@ import React, {
   useMemo,
   type ReactNode,
 } from 'react';
-import { useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Invitation } from 'sip.js';
 import {
@@ -42,7 +41,6 @@ import type {
 } from '@/api/generated/interfaces';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCallingAccess } from '@/lib/calling-access';
-import { useCallDuration } from '@/hooks/useCallDuration';
 import { onCallEvent, type CallEventPayload } from '@/lib/call-events';
 import type {
   ActiveCall,
@@ -51,7 +49,6 @@ import type {
   CallError,
   CallStateValue,
   CallStatus,
-  CallValue,
   MissedCall,
   BusyRejectedCall,
   OpenRailOptions,
@@ -69,7 +66,6 @@ export type {
   RailState,
   CallStateValue,
   CallActionsValue,
-  CallValue,
 } from '@/contexts/call-types';
 
 // ---------------------------------------------------------------------------
@@ -1338,82 +1334,4 @@ export function useCallActions(): CallActionsValue {
     throw new Error('useCallActions must be used within a CallProvider');
   }
   return context;
-}
-
-// ---------------------------------------------------------------------------
-// Compatibility shim (removed once CL-02 / CL-03 migrate every consumer)
-// ---------------------------------------------------------------------------
-
-/** The old `ActiveCall` also knew an `idle` status; nothing ever set it. */
-export type LegacyActiveCall = Omit<ActiveCall, 'status'> & { status: CallStatus | 'idle' };
-
-/** Names the pre-rail components still use. */
-export interface LegacyCallFields {
-  callDuration: number;
-  sipRegistered: boolean;
-  sipConnecting: boolean;
-  isDialpadOpen: boolean;
-  setIsDialpadOpen: (open: boolean) => void;
-  toggleDialpad: () => void;
-  handleAcceptCall: () => Promise<void>;
-  handleRejectCall: () => Promise<void>;
-  handleEndCall: () => Promise<void>;
-  handleToggleHold: () => Promise<void>;
-  handleToggleMute: () => void;
-}
-
-/**
- * `useCall()` return type: the new state + actions, with `error` already
- * translated and `activeCall` widened for the legacy components.
- */
-export type CallContextValue = Omit<CallValue, 'error' | 'activeCall'> & {
-  error: string;
-  activeCall: LegacyActiveCall | null;
-} & LegacyCallFields;
-
-/**
- * Compatibility hook: `{...state, ...actions}` plus the old field names.
- * It ticks with the call timer, so new code uses `useCallState()` /
- * `useCallActions()` and `useCallDuration()` instead.
- */
-export function useCall(): CallContextValue {
-  const state = useCallState();
-  const actions = useCallActions();
-  const t = useTranslations('calls.errors');
-  const callDuration = useCallDuration(state.activeCall?.status === 'active' ? state.activeCall.startTime : null);
-
-  const error = state.error ? t(state.error.key, state.error.params) : '';
-  const { rail, sipState, activeCall } = state;
-  const { openRail, closeRail, minimiseRail } = actions;
-
-  const setIsDialpadOpen = useCallback(
-    (open: boolean) => {
-      if (open) openRail();
-      else if (activeCall) minimiseRail();
-      else closeRail();
-    },
-    [openRail, closeRail, minimiseRail, activeCall]
-  );
-  const isDialpadOpen = rail.mode === 'open';
-  const toggleDialpad = useCallback(() => setIsDialpadOpen(!isDialpadOpen), [setIsDialpadOpen, isDialpadOpen]);
-
-  return useMemo<CallContextValue>(
-    () => ({
-      ...state,
-      ...actions,
-      error,
-      callDuration,
-      sipRegistered: sipState === 'registered',
-      sipConnecting: sipState === 'connecting' || sipState === 'reconnecting',
-      isDialpadOpen,
-      setIsDialpadOpen,
-      toggleDialpad,
-      handleAcceptCall: actions.acceptCall,
-      handleRejectCall: actions.rejectCall,
-      handleEndCall: actions.endCall,
-      handleToggleHold: actions.toggleHold,
-      handleToggleMute: actions.toggleMute,
-    }),
-    [state, actions, error, callDuration, sipState, isDialpadOpen, setIsDialpadOpen, toggleDialpad]
-  );
 }

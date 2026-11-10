@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 import { Eye, Phone, PhoneIncoming, PhoneOff } from "lucide-react";
 import { callInitials } from "./call-format";
-import { useCallActions, useCallState } from "./rail/use-rail-call";
+import { useCallActions, useCallState } from "@/contexts/CallContext";
 
 /**
  * Incoming-call toast (top-right stack in DialpadWidget, every page): caller,

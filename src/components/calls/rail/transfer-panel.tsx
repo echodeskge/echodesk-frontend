@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { PhoneForwarded } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sanitizeDial } from "../call-format";
-import { useCallActions } from "./use-rail-call";
+import { useCallActions } from "@/contexts/CallContext";
 import { useTransferAgents } from "./use-transfer-agents";
 
 type TransferType = "attended" | "blind";
@@ -78,6 +78,7 @@ export function TransferPanel({ onDone }: { onDone: () => void }) {
                     onClick={() => transferTo(agent.extension, agent.name)}
                     className="flex h-8 w-full items-center gap-2 rounded-md px-1.5 text-left text-[13px] hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                     data-testid="call-rail-transfer-agent"
+                    data-extension={agent.extension}
                     data-online={agent.online ? "true" : "false"}
                   >
                     <span className={cn("h-[7px] w-[7px] shrink-0 rounded-full", agent.online ? "bg-ed-green" : "bg-muted-foreground/50")} aria-hidden />

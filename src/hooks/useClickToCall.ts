@@ -9,7 +9,7 @@
  */
 import { useCallback, useMemo } from "react";
 import { useCallingAccess } from "@/lib/calling-access";
-import { useCallBridgeActions, useCallBridgeState } from "@/hooks/useCallBridge";
+import { useCallActions, useCallState } from "@/contexts/CallContext";
 
 export interface ClickToCall {
   enabled: boolean;
@@ -38,8 +38,8 @@ export function telHref(number: string | null | undefined): string {
 
 export function useClickToCall(): ClickToCall {
   const { canUseSoftphone } = useCallingAccess();
-  const { sipState } = useCallBridgeState();
-  const { openRail } = useCallBridgeActions();
+  const { sipState } = useCallState();
+  const { openRail } = useCallActions();
 
   const enabled = canUseSoftphone && sipState === "registered";
 

@@ -123,7 +123,7 @@ vi.mock("@/api/generated/api", () => ({
   callLogsMergeConferenceCreate: (...a: unknown[]) => mockMergeConference(...a),
 }));
 
-import { CallProvider, useCall, useCallState, useCallActions } from "@/contexts/CallContext";
+import { CallProvider, useCallState, useCallActions } from "@/contexts/CallContext";
 import { SipCallError } from "@/services/SipService";
 import { useCallDuration } from "@/hooks/useCallDuration";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1103,22 +1103,6 @@ describe("CallContext flows", () => {
       expect(Number(screen.getByTestId("timer").textContent)).toBeGreaterThanOrEqual(3);
       expect(stateRenders).toBe(before);
       expect(actionsRenders).toBe(actionsBefore);
-    });
-
-    it("useCall() exposes callDuration for the legacy components", async () => {
-      vi.useFakeTimers({ shouldAdvanceTime: true });
-      setUser();
-      const { result } = renderHook(() => useCall(), { wrapper: createWrapper() });
-      await waitFor(() => expect(mockSipInitialize).toHaveBeenCalledTimes(1));
-      sipEmit("onRegistered");
-      expect(result.current.sipRegistered).toBe(true);
-      sipEmit("onIncomingCall", INVITATION);
-      await waitFor(() => expect(result.current.activeCall?.logPending).toBe(false));
-      sipEmit("onCallAccepted");
-      act(() => {
-        vi.advanceTimersByTime(2_000);
-      });
-      expect(result.current.callDuration).toBeGreaterThanOrEqual(2);
     });
   });
 

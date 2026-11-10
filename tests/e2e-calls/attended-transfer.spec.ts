@@ -24,7 +24,7 @@ test.describe("attended-transfer", () => {
     await transferButton(a101.page).click();
     const panel = a101.page.getByTestId("call-rail-transfer-panel");
     await expect(panel).toBeVisible();
-    await panel.getByTestId("call-rail-transfer-mode-attended").click();
+    await panel.getByTestId("call-rail-transfer-attended").click();
     const target = panel.locator('[data-testid="call-rail-transfer-agent"][data-extension="102"]');
     await expect(target).toBeEnabled({ timeout: 15_000 });
     await target.click();

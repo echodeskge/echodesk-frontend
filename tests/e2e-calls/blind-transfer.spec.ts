@@ -24,7 +24,7 @@ test.describe("blind-transfer", () => {
     await transferButton(a101.page).click();
     const panel = a101.page.getByTestId("call-rail-transfer-panel");
     await expect(panel).toBeVisible();
-    await panel.getByTestId("call-rail-transfer-mode-blind").click();
+    await panel.getByTestId("call-rail-transfer-blind").click();
     const target = panel.locator('[data-testid="call-rail-transfer-agent"][data-extension="102"]');
     await expect(target).toBeEnabled({ timeout: 15_000 }); // online dot comes from /api/extensions/status/
     await target.click();

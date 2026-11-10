@@ -1,6 +1,6 @@
 /**
  * CallContext: default state, hook boundaries, softphone gating, the
- * `useCall()` compatibility shim and the rail rules while idle.
+ * rail rules while idle.
  * Interaction flows with the SIP service live in CallContext.test.tsx.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -70,7 +70,7 @@ vi.mock("@/services/SipService", async (importOriginal) => {
   };
 });
 
-import { CallProvider, useCall, useCallState, useCallActions } from "@/contexts/CallContext";
+import { CallProvider, useCallState, useCallActions } from "@/contexts/CallContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
@@ -102,11 +102,10 @@ describe("CallContext", () => {
   });
 
   describe("hook boundaries", () => {
-    it("useCallState / useCallActions / useCall throw outside the provider", () => {
+    it("useCallState / useCallActions throw outside the provider", () => {
       const spy = vi.spyOn(console, "error").mockImplementation(() => {});
       expect(() => renderHook(() => useCallState())).toThrow("useCallState must be used within a CallProvider");
       expect(() => renderHook(() => useCallActions())).toThrow("useCallActions must be used within a CallProvider");
-      expect(() => renderHook(() => useCall())).toThrow("useCallState must be used within a CallProvider");
       spy.mockRestore();
     });
   });
@@ -303,42 +302,23 @@ describe("CallContext", () => {
     });
   });
 
-  describe("useCall() compatibility shim", () => {
-    it("returns state + actions plus the legacy names", () => {
-      const { result } = renderHook(() => useCall(), { wrapper: createWrapper() });
-      const v = result.current;
-      expect(v.activeCall).toBeNull();
-      expect(v.callDuration).toBe(0);
-      expect(v.sipRegistered).toBe(false);
-      expect(v.sipConnecting).toBe(false);
-      expect(v.isDialpadOpen).toBe(false);
-      expect(v.error).toBe("");
-      expect(v.rail.mode).toBe("closed");
-      for (const fn of [
-        "setDialNumber", "makeCall", "handleAcceptCall", "handleRejectCall", "handleEndCall", "handleToggleHold",
-        "handleToggleMute", "setIsDialpadOpen", "toggleDialpad", "sendDTMF", "transferCall", "startAttendedTransfer",
-        "completeTransfer", "cancelTransfer", "mergeConference", "clearMissedCall", "openRail", "closeRail", "reconnect",
-      ] as const) {
-        expect(typeof v[fn]).toBe("function");
-      }
-    });
-
-    it("maps the dialpad flags onto the rail and translates the error", async () => {
-      const { result } = renderHook(() => useCall(), { wrapper: createWrapper() });
+  describe("rail actions while idle", () => {
+    it("openRail / closeRail toggle the mode and makeCall reports an error key when unregistered", async () => {
+      const { result } = renderHook(useBoth, { wrapper: createWrapper() });
+      expect(result.current.state.rail.mode).toBe("closed");
       act(() => {
-        result.current.toggleDialpad();
+        result.current.actions.openRail();
       });
-      expect(result.current.isDialpadOpen).toBe(true);
-      expect(result.current.rail.mode).toBe("open");
+      expect(result.current.state.rail.mode).toBe("open");
       act(() => {
-        result.current.setIsDialpadOpen(false);
+        result.current.actions.closeRail();
       });
-      expect(result.current.isDialpadOpen).toBe(false);
+      expect(result.current.state.rail.mode).toBe("closed");
 
       await act(async () => {
-        await result.current.makeCall("101");
+        await result.current.actions.makeCall("101");
       });
-      expect(result.current.error).toBe("calls.errors.notRegistered");
+      expect(result.current.state.error).toEqual({ key: "notRegistered" });
     });
   });
 });

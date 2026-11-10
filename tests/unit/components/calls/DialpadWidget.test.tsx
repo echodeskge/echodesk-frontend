@@ -18,10 +18,9 @@ const h = vi.hoisted(() => ({
   access: { canUseSoftphone: true, canViewCalls: true, tenantHasCalling: true, userHasCalling: true },
 }));
 
-vi.mock("@/components/calls/rail/use-rail-call", () => ({
+vi.mock("@/contexts/CallContext", () => ({
   useCallState: () => h.state,
   useCallActions: () => h.actions,
-  useRailAdapterEffects: () => {},
 }));
 vi.mock("@/lib/calling-access", () => ({ useCallingAccess: () => h.access }));
 vi.mock("@/components/calls/IncomingCallNotification", () => ({
@@ -210,5 +209,29 @@ describe("missed-call toast", () => {
   it("is absent without a missed call", () => {
     renderWidget();
     expect(screen.queryByText("Missed call")).toBeNull();
+  });
+
+  it("a call rejected with 486 (busyRejected) shows the missed-while-busy toast", async () => {
+    const user = userEvent.setup();
+    h.state = makeState({ rail: closedRail, missedCall: missed, busyRejected: { number: missed.number, time: missed.time } });
+    renderWidget();
+    expect(screen.queryByTestId("missed-call-toast")).toBeNull();
+    const toast = screen.getByTestId("busy-rejected-toast");
+    expect(toast).toHaveTextContent("Missed while you were on a call");
+    expect(toast).toHaveTextContent("+995555999888");
+    await user.click(screen.getByText("Call back"));
+    expect(h.actions.openRail).toHaveBeenCalledWith({ number: "+995555999888" });
+    expect(h.actions.clearMissedCall).toHaveBeenCalledTimes(1);
+  });
+
+  it("an older busyRejected does not relabel a newer missed call", () => {
+    h.state = makeState({
+      rail: closedRail,
+      missedCall: missed,
+      busyRejected: { number: "+995555000000", time: new Date(2026, 3, 15, 12, 0) },
+    });
+    renderWidget();
+    expect(screen.getByTestId("missed-call-toast")).toHaveTextContent("Missed call");
+    expect(screen.queryByTestId("busy-rejected-toast")).toBeNull();
   });
 });

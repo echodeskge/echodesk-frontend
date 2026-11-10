@@ -9,7 +9,7 @@ import { callInitials, sanitizeDial } from "../call-format";
 import { useSoftphoneData, type RecentContact } from "../useSoftphoneData";
 import { DIAL_KEYS, dialKeyTestId } from "./dial-keys";
 import { InCallView } from "./in-call-view";
-import { useCallActions, useCallState } from "./use-rail-call";
+import { useCallActions, useCallState } from "@/contexts/CallContext";
 
 const ANSWERED_ELSEWHERE_MS = 3000;
 

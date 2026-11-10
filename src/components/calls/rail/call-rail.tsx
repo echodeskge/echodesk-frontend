@@ -10,7 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { DOCK, announceDockPopoverOpened, onDockPopoverOpened, setCallRailWidth } from "@/components/TeamChat/floatingDock";
 import { CallerContext } from "./caller-context";
 import { SoftphonePanel } from "./softphone-panel";
-import { useCallActions, useCallState, useRailAdapterEffects } from "./use-rail-call";
+import { useCallActions, useCallState } from "@/contexts/CallContext";
 
 const SIP_LABEL: Record<SipState, "sipOff" | "sipConnecting" | "sipRegistered" | "sipReconnecting" | "sipFailed" | "sipOffline"> = {
   off: "sipOff",
@@ -82,7 +82,7 @@ function ErrorStrip({ error, onDismiss }: { error: CallError; onDismiss: () => v
   const legacy = typeof error.params?.message === "string" ? error.params.message : null;
   const text = te.has(error.key) ? te(error.key, error.params) : legacy ?? t("errorUnknown");
   return (
-    <div role="alert" title={text} className="mx-3 mt-3 flex items-start gap-2 rounded-md bg-destructive/10 px-2.5 py-1.5 text-xs text-destructive" data-testid="call-rail-error">
+    <div role="alert" title={text} className="mx-3 mt-3 flex items-start gap-2 rounded-md bg-destructive/10 px-2.5 py-1.5 text-xs text-destructive" data-testid="call-rail-error" data-key={error.key}>
       <span className="line-clamp-2 min-w-0 flex-1 break-words">{text}</span>
       <button type="button" onClick={onDismiss} aria-label={t("dismiss")} className="shrink-0 rounded hover:bg-destructive/15">
         <X className="h-3.5 w-3.5" />
@@ -107,7 +107,6 @@ export function CallRail() {
   const { closeRail, minimiseRail, reconnect, clearError, unlockSound } = useCallActions();
   const { canUseSoftphone } = useCallingAccess();
   const isMobile = useIsMobile();
-  useRailAdapterEffects();
 
   const open = rail.mode === "open" && canUseSoftphone;
   const inCall = !!activeCall;

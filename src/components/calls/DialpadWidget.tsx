@@ -9,7 +9,7 @@ import { useCallingAccess } from "@/lib/calling-access";
 import { DOCK, DIALPAD_SLOT, dockSlotBottom, setDialpadPresent, useDockRight } from "@/components/TeamChat/floatingDock";
 import { IncomingCallNotification } from "./IncomingCallNotification";
 import { DockBadge, DockDot, dockLauncherClass } from "./dock-launcher";
-import { useCallActions, useCallState } from "./rail/use-rail-call";
+import { useCallActions, useCallState } from "@/contexts/CallContext";
 
 export type PhoneLauncherState = "in-call" | "ringing" | "ready" | "offline";
 
@@ -88,15 +88,21 @@ export function PhoneLauncher({
   );
 }
 
-/** Missed-call toast (top-right), restyled to the redesign toast pattern. */
+/**
+ * Missed-call toast (top-right), restyled to the redesign toast pattern.
+ * `busy`: the call was rejected with 486 because the agent was already on a
+ * call ("missed while busy").
+ */
 export function MissedCallToast({
   number,
   time,
+  busy = false,
   onCallBack,
   onDismiss,
 }: {
   number: string;
   time: Date;
+  busy?: boolean;
   onCallBack: () => void;
   onDismiss: () => void;
 }) {
@@ -106,14 +112,15 @@ export function MissedCallToast({
       role="status"
       aria-live="polite"
       className="w-full rounded-lg border bg-background p-3 text-foreground shadow-lg animate-in slide-in-from-top-2 duration-300"
-      data-testid="missed-call-toast"
+      data-testid={busy ? "busy-rejected-toast" : "missed-call-toast"}
+      data-busy={busy ? "true" : undefined}
     >
       <div className="flex items-start gap-2.5">
         <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-destructive/12 text-destructive">
           <PhoneMissed className="h-4 w-4" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-medium leading-5">{t("missedCall")}</p>
+          <p className="text-[13px] font-medium leading-5">{t(busy ? "missedWhileBusy" : "missedCall")}</p>
           <p className="truncate text-xs text-muted-foreground tabular-nums">
             {number} · {format(time, "HH:mm")}
           </p>
@@ -146,7 +153,7 @@ export function MissedCallToast({
  * launcher opens it, minimises it during a call and closes it when idle.
  */
 export default function DialpadWidget() {
-  const { activeCall, sipState, activeSipConfig, rail, missedCall } = useCallState();
+  const { activeCall, sipState, activeSipConfig, rail, missedCall, busyRejected } = useCallState();
   const { openRail, closeRail, minimiseRail, clearMissedCall } = useCallActions();
   const { canUseSoftphone } = useCallingAccess();
 
@@ -199,6 +206,7 @@ export default function DialpadWidget() {
           <MissedCallToast
             number={missedCall.number}
             time={missedCall.time}
+            busy={!!busyRejected && busyRejected.time === missedCall.time}
             onDismiss={clearMissedCall}
             onCallBack={() => {
               openRail({ number: missedCall.number });

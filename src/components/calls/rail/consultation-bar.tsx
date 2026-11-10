@@ -5,7 +5,7 @@ import { PhoneForwarded, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ActiveCall, ConsultationCall } from "@/contexts/call-types";
 import { BADGE_TONE } from "./in-call-view";
-import { useCallActions } from "./use-rail-call";
+import { useCallActions } from "@/contexts/CallContext";
 
 /**
  * Attended transfer in progress: the customer on hold, the consulted agent's

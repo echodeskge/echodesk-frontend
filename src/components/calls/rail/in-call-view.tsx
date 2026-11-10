@@ -24,7 +24,7 @@ import { ConsultationBar } from "./consultation-bar";
 import { DtmfKeypad } from "./dtmf-keypad";
 import { SpeakerPicker, isSinkSelectionSupported } from "./speaker-picker";
 import { TransferPanel } from "./transfer-panel";
-import { useCallActions } from "./use-rail-call";
+import { useCallActions } from "@/contexts/CallContext";
 
 export type BadgeTone = "ringing" | "held" | "active" | "ending";
 

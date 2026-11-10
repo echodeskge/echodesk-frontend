@@ -57,9 +57,9 @@ Additional ids inside the panels, all prefixed `call-rail-`:
 | `call-rail-context-calls`, `call-rail-recent-call` | Caller context: recent calls |
 | `call-rail-context-notes`, `call-rail-notes`, `call-rail-notes-save`, `call-rail-create-ticket` | Caller context: notes and Create ticket |
 
-Until CL-01 lands, `use-rail-call.ts` adapts the legacy `useCall()` value to
-`useCallState()` / `useCallActions()`; the integrator deletes it and repoints
-the imports to `@/contexts/CallContext`.
+Every component in this folder (and `DialpadWidget.tsx`, `IncomingCallNotification.tsx`)
+reads the context through `useCallState()` / `useCallActions()` from
+`@/contexts/CallContext`; the timer uses `useCallDuration(activeCall.startTime)`.
 
 ## i18n key ownership
 

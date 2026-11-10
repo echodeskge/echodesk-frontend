@@ -1,8 +1,7 @@
 /**
  * Shared fixtures for the call-rail tests: the CL-00 state / actions shapes
- * with sensible defaults, the en / ka catalogs with the pending `calls.rail.*`
- * keys merged in, a matchMedia shim for the `md` breakpoint and a render
- * helper with the intl + react-query providers.
+ * with sensible defaults, the en / ka catalogs, a matchMedia shim for the
+ * `md` breakpoint and a render helper with the intl + react-query providers.
  */
 import { vi } from "vitest";
 import { render, type RenderOptions } from "@testing-library/react";
@@ -12,13 +11,12 @@ import React, { type ReactElement } from "react";
 
 import en from "@/i18n/messages/en.json";
 import ka from "@/i18n/messages/ka.json";
-import pending from "@/i18n/pending/cl-02.json";
 import type { ActiveCall, CallActionsValue, CallStateValue } from "@/contexts/call-types";
 
-export const enMessages = { ...en, calls: { ...en.calls, rail: pending.en.calls.rail } };
-export const kaMessages = { ...ka, calls: { ...ka.calls, rail: pending.ka.calls.rail } };
-export const railEn = pending.en.calls.rail;
-export const railKa = pending.ka.calls.rail;
+export const enMessages = en;
+export const kaMessages = ka;
+export const railEn = en.calls.rail;
+export const railKa = ka.calls.rail;
 
 export function makeActiveCall(overrides: Partial<ActiveCall> & Record<string, unknown> = {}): ActiveCall {
   return {

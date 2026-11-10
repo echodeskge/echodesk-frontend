@@ -16,10 +16,9 @@ const h = vi.hoisted(() => ({
   access: { canUseSoftphone: true, canViewCalls: true, tenantHasCalling: true, userHasCalling: true },
 }));
 
-vi.mock("@/components/calls/rail/use-rail-call", () => ({
+vi.mock("@/contexts/CallContext", () => ({
   useCallState: () => h.state,
   useCallActions: () => h.actions,
-  useRailAdapterEffects: () => {},
 }));
 vi.mock("@/lib/calling-access", () => ({ useCallingAccess: () => h.access }));
 vi.mock("@/api/axios", async (importOriginal) => ({

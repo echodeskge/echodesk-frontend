@@ -1,7 +1,7 @@
 /**
  * useClickToCall: enabled only with softphone access AND a registered SIP
  * state; `call` opens the rail with the sanitised number; `telHref` is the
- * fallback. The call bridge maps the legacy CallContext flags to SipState.
+ * fallback.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
@@ -9,31 +9,25 @@ import { renderHook, act } from "@testing-library/react";
 const state = vi.hoisted(() => ({
   access: { tenantHasCalling: true, userHasCalling: true, canUseSoftphone: true, canViewCalls: true },
   call: {} as Record<string, unknown>,
-  setDialNumber: vi.fn(),
-  setIsDialpadOpen: vi.fn(),
+  openRail: vi.fn(),
 }));
 
 vi.mock("@/lib/calling-access", () => ({ useCallingAccess: () => state.access }));
-vi.mock("@/contexts/CallContext", () => ({ useCall: () => state.call }));
+vi.mock("@/contexts/CallContext", () => ({ useCallState: () => state.call, useCallActions: () => ({ openRail: state.openRail }) }));
 
 import { sanitizeDialNumber, telHref, useClickToCall } from "@/hooks/useClickToCall";
-import { legacySipState, useCallBridgeState } from "@/hooks/useCallBridge";
 
 beforeEach(() => {
   state.access = { tenantHasCalling: true, userHasCalling: true, canUseSoftphone: true, canViewCalls: true };
-  state.setDialNumber.mockClear();
-  state.setIsDialpadOpen.mockClear();
+  state.openRail.mockClear();
   state.call = {
     activeCall: null,
-    sipRegistered: true,
-    sipConnecting: false,
+    sipState: "registered",
     activeSipConfig: { username: "101" },
     loading: false,
-    error: "",
+    error: null,
     callEndedCounter: 0,
-    isDialpadOpen: false,
-    setDialNumber: state.setDialNumber,
-    setIsDialpadOpen: state.setIsDialpadOpen,
+    rail: { mode: "closed", prefill: null, autoDial: false },
   };
 });
 
@@ -61,12 +55,8 @@ describe("useClickToCall", () => {
     expect(result.current.enabled).toBe(false);
   });
 
-  it.each([
-    ["connecting", { sipRegistered: false, sipConnecting: true }],
-    ["failed", { sipRegistered: false, sipConnecting: false }],
-    ["off", { activeSipConfig: null, sipRegistered: false, sipConnecting: false }],
-  ])("is disabled while SIP is %s", (_label, flags) => {
-    state.call = { ...state.call, ...flags };
+  it.each(["connecting", "reconnecting", "failed", "offline", "off"] as const)("is disabled while SIP is %s", (sipState) => {
+    state.call = { ...state.call, sipState, activeSipConfig: sipState === "off" ? null : state.call.activeSipConfig };
     const { result } = renderHook(() => useClickToCall());
     expect(result.current.enabled).toBe(false);
   });
@@ -74,15 +64,13 @@ describe("useClickToCall", () => {
   it("call() opens the rail with the sanitised number prefilled", () => {
     const { result } = renderHook(() => useClickToCall());
     act(() => result.current.call("+995 599 12 34 56"));
-    expect(state.setDialNumber).toHaveBeenCalledWith("+995599123456");
-    expect(state.setIsDialpadOpen).toHaveBeenCalledWith(true);
+    expect(state.openRail).toHaveBeenCalledWith({ number: "+995599123456", autoDial: false });
   });
 
   it("call() ignores a number without digits", () => {
     const { result } = renderHook(() => useClickToCall());
     act(() => result.current.call("n/a"));
-    expect(state.setDialNumber).not.toHaveBeenCalled();
-    expect(state.setIsDialpadOpen).not.toHaveBeenCalled();
+    expect(state.openRail).not.toHaveBeenCalled();
   });
 
   it("keeps a stable identity while nothing changes", () => {
@@ -90,27 +78,5 @@ describe("useClickToCall", () => {
     const first = result.current;
     rerender();
     expect(result.current).toBe(first);
-  });
-});
-
-describe("call bridge", () => {
-  it("maps the legacy flags to SipState", () => {
-    expect(legacySipState({ activeSipConfig: null, sipRegistered: false, sipConnecting: false })).toBe("off");
-    expect(legacySipState({ activeSipConfig: {}, sipRegistered: true, sipConnecting: false })).toBe("registered");
-    expect(legacySipState({ activeSipConfig: {}, sipRegistered: false, sipConnecting: true })).toBe("connecting");
-    expect(legacySipState({ activeSipConfig: {}, sipRegistered: false, sipConnecting: false })).toBe("failed");
-  });
-
-  it("exposes inCall, errorText, railOpen and the counter", () => {
-    state.call = { ...state.call, activeCall: { id: "x" }, error: "SIP registration failed", isDialpadOpen: true, callEndedCounter: 4 };
-    const { result } = renderHook(() => useCallBridgeState());
-    expect(result.current).toMatchObject({
-      inCall: true,
-      sipState: "registered",
-      errorText: "SIP registration failed",
-      railOpen: true,
-      callEndedCounter: 4,
-      loading: false,
-    });
   });
 });

@@ -133,7 +133,7 @@ the integrator renames them here):
 | `call-rail-timer` | the mono `mm:ss` timer in the in-call view |
 | `call-rail-error` | the error strip; `data-key` = the `calls.errors.*` key (`sip603`, `sip486`, …) |
 | `call-rail-transfer-panel` | the "Transfer to agent" box |
-| `call-rail-transfer-mode-blind` / `call-rail-transfer-mode-attended` | the attended/blind toggle |
+| `call-rail-transfer-blind` / `call-rail-transfer-attended` | the attended/blind toggle |
 | `call-rail-transfer-agent` | one agent row, `data-extension="<ext>"`, disabled when offline |
 | `call-rail-transfer-number` / `call-rail-transfer-submit` | external-number input and its submit (unused by the specs today) |
 | `call-rail-consultation` | the consultation bar |

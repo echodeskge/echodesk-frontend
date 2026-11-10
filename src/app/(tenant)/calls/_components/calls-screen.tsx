@@ -7,7 +7,7 @@ import { AlertCircle, Check, ChevronDown, CircleCheck, Loader2, PhoneOff, Plus, 
 import { useAuth } from "@/contexts/AuthContext";
 import { useTicketCreate } from "@/contexts/TicketCreateContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useCallBridgeActions, useCallBridgeState } from "@/hooks/useCallBridge";
+import { useCallActions, useCallState } from "@/contexts/CallContext";
 import { useCallingAccess } from "@/lib/calling-access";
 import { isPbxAdmin } from "@/lib/backendPermissions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -39,8 +39,13 @@ export function CallsScreen() {
   const canManagePbx = isPbxAdmin(user as never) || isPbxAdmin(profile as never);
   const { canUseSoftphone } = useCallingAccess();
   const { openTicketCreate } = useTicketCreate();
-  const { inCall, sipState, activeSipConfig, loading: configLoading, errorText, callEndedCounter, railOpen } = useCallBridgeState();
-  const { openRail } = useCallBridgeActions();
+  const { activeCall, sipState, activeSipConfig, loading: configLoading, error, callEndedCounter, rail } = useCallState();
+  const { openRail } = useCallActions();
+  const tErrors = useTranslations("calls.errors");
+  const inCall = !!activeCall;
+  const railOpen = rail.mode === "open";
+  // The open rail shows (and translates) the same error itself.
+  const errorText = error ? (tErrors.has(error.key) ? tErrors(error.key, error.params) : tErrors("callFailed")) : null;
 
   const [tab, setTab] = useState<CallTab>("all");
   const [agentId, setAgentId] = useState<number | null>(null);

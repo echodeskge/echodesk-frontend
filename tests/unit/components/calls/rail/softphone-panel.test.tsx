@@ -16,10 +16,9 @@ const h = vi.hoisted(() => ({
   actions: null as unknown as CallActionsValue,
 }));
 
-vi.mock("@/components/calls/rail/use-rail-call", () => ({
+vi.mock("@/contexts/CallContext", () => ({
   useCallState: () => h.state,
   useCallActions: () => h.actions,
-  useRailAdapterEffects: () => {},
 }));
 vi.mock("@/api/axios", () => ({ default: { get: vi.fn().mockResolvedValue({ data: { results: [] } }) } }));
 vi.mock("@/components/calls/rail/transfer-panel", () => ({

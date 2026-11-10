@@ -183,6 +183,3 @@ export interface CallActionsValue {
   /** Resume the shared `AudioContext` from a user gesture. */
   unlockSound: () => void;
 }
-
-/** Shape of the `useCall()` shim kept for `calls-screen.tsx` until CL-03 migrates it. */
-export type CallValue = CallStateValue & CallActionsValue;

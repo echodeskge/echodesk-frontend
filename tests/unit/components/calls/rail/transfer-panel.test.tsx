@@ -17,10 +17,9 @@ const h = vi.hoisted(() => ({
   extensionsStatusRetrieve: vi.fn(),
 }));
 
-vi.mock("@/components/calls/rail/use-rail-call", () => ({
+vi.mock("@/contexts/CallContext", () => ({
   useCallState: () => h.state,
   useCallActions: () => h.actions,
-  useRailAdapterEffects: () => {},
 }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: 1, is_staff: true } }) }));
 vi.mock("@/api/generated/api", () => ({

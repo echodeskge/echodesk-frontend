@@ -18,10 +18,9 @@ const h = vi.hoisted(() => ({
   actions: null as unknown as CallActionsValue,
 }));
 
-vi.mock("@/components/calls/rail/use-rail-call", () => ({
+vi.mock("@/contexts/CallContext", () => ({
   useCallState: () => h.state,
   useCallActions: () => h.actions,
-  useRailAdapterEffects: () => {},
 }));
 
 import { IncomingCallNotification } from "@/components/calls/IncomingCallNotification";

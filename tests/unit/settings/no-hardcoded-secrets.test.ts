@@ -13,13 +13,6 @@ const SCANNED = /\.(tsx?|jsx?|mjs|json|md|css)$/;
 /** Legacy PBX host, assembled so the literal is not in this file. */
 const LEGACY_PBX_IP = [165, 227, 166, 42].join(".");
 
-/**
- * Files owned by another work package that still carry the IP on this
- * branch. CL-01 rewrites SipService (drops the provider allow / deny lists);
- * the integrator removes this entry once that lands.
- */
-const PENDING_OTHER_PACKAGE = new Set(["services/SipService.ts"]);
-
 function walk(dir: string, match: (name: string) => boolean = (n) => SCANNED.test(n), out: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
@@ -44,8 +37,7 @@ describe("no hard-coded secrets under src", () => {
   it("no source file names the legacy PBX IP", () => {
     const offenders = walk(SRC)
       .filter((f) => fs.readFileSync(f, "utf8").includes(LEGACY_PBX_IP))
-      .map((f) => path.relative(SRC, f))
-      .filter((f) => !PENDING_OTHER_PACKAGE.has(f));
+      .map((f) => path.relative(SRC, f));
     expect(offenders).toEqual([]);
   });
 
