@@ -25,6 +25,7 @@ import {
 } from "@/hooks/api/useConversationTickets";
 import { useDeleteSocialClient, useSocialClient } from "@/hooks/api/useSocialClients";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { telHref, useClickToCall } from "@/hooks/useClickToCall";
 import { cn, getApiErrorMessage } from "@/lib/utils";
 
 import {
@@ -114,6 +115,9 @@ export function ClientDetailRail({
   const router = useRouter();
   const { data: client, isLoading } = useSocialClient(clientId);
   const { data: profile } = useUserProfile();
+  // Softphone registered -> the Call button opens the rail with the number;
+  // otherwise a plain tel: link.
+  const clickToCall = useClickToCall();
   const { data: tickets = [], isLoading: ticketsLoading } = useClientTickets(clientId);
   const createTicket = useCreateConversationTicket();
   const deleteClient = useDeleteSocialClient();
@@ -217,12 +221,24 @@ export function ClientDetailRail({
               {t("createdOn", { date: shortDate(client.created_at as unknown as string) })}
             </span>
             <div className="mt-1 flex flex-wrap justify-center gap-1.5">
-              {client.phone && (
-                <a href={`tel:${client.phone}`} className={actionButton}>
-                  <Phone className="h-[13px] w-[13px]" />
-                  {t("call")}
-                </a>
-              )}
+              {client.phone &&
+                (clickToCall.enabled ? (
+                  <button
+                    type="button"
+                    onClick={() => clickToCall.call(client.phone!)}
+                    className={actionButton}
+                    data-kind="phone"
+                    data-testid="client-rail-call"
+                  >
+                    <Phone className="h-[13px] w-[13px]" />
+                    {t("call")}
+                  </button>
+                ) : (
+                  <a href={telHref(client.phone)} className={actionButton} data-kind="phone" data-testid="client-rail-call">
+                    <Phone className="h-[13px] w-[13px]" />
+                    {t("call")}
+                  </a>
+                ))}
               {client.email && (
                 <a href={`mailto:${client.email}`} className={actionButton}>
                   <Mail className="h-[13px] w-[13px]" />

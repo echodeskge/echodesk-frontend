@@ -45,6 +45,7 @@ import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
 import { getNotificationSound } from "@/utils/notificationSound";
 import { useSocialSettings } from "@/hooks/api/useSocial";
 import { navigationConfig } from "@/config/navigationConfig";
+import { parseFeatureKeys } from "@/lib/calling-access";
 import { useAuth } from "@/contexts/AuthContext";
 import { SubscriptionInactiveAdminScreen } from "@/components/subscription/SubscriptionInactiveAdminScreen";
 import { SubscriptionInactiveUserScreen } from "@/components/subscription/SubscriptionInactiveUserScreen";
@@ -279,13 +280,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     help: "help",
   };
 
-  // Parse user's feature keys
-  // Handle both string (JSON) and array formats from API
-  const userFeatureKeys = userProfile?.feature_keys
-    ? typeof userProfile.feature_keys === "string"
-      ? JSON.parse(userProfile.feature_keys)
-      : userProfile.feature_keys
-    : [];
+  // feature_keys arrives as a JSON string or an array; a bad value gives []
+  // instead of crashing the layout.
+  const userFeatureKeys = parseFeatureKeys(userProfile?.feature_keys);
 
 
   // Helper function to check if user has a feature key

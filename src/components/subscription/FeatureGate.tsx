@@ -1,11 +1,12 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import { useSubscription, SubscriptionFeature } from '@/contexts/SubscriptionContext';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Lock, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { Lock, AlertCircle, type LucideIcon } from 'lucide-react';
+import { useSubscription, SubscriptionFeature } from '@/contexts/SubscriptionContext';
+import { rdButton } from '@/components/redesign/buttons';
+import { cn } from '@/lib/utils';
 
 interface FeatureGateProps {
   feature: SubscriptionFeature;
@@ -15,11 +16,48 @@ interface FeatureGateProps {
   customMessage?: string;
 }
 
+/** Theme-aware loading skeleton (one 40px row on `bg-muted`). */
+function GateSkeleton({ label }: { label: string }) {
+  return (
+    <div role="status" aria-label={label} className="h-10 w-full animate-pulse rounded-md bg-muted" data-testid="feature-gate-loading" />
+  );
+}
+
+/** Locked block: 10px card, icon tile, title, description and the upgrade link. */
+function GateBlock({
+  icon: Icon,
+  title,
+  description,
+  action,
+  testId,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: ReactNode;
+  action: string;
+  testId: string;
+}) {
+  return (
+    <div role="alert" className="my-4 flex gap-3 rounded-[10px] border bg-card p-4" data-testid={testId}>
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <Icon aria-hidden="true" size={16} />
+      </span>
+      <div className="flex min-w-0 flex-col gap-1">
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        <p className="text-[13px] text-muted-foreground [text-wrap:pretty]">{description}</p>
+        <Link href="/settings/subscription" className={cn(rdButton.outline, 'mt-2 self-start')} data-testid={`${testId}-upgrade`}>
+          {action}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 /**
  * FeatureGate component - Conditionally renders children based on subscription features
  *
  * Usage:
- * <FeatureGate feature="sip_calling">
+ * <FeatureGate feature="ip_calling">
  *   <CallButton />
  * </FeatureGate>
  */
@@ -30,12 +68,11 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
   showUpgrade = true,
   customMessage,
 }) => {
-  const { hasFeature, subscription, loading } = useSubscription();
+  const t = useTranslations('featureGate');
+  const { hasFeature, loading } = useSubscription();
 
   if (loading) {
-    return (
-      <div className="animate-pulse bg-gray-200 rounded h-10 w-full" />
-    );
+    return <GateSkeleton label={t('loading')} />;
   }
 
   const featureEnabled = hasFeature(feature);
@@ -47,20 +84,13 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
 
     if (showUpgrade) {
       return (
-        <Alert variant="destructive" className="my-4">
-          <Lock className="h-4 w-4" />
-          <AlertTitle>Feature Not Available</AlertTitle>
-          <AlertDescription>
-            {customMessage || `This feature is not included in your current plan.`}
-            <div className="mt-2">
-              <Link href="/settings/subscription">
-                <Button variant="outline" size="sm">
-                  Upgrade Plan
-                </Button>
-              </Link>
-            </div>
-          </AlertDescription>
-        </Alert>
+        <GateBlock
+          icon={Lock}
+          title={t('notAvailableTitle')}
+          description={customMessage || t('notAvailableDescription')}
+          action={t('upgradePlan')}
+          testId="feature-gate-locked"
+        />
       );
     }
 
@@ -91,12 +121,11 @@ export const LimitGate: React.FC<LimitGateProps> = ({
   fallback,
   showWarning = true,
 }) => {
+  const t = useTranslations('featureGate');
   const { isWithinLimit, subscription, loading } = useSubscription();
 
   if (loading) {
-    return (
-      <div className="animate-pulse bg-gray-200 rounded h-10 w-full" />
-    );
+    return <GateSkeleton label={t('loading')} />;
   }
 
   const withinLimit = isWithinLimit(limitType);
@@ -108,22 +137,16 @@ export const LimitGate: React.FC<LimitGateProps> = ({
 
     if (showWarning) {
       const limitInfo = subscription?.usage_limits?.[limitType];
+      const usage =
+        limitInfo && limitInfo.limit != null ? t('limitUsage', { current: limitInfo.current ?? 0, limit: limitInfo.limit }) : '';
       return (
-        <Alert variant="destructive" className="my-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Usage Limit Reached</AlertTitle>
-          <AlertDescription>
-            You have reached your {limitType} limit
-            {limitInfo && ` (${limitInfo.current} / ${limitInfo.limit})`}.
-            <div className="mt-2">
-              <Link href="/settings/subscription">
-                <Button variant="outline" size="sm">
-                  Upgrade Plan
-                </Button>
-              </Link>
-            </div>
-          </AlertDescription>
-        </Alert>
+        <GateBlock
+          icon={AlertCircle}
+          title={t('limitTitle')}
+          description={t('limitDescription', { limit: t(`limits.${limitType}`), usage })}
+          action={t('upgradePlan')}
+          testId="limit-gate-reached"
+        />
       );
     }
 

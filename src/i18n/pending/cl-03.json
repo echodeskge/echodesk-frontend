@@ -1,0 +1,116 @@
+{
+  "en": {
+    "featureGate": {
+      "loading": "Checking your plan…",
+      "notAvailableTitle": "Feature not available",
+      "notAvailableDescription": "This feature is not included in your current plan.",
+      "upgradePlan": "Upgrade plan",
+      "limitTitle": "Usage limit reached",
+      "limitDescription": "You have reached your {limit} limit{usage}.",
+      "limitUsage": " ({current} / {limit})",
+      "limits": {
+        "users": "users",
+        "whatsapp": "WhatsApp",
+        "storage": "storage"
+      }
+    },
+    "calls": {
+      "access": {
+        "loading": "Checking access…",
+        "upgradeTitle": "Upgrade required",
+        "upgradeDescription": "Calls are included in the IP calling add-on. Upgrade your plan to unlock this feature.",
+        "upgradePlan": "Upgrade plan",
+        "noAccessTitle": "No access",
+        "noAccessDescription": "IP calling is not enabled for your group. Ask an administrator to turn it on.",
+        "noSoftphone": "You can see calls but not place them. Ask an administrator for the make-calls permission.",
+        "viewOnly": "You can see calls but not place them."
+      },
+      "settings": {
+        "connectionSection": "Connection",
+        "connectionHint": "Where the browser softphone connects",
+        "credentialsSection": "Trunk credentials",
+        "webrtcSection": "WebRTC",
+        "webrtcHint": "STUN / TURN for media through NAT",
+        "statusSection": "Status",
+        "configurationNameHint": "Shown in the configuration list",
+        "trunkPhoneNumberHint": "The number this trunk presents on outbound calls",
+        "sipServerHint": "Host name or IP of the PBX",
+        "portHint": "Signalling port (WebSocket port for WSS)",
+        "turnPassword": "TURN password",
+        "secretSetHint": "A password is stored. Leave blank to keep it.",
+        "secretUnsetHint": "No password stored yet.",
+        "maxCallsHint": "Concurrent calls this configuration may carry",
+        "activeHint": "Inactive configurations stay saved but are not used",
+        "defaultHint": "The softphone uses the default configuration when a user has no extension",
+        "configurationNamePlaceholder": "Main PBX",
+        "displayNamePlaceholder": "Sales team",
+        "userHint": "The agent who registers with this extension",
+        "extensionHint": "Digits only, unique on this PBX",
+        "extensionPasswordHint": "Set when assigning; leave blank later to keep it",
+        "phoneNumberHint": "Caller ID shown to the called party",
+        "displayNameHint": "Optional label on the softphone",
+        "primaryHint": "Used when the user has several extensions",
+        "activeAssignmentHint": "Inactive extensions cannot register",
+        "noUsers": "No users to assign",
+        "removeAssignment": "Remove assignment"
+      }
+    }
+  },
+  "ka": {
+    "featureGate": {
+      "loading": "გეგმის შემოწმება…",
+      "notAvailableTitle": "ფუნქცია მიუწვდომელია",
+      "notAvailableDescription": "ეს ფუნქცია თქვენს მიმდინარე გეგმაში არ შედის.",
+      "upgradePlan": "გეგმის განახლება",
+      "limitTitle": "ლიმიტი ამოწურულია",
+      "limitDescription": "თქვენ მიაღწიეთ {limit} ლიმიტს{usage}.",
+      "limitUsage": " ({current} / {limit})",
+      "limits": {
+        "users": "მომხმარებლების",
+        "whatsapp": "WhatsApp-ის",
+        "storage": "საცავის"
+      }
+    },
+    "calls": {
+      "access": {
+        "loading": "წვდომის შემოწმება…",
+        "upgradeTitle": "საჭიროა გეგმის განახლება",
+        "upgradeDescription": "ზარები შედის IP დარეკვის დამატებაში. გააუმჯობესეთ გეგმა ამ ფუნქციის გასახსნელად.",
+        "upgradePlan": "გეგმის განახლება",
+        "noAccessTitle": "წვდომა არ გაქვთ",
+        "noAccessDescription": "IP დარეკვა თქვენი ჯგუფისთვის ჩართული არ არის. სთხოვეთ ადმინისტრატორს მის ჩართვას.",
+        "noSoftphone": "ზარების ნახვა შეგიძლიათ, დარეკვა კი არა. სთხოვეთ ადმინისტრატორს დარეკვის უფლებას.",
+        "viewOnly": "ზარების ნახვა შეგიძლიათ, დარეკვა კი არა."
+      },
+      "settings": {
+        "connectionSection": "კავშირი",
+        "connectionHint": "სად უკავშირდება ბრაუზერის სოფტფონი",
+        "credentialsSection": "ტრანკის მონაცემები",
+        "webrtcSection": "WebRTC",
+        "webrtcHint": "STUN / TURN მედიისთვის NAT-ის მიღმა",
+        "statusSection": "სტატუსი",
+        "configurationNameHint": "ჩანს კონფიგურაციების სიაში",
+        "trunkPhoneNumberHint": "ნომერი, რომლითაც ეს ტრანკი გამავალ ზარებზე წარდგება",
+        "sipServerHint": "PBX-ის ჰოსტის სახელი ან IP",
+        "portHint": "სასიგნალო პორტი (WSS-ისთვის WebSocket პორტი)",
+        "turnPassword": "TURN პაროლი",
+        "secretSetHint": "პაროლი შენახულია. დატოვეთ ცარიელი, რომ შენარჩუნდეს.",
+        "secretUnsetHint": "პაროლი ჯერ შენახული არ არის.",
+        "maxCallsHint": "ერთდროული ზარების რაოდენობა ამ კონფიგურაციაზე",
+        "activeHint": "არააქტიური კონფიგურაციები ინახება, მაგრამ არ გამოიყენება",
+        "defaultHint": "სოფტფონი ნაგულისხმევ კონფიგურაციას იყენებს, როცა მომხმარებელს ხაზი არ აქვს",
+        "configurationNamePlaceholder": "მთავარი PBX",
+        "displayNamePlaceholder": "გაყიდვების გუნდი",
+        "userHint": "აგენტი, რომელიც ამ ხაზით რეგისტრირდება",
+        "extensionHint": "მხოლოდ ციფრები, უნიკალური ამ PBX-ზე",
+        "extensionPasswordHint": "ენიჭება მინიჭებისას; შემდეგ დატოვეთ ცარიელი, რომ შენარჩუნდეს",
+        "phoneNumberHint": "ნომერი, რომელსაც ადრესატი ხედავს",
+        "displayNameHint": "არასავალდებულო წარწერა სოფტფონზე",
+        "primaryHint": "გამოიყენება, როცა მომხმარებელს რამდენიმე ხაზი აქვს",
+        "activeAssignmentHint": "არააქტიური ხაზები ვერ რეგისტრირდება",
+        "noUsers": "მისანიჭებელი მომხმარებლები არ არის",
+        "removeAssignment": "მინიჭების წაშლა"
+      }
+    }
+  }
+}

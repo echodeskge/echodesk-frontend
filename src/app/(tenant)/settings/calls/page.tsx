@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { FeatureGate } from "@/components/subscription/FeatureGate";
 import { SipConfigForm } from "@/components/calls/SipConfigForm";
 import { SipConfigList } from "@/components/calls/SipConfigList";
 import { UserPhoneAssignments } from "@/components/calls/UserPhoneAssignments";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Phone, Plus, Zap, Upload, Trash2, Loader2 } from "lucide-react";
+import { Lock, Phone, Plus, Upload, Trash2, Loader2 } from "lucide-react";
 import { Segmented } from "@/components/redesign/segmented";
 import { rdButton } from "@/components/redesign/buttons";
 import { LoadingBlock } from "@/components/redesign/states";
@@ -46,6 +45,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { isPbxAdmin } from "@/lib/backendPermissions";
+import { useCallingAccess } from "@/lib/calling-access";
 import axiosInstance from "@/api/axios";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -405,6 +405,8 @@ export default function CallSettingsPage() {
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const canManagePbx =
     Boolean(user?.is_staff || user?.is_superuser) || isPbxAdmin(userProfile as never);
+  // Tenant add-on, same helper as /calls, the PBX layout and the nav.
+  const { tenantHasCalling } = useCallingAccess();
 
   // ── SIP Config State (Tab 1 - existing) ──
   const [sipConfigs, setSipConfigs] = useState<SipConfigurationList[]>([]);
@@ -524,27 +526,6 @@ export default function CallSettingsPage() {
         variant: "destructive",
       });
     }
-  };
-
-  const setupAsteriskServer = () => {
-    setEditingConfig(null);
-    setConfigForm({
-      name: "EchoDesk Asterisk Server",
-      sip_server: "165.227.166.42",
-      sip_port: 8089,
-      username: "1001",
-      password: "Giorgi123.",
-      realm: "165.227.166.42",
-      proxy: "",
-      stun_server: "stun:stun.l.google.com:19302",
-      turn_server: "",
-      turn_username: "",
-      turn_password: "",
-      is_active: true,
-      is_default: true,
-      max_concurrent_calls: 5,
-    });
-    setShowModal(true);
   };
 
   const saveConfig = async () => {
@@ -879,27 +860,27 @@ export default function CallSettingsPage() {
     );
   }
 
+  if (!tenantHasCalling) {
+    return (
+      <SettingsPage icon={Phone} title={t("settings.title")} width="wide" testId="calls-settings">
+        <div className="rounded-[10px] border bg-card" data-testid="calls-upgrade">
+          <EmptyState
+            icon={Lock}
+            title={tPbx("page.upgradeTitle")}
+            description={tPbx("page.upgradeDescription")}
+            action={
+              <Link href="/settings/subscription" className={rdButton.outline}>
+                {ts("upgradePlan")}
+              </Link>
+            }
+          />
+        </div>
+      </SettingsPage>
+    );
+  }
+
   return (
-    <FeatureGate
-      feature="ip_calling"
-      showUpgrade={true}
-      fallback={
-        <SettingsPage icon={Phone} title={t("settings.title")} width="wide" testId="calls-settings">
-          <div className="rounded-[10px] border bg-card" data-testid="calls-upgrade">
-            <EmptyState
-              icon={Lock}
-              title={tPbx("page.upgradeTitle")}
-              description={tPbx("page.upgradeDescription")}
-              action={
-                <Link href="/settings/subscription" className={rdButton.outline}>
-                  {ts("upgradePlan")}
-                </Link>
-              }
-            />
-          </div>
-        </SettingsPage>
-      }
-    >
+    <>
       <SettingsPage
         icon={Phone}
         title={t("settings.title")}
@@ -927,20 +908,15 @@ export default function CallSettingsPage() {
             <SettingsSection
               title={ts("configsTitle")}
               actions={
-                <>
-                  <ActionButton icon={Zap} onClick={setupAsteriskServer} testId="sip-quick-setup">
-                    {t("settings.quickSetup")}
-                  </ActionButton>
-                  <button
-                    type="button"
-                    className={cn(rdButton.primarySm, "h-[30px] px-2.5")}
-                    onClick={() => openModal()}
-                    data-testid="sip-add"
-                  >
-                    <Plus className="h-3.5 w-3.5" aria-hidden />
-                    {t("settings.addConfiguration")}
-                  </button>
-                </>
+                <button
+                  type="button"
+                  className={cn(rdButton.primarySm, "h-[30px] px-2.5")}
+                  onClick={() => openModal()}
+                  data-testid="sip-add"
+                >
+                  <Plus className="h-3.5 w-3.5" aria-hidden />
+                  {t("settings.addConfiguration")}
+                </button>
               }
               testId="sip-configs"
             >
@@ -1294,6 +1270,6 @@ export default function CallSettingsPage() {
           </>
         )}
       </SettingsPage>
-    </FeatureGate>
+    </>
   );
 }

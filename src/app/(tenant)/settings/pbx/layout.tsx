@@ -3,10 +3,10 @@
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Headset, Lock } from "lucide-react";
-import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { profileHasPermission } from "@/lib/backendPermissions";
+import { useCallingAccess } from "@/lib/calling-access";
 import { SettingsPage } from "@/components/redesign/settings";
 import { EmptyState } from "@/app/(tenant)/tickets/_components/primitives/empty-state";
 import { PbxTabs } from "./_components/pbx-ui";
@@ -35,22 +35,15 @@ function UpgradeRequired() {
 export default function PbxLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const t = useTranslations("pbxSettings");
-  const { hasFeature } = useSubscription();
   const { user } = useAuth();
   const { data: userProfile } = useUserProfile();
+  // Tenant subscription AND user feature key (or staff), like every other
+  // calling gate (`calling-access.ts`).
+  const { canViewCalls } = useCallingAccess();
 
   const isStaffOrAdmin = user?.is_staff || user?.is_superuser;
-  const userFeatureKeys: string[] = userProfile?.feature_keys
-    ? typeof userProfile.feature_keys === "string"
-      ? JSON.parse(userProfile.feature_keys)
-      : (userProfile.feature_keys as string[])
-    : [];
-  const hasIpCalling =
-    (isStaffOrAdmin && userFeatureKeys.length === 0) ||
-    userFeatureKeys.includes("ip_calling") ||
-    hasFeature("ip_calling");
 
-  if (!hasIpCalling) return <UpgradeRequired />;
+  if (!canViewCalls) return <UpgradeRequired />;
 
   // Mirrors the backend: PBX configuration needs a PBX admin (staff,
   // superuser or manage_settings); statistics also open to view_reports.

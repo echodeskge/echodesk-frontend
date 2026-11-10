@@ -129,7 +129,7 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
     features: {
       ticket_management: true,  // Always allow basic features
       email_integration: true,
-      sip_calling: false,
+      ip_calling: false,
       facebook_integration: false,
       instagram_integration: false,
       whatsapp_integration: false,
