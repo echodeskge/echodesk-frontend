@@ -79,7 +79,8 @@
         "editTitle": "Edit email connection",
         "editDescription": "Update the settings of {email}",
         "saveChanges": "Save changes",
-        "saving": "Saving…"
+        "saving": "Saving…",
+        "addHint": "IMAP uses SSL and SMTP uses STARTTLS by default. Sync starts from the last 30 days of the folder (Advanced settings change this)."
       },
       "settingsPage": {
         "autoReply": {
@@ -100,6 +101,24 @@
         },
         "emailSync": {
           "refresh": "Refresh"
+        }
+      },
+      "connections": {
+        "channelsLabel": "Channels",
+        "email": "Email",
+        "widget": "Website widget",
+        "dismiss": "Dismiss"
+      },
+      "widget": {
+        "appearance": {
+          "swatches": {
+            "default": "Default navy",
+            "blue": "Blue",
+            "green": "Green",
+            "red": "Red",
+            "purple": "Purple",
+            "orange": "Orange"
+          }
         }
       }
     },
@@ -204,7 +223,8 @@
         "editTitle": "ელფოსტის კავშირის რედაქტირება",
         "editDescription": "{email}-ის პარამეტრების განახლება",
         "saveChanges": "ცვლილებების შენახვა",
-        "saving": "ინახება…"
+        "saving": "ინახება…",
+        "addHint": "ნაგულისხმევად IMAP იყენებს SSL-ს, SMTP კი STARTTLS-ს. სინქრონიზაცია საქაღალდის ბოლო 30 დღიდან იწყება (ცვლილება შესაძლებელია დამატებით პარამეტრებში)."
       },
       "settingsPage": {
         "autoReply": {
@@ -225,6 +245,24 @@
         },
         "emailSync": {
           "refresh": "განახლება"
+        }
+      },
+      "connections": {
+        "channelsLabel": "არხები",
+        "email": "ელფოსტა",
+        "widget": "საიტის ვიჯეტი",
+        "dismiss": "დახურვა"
+      },
+      "widget": {
+        "appearance": {
+          "swatches": {
+            "default": "ნაგულისხმევი მუქი ლურჯი",
+            "blue": "ლურჯი",
+            "green": "მწვანე",
+            "red": "წითელი",
+            "purple": "იისფერი",
+            "orange": "ნარინჯისფერი"
+          }
         }
       }
     },

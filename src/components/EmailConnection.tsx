@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import DOMPurify from 'dompurify';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   useEmailStatus,
   useConnectEmail,
@@ -13,13 +13,23 @@ import {
   EmailConnectRequest,
   EmailConnectionDetail,
 } from '@/hooks/api/useSocial';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TonePill } from '@/components/redesign/pill';
+import { rdButton } from '@/components/redesign/buttons';
+import {
+  ChannelDetailCard,
+  FieldRow,
+  SecretInput,
+  SettingsNote,
+  SettingsSection,
+  SettingsToggle,
+  settingsFieldWidth,
+  settingsInputClass,
+} from '@/components/redesign/settings';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
@@ -51,6 +61,7 @@ import {
   Loader2,
   Users,
   Pencil,
+  Plug,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -89,11 +100,12 @@ function EmailAccountCard({
   isReactivating: boolean;
 }) {
   const t = useTranslations('social.emailConnection');
+  const locale = useLocale();
   const [reactivatePassword, setReactivatePassword] = useState('');
   const autoDisabled = Boolean(connection.auto_disabled_at);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(locale === 'ka' ? 'ka-GE' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -107,181 +119,145 @@ function EmailAccountCard({
     : connection.is_active
       ? t('statusActive')
       : t('statusInactive');
-  const statusClass = autoDisabled
-    ? 'bg-amber-500 hover:bg-amber-600 text-white'
-    : connection.is_active
-      ? 'bg-green-600 hover:bg-green-700'
-      : '';
+  const rowAction =
+    "inline-flex h-7 items-center gap-[5px] whitespace-nowrap rounded-md px-2 text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
 
   return (
-    <div className="border rounded-lg p-4 space-y-3">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-red-600">
-            <Mail className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="font-medium">{connection.display_name || connection.email_address}</p>
-            <p className="text-sm text-muted-foreground break-all">{connection.email_address}</p>
-          </div>
+    <div className="flex flex-col gap-2.5 border-b px-4 py-3 last:border-b-0" data-testid="email-account-row">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-500/10 text-red-600 dark:text-red-400">
+          <Mail className="h-[18px] w-[18px]" aria-hidden />
+        </span>
+        <div className="flex min-w-[180px] flex-1 flex-col gap-0.5">
+          <span className="text-[13px] font-medium">{connection.display_name || connection.email_address}</span>
+          <span className="text-xs text-muted-foreground [overflow-wrap:anywhere]">{connection.email_address}</span>
         </div>
-        <Badge
-          variant={connection.is_active || autoDisabled ? 'default' : 'secondary'}
-          className={cn('self-start sm:self-auto', statusClass)}
-        >
+        <TonePill tone={autoDisabled ? 'warning' : connection.is_active ? 'success' : 'neutral'} testId="email-account-status">
           {statusLabel}
-        </Badge>
+        </TonePill>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-        <div>
-          <span className="text-muted-foreground">{t('imap')}:</span>
-          <span className="ml-2 break-all">{connection.imap_server}</span>
+      <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2 sm:ps-12">
+        <div className="flex min-w-0 gap-1.5">
+          <dt className="text-muted-foreground">{t('imap')}:</dt>
+          <dd className="min-w-0 [overflow-wrap:anywhere]">{connection.imap_server}</dd>
         </div>
-        <div>
-          <span className="text-muted-foreground">{t('smtp')}:</span>
-          <span className="ml-2 break-all">{connection.smtp_server}</span>
+        <div className="flex min-w-0 gap-1.5">
+          <dt className="text-muted-foreground">{t('smtp')}:</dt>
+          <dd className="min-w-0 [overflow-wrap:anywhere]">{connection.smtp_server}</dd>
         </div>
-        <div>
-          <span className="text-muted-foreground">{t('folder')}:</span>
-          <span className="ml-2">{connection.sync_folder}</span>
+        <div className="flex min-w-0 gap-1.5">
+          <dt className="text-muted-foreground">{t('folder')}:</dt>
+          <dd>{connection.sync_folder}</dd>
         </div>
-        <div className="flex items-center gap-1">
-          <Clock className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-          <span className="text-muted-foreground">{t('synced')}:</span>
-          <span className="ml-1">
-            {connection.last_sync_at ? formatDate(connection.last_sync_at) : t('never')}
-          </span>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <Clock className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
+          <dt className="text-muted-foreground">{t('synced')}:</dt>
+          <dd>{connection.last_sync_at ? formatDate(connection.last_sync_at) : t('never')}</dd>
         </div>
-      </div>
+      </dl>
 
       {autoDisabled ? (
-        <Alert className="py-3 border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-100 dark:border-amber-900">
-          <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <AlertDescription className="space-y-2">
-            <div className="text-xs">
-              <span className="font-medium">{t('autoDisabledTitle')}</span>{' '}
+        <div className="flex flex-col gap-2 rounded-lg border border-amber-500/40 bg-amber-500/[0.08] px-3 py-2.5 sm:ms-12" role="alert" data-testid="email-auto-disabled">
+          <div className="flex items-start gap-2 text-xs leading-[17px]">
+            <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden />
+            <span>
+              <span className="font-semibold text-amber-700 dark:text-amber-400">{t('autoDisabledTitle')}</span>{' '}
               {connection.last_sync_error || t('autoDisabledFallback')}{' '}
               {t('autoDisabledHint')}
-            </div>
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                onReactivate(reactivatePassword.trim() || undefined);
-              }}
-              className="flex flex-col sm:flex-row gap-2"
-            >
-              <Input
-                type="password"
-                placeholder={t('reactivatePasswordPlaceholder')}
-                value={reactivatePassword}
-                onChange={(event) => setReactivatePassword(event.target.value)}
-                className="text-xs h-8 flex-1 bg-background"
-                autoComplete="new-password"
-              />
-              <Button
-                type="submit"
-                size="sm"
-                variant="default"
-                disabled={isReactivating}
-              >
-                {isReactivating ? (
-                  <>
-                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                    {t('testing')}
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-3 w-3" />
-                    {t('reactivate')}
-                  </>
-                )}
-              </Button>
-            </form>
-          </AlertDescription>
-        </Alert>
+            </span>
+          </div>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              onReactivate(reactivatePassword.trim() || undefined);
+            }}
+            className="flex flex-col gap-2 sm:flex-row"
+          >
+            <input
+              type="password"
+              placeholder={t('reactivatePasswordPlaceholder')}
+              aria-label={t('password')}
+              value={reactivatePassword}
+              onChange={(event) => setReactivatePassword(event.target.value)}
+              className={cn(settingsInputClass, 'h-[30px] flex-1 text-xs')}
+              autoComplete="new-password"
+            />
+            <button type="submit" className={rdButton.primarySm} disabled={isReactivating}>
+              {isReactivating ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                  {t('testing')}
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-3 w-3" aria-hidden />
+                  {t('reactivate')}
+                </>
+              )}
+            </button>
+          </form>
+        </div>
       ) : (
         connection.last_sync_error && (
-          <Alert variant="destructive" className="py-2">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-xs">{connection.last_sync_error}</AlertDescription>
-          </Alert>
+          <div className="sm:ms-12">
+            <SettingsNote tone="danger" icon={AlertCircle}>{connection.last_sync_error}</SettingsNote>
+          </div>
         )
       )}
 
-      <div className="flex gap-2 pt-2 flex-wrap">
-        <Button
-          onClick={onEdit}
-          variant="outline"
-          size="sm"
-        >
-          <Pencil className="mr-2 h-3 w-3" />
+      <div className="flex flex-wrap gap-1 sm:ms-10">
+        <button type="button" onClick={onEdit} className={rowAction}>
+          <Pencil className="h-[13px] w-[13px]" aria-hidden />
           {t('edit')}
-        </Button>
-        <Button
+        </button>
+        <button
+          type="button"
           onClick={onSync}
           disabled={isSyncing || autoDisabled}
-          variant="outline"
-          size="sm"
+          className={rowAction}
           title={autoDisabled ? t('reactivateBeforeSync') : undefined}
         >
-          {isSyncing ? (
-            <>
-              <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
-              {t('syncing')}
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-3 w-3" />
-              {t('sync')}
-            </>
-          )}
-        </Button>
-        <Button
-          onClick={onEditSignature}
-          variant="outline"
-          size="sm"
-        >
-          <FileSignature className="mr-2 h-3 w-3" />
+          <RefreshCw className={cn('h-[13px] w-[13px]', isSyncing && 'animate-spin')} aria-hidden />
+          {isSyncing ? t('syncing') : t('sync')}
+        </button>
+        <button type="button" onClick={onEditSignature} className={rowAction}>
+          <FileSignature className="h-[13px] w-[13px]" aria-hidden />
           {t('signature')}
           {hasEffectiveSignature(connection) && (
             <Check
-              className="ml-1 h-3 w-3 text-green-500"
+              className="h-3 w-3 text-green-600"
               data-testid="signature-indicator"
             />
           )}
-        </Button>
-        <Button
-          onClick={onManageAccess}
-          variant="outline"
-          size="sm"
-        >
-          <Users className="mr-2 h-3 w-3" />
+        </button>
+        <button type="button" onClick={onManageAccess} className={rowAction}>
+          <Users className="h-[13px] w-[13px]" aria-hidden />
           {t('access')}
           {connection.assigned_users && connection.assigned_users.length > 0 && (
-            <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
+            <span className="inline-flex h-4 min-w-4 items-center justify-center rounded bg-muted px-1 text-[10px] tabular-nums">
               {connection.assigned_users.length}
-            </Badge>
+            </span>
           )}
-        </Button>
-        <Button
+        </button>
+        <button
+          type="button"
           onClick={onDisconnect}
           disabled={isDisconnecting}
-          variant="destructive"
-          size="sm"
+          className={cn(rowAction, 'text-destructive')}
         >
           {isDisconnecting ? (
             <>
-              <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+              <RefreshCw className="h-[13px] w-[13px] animate-spin" aria-hidden />
               {t('removing')}
             </>
           ) : (
             <>
-              <Trash2 className="mr-2 h-3 w-3" />
+              <Trash2 className="h-[13px] w-[13px]" aria-hidden />
               {t('remove')}
             </>
           )}
-        </Button>
+        </button>
       </div>
     </div>
   );
@@ -614,328 +590,250 @@ export function EmailConnection() {
     }
   };
 
+  const fieldLabel = 'text-xs font-medium text-muted-foreground';
+
   return (
     <>
-      <Card className={cn('border-2', hasConnections ? 'border-red-200 bg-red-50/50' : 'border-border')}>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-600 text-white">
-                <Mail className="h-6 w-6" />
-              </div>
-              <div>
-                <CardTitle className="text-xl">{t('title')}</CardTitle>
-                <CardDescription className="flex items-center gap-2 mt-1">
-                  {hasConnections ? (
-                    <>
-                      <Check className="h-4 w-4 text-green-600" />
-                      <span>{t('accountsConnected', { count: connections.length })}</span>
-                    </>
-                  ) : (
-                    <>
-                      <X className="h-4 w-4 text-muted-foreground" />
-                      <span>{t('noAccounts')}</span>
-                    </>
-                  )}
-                </CardDescription>
-              </div>
-            </div>
-            <Badge
-              variant={hasConnections ? 'default' : 'secondary'}
-              className={cn('h-8 self-start sm:self-auto', hasConnections && 'bg-red-600 hover:bg-red-700')}
-            >
-              {hasConnections ? t('badgeConnected', { count: connections.length }) : t('badgeNotConnected')}
-            </Badge>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          {/* Action buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              onClick={() => setShowConnectDialog(true)}
-              disabled={loading}
-              className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              {t('addAccount')}
-            </Button>
-            {hasConnections && (
-              <Button
-                onClick={handleSyncAll}
-                disabled={loading || syncEmail.isPending}
-                variant="outline"
-                className="w-full sm:w-auto"
-              >
-                {syncEmail.isPending && syncingConnectionId === null ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    {t('syncingAll')}
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    {t('syncAll')}
-                  </>
-                )}
-              </Button>
-            )}
-            <Button onClick={() => refetch()} disabled={loading} variant="outline" className="w-full sm:w-auto">
-              <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
-              {t('refresh')}
-            </Button>
-          </div>
-
-          {/* Connected accounts list */}
-          {hasConnections && (
-            <div className="space-y-3 pt-4 border-t">
-              <h4 className="font-semibold text-sm">{t('connectedAccounts')}</h4>
-              {connections.map((connection) => (
-                <EmailAccountCard
-                  key={connection.id}
-                  connection={connection}
-                  onSync={() => handleSync(connection.id)}
-                  onDisconnect={() => handleDisconnect(connection.id, connection.email_address)}
-                  onEdit={() => handleEdit(connection)}
-                  onEditSignature={() => handleEditSignature(connection)}
-                  onManageAccess={() => handleManageAccess(connection)}
-                  onReactivate={(password) => handleReactivate(connection.id, password)}
-                  isSyncing={syncingConnectionId === connection.id}
-                  isDisconnecting={disconnectingConnectionId === connection.id}
-                  isReactivating={reactivatingConnectionId === connection.id}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Setup Instructions */}
-          {!hasConnections && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {t.rich('gmailNote', {
-                  strong: (chunks) => <strong>{chunks}</strong>,
-                  link: (chunks) => (
-                    <a
-                      href="https://support.google.com/accounts/answer/185833"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      {chunks}
-                    </a>
-                  ),
-                })}
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Connect Dialog */}
-      <Dialog open={showConnectDialog} onOpenChange={setShowConnectDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              {t('addTitle')}
-            </DialogTitle>
-            <DialogDescription>
-              {t('addDescription')}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {/* Basic Info */}
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('emailAddress')}</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={formData.email_address}
-                onChange={(e) => handleEmailChange(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="display_name">{t('displayName')}</Label>
-              <Input
-                id="display_name"
-                placeholder={t('displayNamePlaceholder')}
-                value={formData.display_name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, display_name: e.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">{t('passwordRequired')}</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder={t('passwordPlaceholder')}
-                  value={formData.password}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+      <ChannelDetailCard
+        icon={Mail}
+        color="#dc2626"
+        title={t('title')}
+        status={hasConnections ? t('accountsConnected', { count: connections.length }) : t('noAccounts')}
+        statusIcon={hasConnections ? Check : X}
+        statusTone={hasConnections ? 'success' : 'neutral'}
+        badge={{ label: hasConnections ? t('badgeConnected', { count: connections.length }) : t('badgeNotConnected'), tone: hasConnections ? 'success' : 'neutral' }}
+        actions={[
+          { label: t('addAccount'), icon: Plus, variant: 'primary', onClick: () => setShowConnectDialog(true), disabled: loading, testId: 'email-add-account' },
+          ...(hasConnections
+            ? [{
+                label: syncEmail.isPending && syncingConnectionId === null ? t('syncingAll') : t('syncAll'),
+                icon: RefreshCw,
+                variant: 'outline' as const,
+                onClick: handleSyncAll,
+                disabled: loading || syncEmail.isPending,
+                testId: 'email-sync-all',
+              }]
+            : []),
+          { label: t('refresh'), icon: RefreshCw, variant: 'outline', onClick: () => refetch(), disabled: loading, testId: 'email-refresh' },
+        ]}
+        testId="email-detail"
+      >
+        {/* Setup Instructions */}
+        {!hasConnections && (
+          <SettingsNote tone="info" icon={AlertCircle}>
+            {t.rich('gmailNote', {
+              strong: (chunks) => <strong className="font-semibold">{chunks}</strong>,
+              link: (chunks) => (
+                <a
+                  href="https://support.google.com/accounts/answer/185833"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
+                  {chunks}
+                </a>
+              ),
+            })}
+          </SettingsNote>
+        )}
+      </ChannelDetailCard>
+
+      {/* Add mailbox (design CONNECTIONS email add form; same fields, checks and request as the old dialog) */}
+      {showConnectDialog && (
+        <SettingsSection title={t('addTitle')} hint={t('addDescription')} testId="email-add-form">
+          <div className="flex flex-col gap-3.5 px-4 py-3.5">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className={fieldLabel}>{t('emailAddress')}</span>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  className={settingsInputClass}
+                  value={formData.email_address}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                />
+              </label>
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className={fieldLabel}>{t('displayName')}</span>
+                <input
+                  id="display_name"
+                  className={settingsInputClass}
+                  placeholder={t('displayNamePlaceholder')}
+                  value={formData.display_name}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, display_name: e.target.value }))}
+                />
+              </label>
+              <div className="flex min-w-0 flex-col gap-1">
+                <label htmlFor="password" className={fieldLabel}>{t('passwordRequired')}</label>
+                <SecretInput
+                  id="password"
+                  mono={false}
+                  value={formData.password}
+                  onChange={(value) => setFormData((prev) => ({ ...prev, password: value }))}
+                  placeholder={t('passwordPlaceholder')}
+                  autoComplete="new-password"
+                  showLabel={t('showPassword')}
+                  hideLabel={t('hidePassword')}
+                />
               </div>
             </div>
 
-            {/* Server Settings */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="imap_server">{t('imapServer')}</Label>
-                <Input
+            <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-3 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)_88px]">
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className={fieldLabel}>{t('imapServer')}</span>
+                <input
                   id="imap_server"
+                  className={settingsInputClass}
                   placeholder="imap.example.com"
                   value={formData.imap_server}
                   onChange={(e) => setFormData((prev) => ({ ...prev, imap_server: e.target.value }))}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="imap_port">{t('imapPort')}</Label>
-                <Input
+              </label>
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className={fieldLabel}>{t('imapPort')}</span>
+                <input
                   id="imap_port"
                   type="number"
+                  className={cn(settingsInputClass, 'font-mono tabular-nums')}
                   value={formData.imap_port}
                   onChange={(e) => setFormData((prev) => ({ ...prev, imap_port: parseInt(e.target.value) || 993 }))}
                 />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="smtp_server">{t('smtpServer')}</Label>
-                <Input
+              </label>
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className={fieldLabel}>{t('smtpServer')}</span>
+                <input
                   id="smtp_server"
+                  className={settingsInputClass}
                   placeholder="smtp.example.com"
                   value={formData.smtp_server}
                   onChange={(e) => setFormData((prev) => ({ ...prev, smtp_server: e.target.value }))}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="smtp_port">{t('smtpPort')}</Label>
-                <Input
+              </label>
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className={fieldLabel}>{t('smtpPort')}</span>
+                <input
                   id="smtp_port"
                   type="number"
+                  className={cn(settingsInputClass, 'font-mono tabular-nums')}
                   value={formData.smtp_port}
                   onChange={(e) => setFormData((prev) => ({ ...prev, smtp_port: parseInt(e.target.value) || 587 }))}
                 />
-              </div>
+              </label>
             </div>
 
+            <p className="text-xs leading-[17px] text-muted-foreground">{t('addHint')}</p>
+
             {/* Advanced Settings */}
-            <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+            <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced} className="rounded-lg border">
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-full justify-between">
+                <button type="button" className="flex h-9 w-full items-center justify-between gap-2 px-3 text-[13px] font-medium hover:bg-accent/60">
                   <span className="flex items-center gap-2">
-                    <Settings2 className="h-4 w-4" />
+                    <Settings2 className="h-4 w-4 text-muted-foreground" aria-hidden />
                     {t('advanced')}
                   </span>
-                  <ChevronDown className={cn('h-4 w-4 transition-transform', showAdvanced && 'rotate-180')} />
-                </Button>
+                  <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', showAdvanced && 'rotate-180')} aria-hidden />
+                </button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">{t('username')}</Label>
-                  <Input
+              <CollapsibleContent className="border-t">
+                <FieldRow label={t('username')} htmlFor="username" align="center">
+                  <input
                     id="username"
+                    className={cn(settingsInputClass, settingsFieldWidth)}
                     placeholder={t('usernamePlaceholder')}
                     value={formData.username}
                     onChange={(e) => setFormData((prev) => ({ ...prev, username: e.target.value }))}
                   />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="imap_ssl">{t('imapSsl')}</Label>
-                  <Switch
+                </FieldRow>
+                <FieldRow label={t('imapSsl')} htmlFor="imap_ssl" align="center">
+                  <SettingsToggle
                     id="imap_ssl"
                     checked={formData.imap_use_ssl}
                     onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, imap_use_ssl: checked }))}
                   />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="smtp_tls">{t('smtpTls')}</Label>
-                  <Switch
+                </FieldRow>
+                <FieldRow label={t('smtpTls')} htmlFor="smtp_tls" align="center">
+                  <SettingsToggle
                     id="smtp_tls"
                     checked={formData.smtp_use_tls}
                     onCheckedChange={(checked) =>
                       setFormData((prev) => ({ ...prev, smtp_use_tls: checked, smtp_use_ssl: checked ? false : prev.smtp_use_ssl }))
                     }
                   />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="smtp_ssl">{t('smtpSsl')}</Label>
-                  <Switch
+                </FieldRow>
+                <FieldRow label={t('smtpSsl')} htmlFor="smtp_ssl" align="center">
+                  <SettingsToggle
                     id="smtp_ssl"
                     checked={formData.smtp_use_ssl}
                     onCheckedChange={(checked) =>
                       setFormData((prev) => ({ ...prev, smtp_use_ssl: checked, smtp_use_tls: checked ? false : prev.smtp_use_tls }))
                     }
                   />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sync_folder">{t('syncFolder')}</Label>
-                    <Input
-                      id="sync_folder"
-                      value={formData.sync_folder}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, sync_folder: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sync_days">{t('syncDaysBack')}</Label>
-                    <Input
-                      id="sync_days"
-                      type="number"
-                      min={1}
-                      max={365}
-                      value={formData.sync_days_back}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, sync_days_back: parseInt(e.target.value) || 30 }))}
-                    />
-                  </div>
-                </div>
+                </FieldRow>
+                <FieldRow label={t('syncFolder')} htmlFor="sync_folder" align="center">
+                  <input
+                    id="sync_folder"
+                    className={cn(settingsInputClass, settingsFieldWidth)}
+                    value={formData.sync_folder}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, sync_folder: e.target.value }))}
+                  />
+                </FieldRow>
+                <FieldRow label={t('syncDaysBack')} htmlFor="sync_days" align="center">
+                  <input
+                    id="sync_days"
+                    type="number"
+                    min={1}
+                    max={365}
+                    className={cn(settingsInputClass, 'w-28 font-mono tabular-nums')}
+                    value={formData.sync_days_back}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, sync_days_back: parseInt(e.target.value) || 30 }))}
+                  />
+                </FieldRow>
               </CollapsibleContent>
             </Collapsible>
-          </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConnectDialog(false)}>
-              {t('cancel')}
-            </Button>
-            <Button
-              onClick={handleConnect}
-              disabled={connectEmail.isPending}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {connectEmail.isPending ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  {t('connecting')}
-                </>
-              ) : (
-                <>
-                  <Mail className="mr-2 h-4 w-4" />
-                  {t('connect')}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div className="flex flex-wrap justify-end gap-2">
+              <button type="button" className={rdButton.outline} onClick={() => setShowConnectDialog(false)}>
+                {t('cancel')}
+              </button>
+              <button type="button" onClick={handleConnect} className={rdButton.primary} disabled={connectEmail.isPending} data-testid="email-connect-submit">
+                {connectEmail.isPending ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                    {t('connecting')}
+                  </>
+                ) : (
+                  <>
+                    <Plug className="h-3.5 w-3.5" aria-hidden />
+                    {t('connect')}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </SettingsSection>
+      )}
+
+      {/* Connected accounts list */}
+      {hasConnections && (
+        <SettingsSection title={t('connectedAccounts')} testId="email-accounts">
+          {connections.map((connection) => (
+            <EmailAccountCard
+              key={connection.id}
+              connection={connection}
+              onSync={() => handleSync(connection.id)}
+              onDisconnect={() => handleDisconnect(connection.id, connection.email_address)}
+              onEdit={() => handleEdit(connection)}
+              onEditSignature={() => handleEditSignature(connection)}
+              onManageAccess={() => handleManageAccess(connection)}
+              onReactivate={(password) => handleReactivate(connection.id, password)}
+              isSyncing={syncingConnectionId === connection.id}
+              isDisconnecting={disconnectingConnectionId === connection.id}
+              isReactivating={reactivatingConnectionId === connection.id}
+            />
+          ))}
+        </SettingsSection>
+      )}
 
       {/* Edit Connection Dialog */}
       <Dialog open={showEditDialog} onOpenChange={(open) => {

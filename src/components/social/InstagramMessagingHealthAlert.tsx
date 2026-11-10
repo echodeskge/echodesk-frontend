@@ -2,8 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { AlertTriangle, RefreshCw } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { ActionButton } from "@/components/redesign/settings";
 
 export type InstagramMessagingStatus = "unknown" | "ok" | "messaging_disabled" | "error";
 
@@ -39,50 +38,59 @@ export function InstagramMessagingHealthAlert({ accounts, onRecheck, rechecking 
   if (disabled.length === 0 && failing.length === 0) return null;
 
   const recheckButton = onRecheck ? (
-    <Button size="sm" variant="outline" onClick={onRecheck} disabled={rechecking} className="mt-3">
-      <RefreshCw className={rechecking ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"} />
+    <ActionButton icon={RefreshCw} onClick={onRecheck} disabled={rechecking} className={rechecking ? "mt-2.5 [&_svg]:animate-spin" : "mt-2.5"}>
       {t("recheck")}
-    </Button>
+    </ActionButton>
   ) : null;
 
+  // Design CONNECTIONS alert banner, in the destructive tone (DMs stopped).
+  const banner =
+    "flex items-start gap-3 rounded-[10px] border border-destructive/40 bg-destructive/[0.06] px-3.5 py-3";
+  const titleCls = "text-[13px] font-semibold text-destructive dark:text-red-400";
+  const textCls = "mt-0.5 text-xs leading-[17px] text-foreground/85";
+
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {disabled.length > 0 && (
-        <Alert variant="destructive" data-testid="instagram-messaging-disabled">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>
-            {t("disabledTitle", { accounts: disabled.map((a) => `@${a.username}`).join(", ") })}
-          </AlertTitle>
-          <AlertDescription>
-            <p>{t("disabledDescription")}</p>
-            <ol className="mt-2 list-decimal space-y-1 pl-5">
-              {ENABLE_STEPS.map((step) => (
-                <li key={step}>{t(`steps.${step}`)}</li>
-              ))}
-            </ol>
-            <p className="mt-2">{t("afterEnabling")}</p>
+        <div role="alert" className={banner} data-testid="instagram-messaging-disabled">
+          <AlertTriangle className="mt-px h-4 w-4 shrink-0 text-destructive dark:text-red-400" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <p className={titleCls}>
+              {t("disabledTitle", { accounts: disabled.map((a) => `@${a.username}`).join(", ") })}
+            </p>
+            <div className={textCls}>
+              <p>{t("disabledDescription")}</p>
+              <ol className="mt-1.5 list-decimal space-y-0.5 ps-5">
+                {ENABLE_STEPS.map((step) => (
+                  <li key={step}>{t(`steps.${step}`)}</li>
+                ))}
+              </ol>
+              <p className="mt-1.5">{t("afterEnabling")}</p>
+            </div>
             {recheckButton}
-          </AlertDescription>
-        </Alert>
+          </div>
+        </div>
       )}
       {failing.length > 0 && (
-        <Alert variant="destructive" data-testid="instagram-messaging-error">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>
-            {t("errorTitle", { accounts: failing.map((a) => `@${a.username}`).join(", ") })}
-          </AlertTitle>
-          <AlertDescription>
-            <p>{t("errorDescription")}</p>
-            {failing.map((a) =>
-              a.messaging_error ? (
-                <p key={a.id} className="mt-1 text-xs opacity-80">
-                  @{a.username}: {a.messaging_error}
-                </p>
-              ) : null,
-            )}
+        <div role="alert" className={banner} data-testid="instagram-messaging-error">
+          <AlertTriangle className="mt-px h-4 w-4 shrink-0 text-destructive dark:text-red-400" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <p className={titleCls}>
+              {t("errorTitle", { accounts: failing.map((a) => `@${a.username}`).join(", ") })}
+            </p>
+            <div className={textCls}>
+              <p>{t("errorDescription")}</p>
+              {failing.map((a) =>
+                a.messaging_error ? (
+                  <p key={a.id} className="mt-1 opacity-80">
+                    @{a.username}: {a.messaging_error}
+                  </p>
+                ) : null,
+              )}
+            </div>
             {disabled.length === 0 && recheckButton}
-          </AlertDescription>
-        </Alert>
+          </div>
+        </div>
       )}
     </div>
   );

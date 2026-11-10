@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { AlertTriangle, Globe, Plus, Trash2, Save, RefreshCw } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle, Plus, Trash2, Save, RefreshCw } from 'lucide-react';
+import { rdButton } from '@/components/redesign/buttons';
+import { ActionButton, SettingsNote, SettingsSection, settingsInputClass } from '@/components/redesign/settings';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface WidgetAllowedOriginsEditorProps {
@@ -112,77 +111,63 @@ export function WidgetAllowedOriginsEditor({
   const showEmptyWarning = effectiveList.length === 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Globe className="h-5 w-5" />
-          {t('title')}
-        </CardTitle>
-        <CardDescription>{t('description')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <SettingsSection title={t('title')} hint={t('description')} testId="widget-origins">
+      <div className="flex flex-col gap-2.5 px-4 py-3.5">
         {showEmptyWarning && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{t('emptyWarning')}</AlertDescription>
-          </Alert>
+          <SettingsNote tone="danger" icon={AlertTriangle}>{t('emptyWarning')}</SettingsNote>
         )}
 
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           {draft.map((origin, index) => (
-            <div key={index} className="flex gap-2">
-              <Input
+            <div key={index} className="flex gap-1.5">
+              <input
                 type="url"
                 placeholder="https://example.com"
+                className={cn(settingsInputClass, 'flex-1 font-mono text-xs')}
+                aria-label={t('title')}
                 value={origin}
                 onChange={(e) => handleChange(index, e.target.value)}
                 onBlur={() => handleBlur(index)}
                 autoComplete="off"
                 spellCheck={false}
               />
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="icon"
+                className={rdButton.ghostIcon}
                 onClick={() => handleRemove(index)}
                 aria-label={t('remove')}
+                title={t('remove')}
               >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+                <Trash2 className="h-4 w-4" aria-hidden />
+              </button>
             </div>
           ))}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAdd}
-          >
-            <Plus className="mr-2 h-4 w-4" />
+        <div className="flex flex-wrap gap-2">
+          <ActionButton icon={Plus} onClick={handleAdd}>
             {t('add')}
-          </Button>
-          <Button
+          </ActionButton>
+          <button
             type="button"
-            size="sm"
+            className={rdButton.primarySm}
             onClick={handleSave}
             disabled={!isDirty || saving}
           >
             {saving ? (
               <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden />
                 {t('saving')}
               </>
             ) : (
               <>
-                <Save className="mr-2 h-4 w-4" />
+                <Save className="h-3.5 w-3.5" aria-hidden />
                 {t('save')}
               </>
             )}
-          </Button>
+          </button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </SettingsSection>
   );
 }

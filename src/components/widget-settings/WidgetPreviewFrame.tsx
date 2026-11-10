@@ -2,8 +2,7 @@
 
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { Eye } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SettingsSection } from '@/components/redesign/settings';
 
 interface WidgetPreviewFrameProps {
   widgetToken: string | null | undefined;
@@ -42,17 +41,10 @@ export function WidgetPreviewFrame({ widgetToken }: WidgetPreviewFrameProps) {
   const scale = displayWidth / naturalWidth;
 
   return (
-    <Card className="sticky top-4">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Eye className="h-5 w-5" />
-          {t('title')}
-        </CardTitle>
-        <CardDescription>{t('description')}</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <SettingsSection title={t('title')} hint={t('description')} testId="widget-preview">
+      <div className="flex justify-center px-4 py-4">
         <div
-          className="mx-auto overflow-hidden rounded-xl border bg-muted/30"
+          className="max-w-full overflow-hidden rounded-xl border bg-muted/30"
           style={{ width: displayWidth, height: displayHeight }}
         >
           {previewUrl ? (
@@ -76,7 +68,7 @@ export function WidgetPreviewFrame({ widgetToken }: WidgetPreviewFrameProps) {
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </SettingsSection>
   );
 }

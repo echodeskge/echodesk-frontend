@@ -2,12 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Palette } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import {
+  ChoiceControl,
+  FieldRow,
+  SettingsSection,
+  SwatchPicker,
+  settingsInputClass,
+  type SwatchOption,
+} from '@/components/redesign/settings';
 
 export type WidgetPosition = 'bottom-right' | 'bottom-left';
 
@@ -20,6 +23,16 @@ interface WidgetAppearanceFormProps {
 
 const DEFAULT_COLOR = '#2A2B7D';
 const HEX_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+/** Quick brand colours (design swatches). Picking one is the same as picking it in the colour input. */
+const SWATCHES = [
+  { key: 'default', value: '#2A2B7D' },
+  { key: 'blue', value: '#2563EB' },
+  { key: 'green', value: '#16A34A' },
+  { key: 'red', value: '#DC2626' },
+  { key: 'purple', value: '#9333EA' },
+  { key: 'orange', value: '#EA580C' },
+] as const;
 
 /**
  * Appearance is a "simple fields, fire onChange immediately" form.
@@ -63,71 +76,65 @@ export function WidgetAppearanceForm({
     emit(normalized, position);
   };
 
+  const swatches: SwatchOption[] = SWATCHES.map((sw) => ({ value: sw.value, color: sw.value, label: t(`swatches.${sw.key}`) }));
+  const normalizedLocal = localColor.toUpperCase();
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Palette className="h-5 w-5" />
-          {t('title')}
-        </CardTitle>
-        <CardDescription>
+    <SettingsSection
+      title={t('title')}
+      hint={
+        <>
           {t('description')}
-          {saving && (
-            <span className="ml-2 text-xs text-muted-foreground">{t('saving')}</span>
-          )}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Brand color */}
-        <div className="space-y-2">
-          <Label htmlFor="widget_brand_color">{t('brandColor')}</Label>
-          <div className="flex items-center gap-3">
+          {saving && <span className="ms-2 text-xs text-muted-foreground">{t('saving')}</span>}
+        </>
+      }
+      testId="widget-appearance"
+    >
+      {/* Brand color */}
+      <FieldRow label={t('brandColor')} help={t('brandColorHint')} htmlFor="widget_brand_color">
+        <div className="flex flex-col items-start gap-2.5 sm:items-end">
+          <SwatchPicker
+            value={swatches.some((sw) => sw.value === normalizedLocal) ? normalizedLocal : null}
+            onChange={(value) => handleColorPicker(value)}
+            options={swatches}
+            ariaLabel={t('brandColor')}
+            testId="widget-swatches"
+          />
+          <div className="flex items-center gap-2">
             <input
               id="widget_brand_color_picker"
               type="color"
               aria-label={t('brandColor')}
               value={HEX_PATTERN.test(localColor) ? localColor : DEFAULT_COLOR}
               onChange={(e) => handleColorPicker(e.target.value)}
-              className="h-10 w-14 cursor-pointer rounded-md border bg-background p-1"
+              className="h-[34px] w-11 cursor-pointer rounded-md border bg-background p-1"
             />
-            <Input
+            <input
               id="widget_brand_color"
               type="text"
               value={localColor}
               onChange={(e) => handleColorInput(e.target.value)}
               placeholder={DEFAULT_COLOR}
-              className="max-w-[160px] font-mono uppercase"
+              className={cn(settingsInputClass, 'w-[120px] font-mono uppercase')}
               spellCheck={false}
             />
-            <div
-              className="h-10 w-10 rounded-full border shadow-sm"
-              style={{ backgroundColor: HEX_PATTERN.test(localColor) ? localColor : DEFAULT_COLOR }}
-              aria-hidden
-            />
           </div>
-          <p className="text-xs text-muted-foreground">{t('brandColorHint')}</p>
         </div>
+      </FieldRow>
 
-        {/* Position */}
-        <div className="space-y-2">
-          <Label>{t('position')}</Label>
-          <div className="flex flex-wrap gap-2">
-            {(['bottom-right', 'bottom-left'] as WidgetPosition[]).map((pos) => (
-              <Button
-                key={pos}
-                type="button"
-                variant={position === pos ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => emit(localColor, pos)}
-                className={cn('min-w-[140px] justify-center')}
-              >
-                {t(pos === 'bottom-right' ? 'bottomRight' : 'bottomLeft')}
-              </Button>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground">{t('positionHint')}</p>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Position */}
+      <FieldRow label={t('position')} help={t('positionHint')} align="center">
+        <ChoiceControl
+          value={position}
+          onChange={(pos) => emit(localColor, pos)}
+          ariaLabel={t('position')}
+          testId="widget-position"
+          options={[
+            { value: 'bottom-right', label: t('bottomRight') },
+            { value: 'bottom-left', label: t('bottomLeft') },
+          ]}
+        />
+      </FieldRow>
+    </SettingsSection>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { FacebookPageConnection, FacebookMessage } from "@/api/generated/interfaces";
 import {
   useFacebookStatus,
@@ -15,27 +15,21 @@ import {
   useDisconnectInstagram,
   useRecheckInstagramMessaging,
 } from "@/hooks/api";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Facebook,
   Instagram,
   RefreshCw,
   Check,
   X,
-  MessageSquare,
   MessageCircle,
   Clock,
   AlertCircle,
   Info,
-  ArrowRight,
   Mail,
+  Plug,
   Trash2,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { socialFacebookPagesDestroy } from "@/api/generated/api";
@@ -49,7 +43,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+import {
+  AccountRow,
+  AccountRowAction,
+  ChannelDetailCard,
+  ChannelList,
+  ChannelNote,
+  ConnectionsLayout,
+  PermissionList,
+  SettingsNote,
+  SettingsPage,
+  SettingsSection,
+  type ChannelListItem,
+} from "@/components/redesign/settings";
 import { useRouter } from "next/navigation";
 import { WhatsAppConnection } from "@/components/WhatsAppConnection";
 import { EmailConnection } from "@/components/EmailConnection";
@@ -98,6 +104,8 @@ const TikTokIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+type ChannelId = "facebook" | "instagram" | "whatsapp" | "email" | "widget" | "tiktok" | "telegram";
+
 interface SocialIntegrationsProps {
   onBackToDashboard?: () => void;
   onConnectionChange?: (type: 'facebook', connected: boolean) => void;
@@ -139,6 +147,7 @@ interface PaginatedResponse<T> {
 
 export default function SocialIntegrations({ onBackToDashboard, onConnectionChange }: SocialIntegrationsProps) {
   const t = useTranslations("social");
+  const locale = useLocale();
   const [error, setError] = useState("");
   const router = useRouter();
   // An old (inactive) page the user asked to remove from the list
@@ -159,6 +168,9 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   const { data: instagramAccountsData, isLoading: instagramAccountsLoading, refetch: refetchInstagramAccounts } = useInstagramAccounts();
   const instagramStatus = instagramStatusData as InstagramStatus | null;
   const isInstagramConnected = instagramStatus?.connected || false;
+  const instagramNeedsAttention = (instagramStatus?.accounts || []).some(
+    (a) => a.is_active && (a.messaging_status === "messaging_disabled" || a.messaging_status === "error")
+  );
   const { data: instagramMessagesData } = useInstagramMessages({ page: 1 }, { enabled: isInstagramConnected });
   const disconnectInstagram = useDisconnectInstagram();
   const recheckInstagram = useRecheckInstagramMessaging();
@@ -253,7 +265,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(locale === 'ka' ? 'ka-GE' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -262,50 +274,67 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
     });
   };
 
-  // Define platform tabs
-  const platformTabs = [
-    { value: "facebook", label: "Facebook", icon: Facebook, color: "text-blue-600" },
-    { value: "instagram", label: "Instagram", icon: Instagram, color: "text-pink-600" },
-    { value: "whatsapp", label: "WhatsApp", icon: WhatsAppIcon, color: "text-green-600" },
-    { value: "email", label: "Email", icon: Mail, color: "text-red-600" },
-    { value: "widget", label: "Website widget", icon: MessageCircle, color: "text-indigo-600" },
-    { value: "tiktok", label: "TikTok", icon: TikTokIcon, color: "text-black" },
-    { value: "telegram", label: "Telegram", icon: TelegramIcon, color: "text-[#229ED9]" },
+  const [channel, setChannel] = useState<ChannelId>("facebook");
+
+  // Channel list (design CONNECTIONS). Statuses only for the channels whose
+  // status this page already loads; the others load when opened, as before.
+  const channels: ChannelListItem<ChannelId>[] = [
+    {
+      id: "facebook",
+      label: "Facebook",
+      icon: Facebook,
+      color: "#1877F2",
+      status: isConnected && facebookStatus ? `${facebookStatus.pages_count} ${t("pagesConnected")}` : t("notConnected"),
+      dot: isConnected ? "success" : null,
+    },
+    {
+      id: "instagram",
+      label: "Instagram",
+      icon: Instagram,
+      color: "linear-gradient(135deg,#9333ea,#db2777)",
+      status: isInstagramConnected && instagramStatus ? `${instagramStatus.accounts_count} ${t("accountsConnected")}` : t("notConnected"),
+      dot: isInstagramConnected ? (instagramNeedsAttention ? "warning" : "success") : null,
+    },
+    { id: "whatsapp", label: "WhatsApp", icon: WhatsAppIcon as unknown as LucideIcon, color: "#25D366" },
+    { id: "email", label: t("connections.email"), icon: Mail, color: "#dc2626" },
+    { id: "widget", label: t("connections.widget"), icon: MessageCircle, color: "#4f46e5" },
+    { id: "tiktok", label: "TikTok", icon: TikTokIcon as unknown as LucideIcon, color: "#000000" },
+    { id: "telegram", label: "Telegram", icon: TelegramIcon as unknown as LucideIcon, color: "#229ED9" },
   ];
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-          {t("socialMediaIntegrations")}
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          {t("connectAndManage")}
-        </p>
-      </div>
-
+    <SettingsPage
+      icon={Plug}
+      title={t("socialMediaIntegrations")}
+      description={t("connectAndManage")}
+      width="connections"
+      gap={18}
+      testId="social-connections-page"
+    >
       {/* Error Alert */}
       {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span>{error}</span>
-            <Button
-              variant="ghost"
-              size="sm"
+        <SettingsNote
+          tone="danger"
+          icon={AlertCircle}
+          testId="connections-error"
+          action={
+            <button
+              type="button"
               onClick={() => setError("")}
-              className="h-auto p-0 hover:bg-transparent self-end sm:self-auto"
+              className="-my-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-destructive/10"
+              aria-label={t("connections.dismiss")}
             >
-              <X className="h-4 w-4" />
-            </Button>
-          </AlertDescription>
-        </Alert>
+              <X className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          }
+        >
+          {error}
+        </SettingsNote>
       )}
 
-      {/* Shown above the tabs: Facebook is the default tab, and Instagram
-          DMs silently stop when the owner turns off message access. */}
-      <div className="mb-6 empty:hidden">
+      {/* Shown above the channels: Instagram DMs silently stop when the
+          owner turns off message access, whichever channel is open. */}
+      <div className="empty:hidden">
         <InstagramMessagingHealthAlert
           accounts={instagramStatus?.accounts || []}
           onRecheck={() => recheckInstagram.mutate()}
@@ -313,433 +342,230 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
         />
       </div>
 
-      <Tabs defaultValue="facebook" className="w-full">
-        <TabsList className="mb-6 h-auto flex-wrap">
-          {platformTabs.map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              className="flex items-center gap-2"
-            >
-              <tab.icon className={cn("h-4 w-4", tab.color)} />
-              <span className="hidden sm:inline">{tab.label}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      <ConnectionsLayout
+        list={<ChannelList channels={channels} value={channel} onSelect={setChannel} ariaLabel={t("connections.channelsLabel")} />}
+      >
+        {/* Facebook */}
+        {channel === "facebook" && (
+          <>
+            <ChannelDetailCard
+              icon={Facebook}
+              color="#1877F2"
+              title={t("facebookPages")}
+              status={isConnected && facebookStatus ? `${facebookStatus.pages_count} ${t("pagesConnected")}` : t("notConnected")}
+              statusIcon={isConnected && facebookStatus ? Check : X}
+              statusTone={isConnected && facebookStatus ? "success" : "neutral"}
+              badge={{ label: isConnected ? t("connected") : t("notConnected"), tone: isConnected ? "success" : "neutral" }}
+              inbox={
+                isConnected && totalMessages > 0
+                  ? { count: totalMessages, label: t("totalMessages"), actionLabel: t("viewMessages"), onClick: () => router.push('/social/messages') }
+                  : null
+              }
+              actions={[
+                /* The Facebook Login button must ALWAYS be visible — App
+                   Review rejected the app ("Unable to Locate Facebook
+                   Login", Platform Term 7.a) because it disappeared once a
+                   page was connected. It also lets tenants connect more
+                   pages without disconnecting existing ones. */
+                {
+                  label: loading || connectFacebook.isPending ? t("connecting") : isConnected ? t("connectMorePages") : t("connectFacebookPages"),
+                  icon: loading || connectFacebook.isPending ? RefreshCw : Facebook,
+                  variant: "primary",
+                  onClick: handleConnectFacebook,
+                  disabled: loading || connectFacebook.isPending,
+                  testId: "facebook-connect",
+                },
+                ...(isConnected
+                  ? [{
+                      label: loading || disconnectFacebook.isPending ? t("disconnecting") : t("disconnectAllPages"),
+                      icon: loading || disconnectFacebook.isPending ? RefreshCw : X,
+                      variant: "danger" as const,
+                      onClick: handleDisconnectFacebook,
+                      disabled: loading || disconnectFacebook.isPending,
+                      testId: "facebook-disconnect",
+                    }]
+                  : []),
+                { label: t("refreshStatus"), icon: RefreshCw, variant: "outline", onClick: handleRefresh, disabled: loading, testId: "facebook-refresh" },
+              ]}
+              testId="facebook-detail"
+            />
 
-        {/* Facebook Tab */}
-        <TabsContent value="facebook" className="space-y-6">
-          <Card className={cn(
-            "border-2",
-            isConnected ? "border-green-200 bg-green-50/50" : "border-border"
-          )}>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600 text-white">
-                    <Facebook className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">{t("facebookPages")}</CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-1">
-                      {isConnected && facebookStatus ? (
-                        <>
-                          <Check className="h-4 w-4 text-green-600" />
-                          <span>{facebookStatus.pages_count} {t("pagesConnected")}</span>
-                        </>
-                      ) : (
-                        <>
-                          <X className="h-4 w-4 text-muted-foreground" />
-                          <span>{t("notConnected")}</span>
-                        </>
-                      )}
-                    </CardDescription>
-                  </div>
-                </div>
-                <Badge
-                  variant={isConnected ? "default" : "secondary"}
-                  className={cn(
-                    "h-8 self-start sm:self-auto",
-                    isConnected && "bg-green-600 hover:bg-green-700"
-                  )}
-                >
-                  {isConnected ? t("connected") : t("notConnected")}
-                </Badge>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {isConnected && totalMessages > 0 && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center gap-2 text-sm text-blue-700">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>{totalMessages} {t("totalMessages")}</span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-blue-700 hover:text-blue-800 hover:bg-blue-100 self-end sm:self-auto"
-                    onClick={() => router.push('/social/messages')}
-                  >
-                    {t("viewMessages")}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                {/* The Facebook Login button must ALWAYS be visible — App
-                    Review rejected the app ("Unable to Locate Facebook
-                    Login", Platform Term 7.a) because it disappeared once a
-                    page was connected. It also lets tenants connect more
-                    pages without disconnecting existing ones. */}
-                <Button
-                  onClick={handleConnectFacebook}
-                  disabled={loading || connectFacebook.isPending}
-                  className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
-                >
-                  {loading || connectFacebook.isPending ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      {t("connecting")}
-                    </>
-                  ) : (
-                    <>
-                      <Facebook className="mr-2 h-4 w-4" />
-                      {isConnected ? t("connectMorePages") : t("connectFacebookPages")}
-                    </>
-                  )}
-                </Button>
-                {isConnected && (
-                  <Button
-                    onClick={handleDisconnectFacebook}
-                    disabled={loading || disconnectFacebook.isPending}
-                    variant="destructive"
-                    className="w-full sm:w-auto"
-                  >
-                    {loading || disconnectFacebook.isPending ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        {t("disconnecting")}
-                      </>
-                    ) : (
-                      <>
-                        <X className="mr-2 h-4 w-4" />
-                        {t("disconnectAllPages")}
-                      </>
-                    )}
-                  </Button>
-                )}
-                <Button
-                  onClick={handleRefresh}
-                  disabled={loading}
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                >
-                  <RefreshCw className={cn(
-                    "mr-2 h-4 w-4",
-                    loading && "animate-spin"
-                  )} />
-                  {t("refreshStatus")}
-                </Button>
-              </div>
-
-              {/* Setup Instructions inside Facebook card */}
-              {!isConnected && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <h4 className="font-medium flex items-center gap-2 mb-3">
-                    <Info className="h-4 w-4" />
-                    {t("howToConnect")}
-                  </h4>
-                  <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
+            {/* Setup Instructions */}
+            {!isConnected && (
+              <SettingsSection title={t("howToConnect")} testId="facebook-how-to">
+                <div className="flex flex-col gap-3 px-4 py-3.5">
+                  <ol className="list-inside list-decimal space-y-1.5 text-[13px] text-muted-foreground">
                     <li>{t("step1")}</li>
                     <li>{t("step2")}</li>
                     <li>{t("step3")}</li>
                     <li>{t("step4")}</li>
                     <li>{t("step5")}</li>
                   </ol>
-                  <Alert className="mt-3">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      <strong>{t("note")}:</strong> {t("noteAdmin")}
-                    </AlertDescription>
-                  </Alert>
-
-                  {/* What each requested Meta permission is used for */}
-                  <h4 className="font-medium mt-4 mb-2">{t("connectPermissions.title")}</h4>
-                  <ul className="space-y-1.5 text-sm text-muted-foreground" data-testid="connect-permissions">
-                    {CONNECT_PERMISSIONS.map(({ scope, key }) => (
-                      <li key={scope}>
-                        <code className="rounded bg-muted px-1 py-0.5 text-xs text-foreground">{scope}</code>{" "}
-                        — {t(`connectPermissions.${key}`)}
-                      </li>
-                    ))}
-                  </ul>
+                  <SettingsNote tone="info">
+                    <strong className="font-semibold">{t("note")}:</strong> {t("noteAdmin")}
+                  </SettingsNote>
                 </div>
-              )}
+              </SettingsSection>
+            )}
 
-              {/* Meta Human Agent: replies up to 7 days, people only */}
-              <Alert className="mt-4" data-testid="human-agent-note">
-                <Clock className="h-4 w-4" />
-                <AlertDescription>{t("humanAgentNote")}</AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-
-          {/* Connected Pages List */}
-          {facebookPages.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t("connectedFacebookPages")}</CardTitle>
-                <CardDescription>
-                  {facebookPages.length} {t("pagesConnectedCount")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {facebookPages.map((page, index) => (
-                    <div key={page.id}>
-                      {index > 0 && <Separator className="my-3" />}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-blue-100 text-blue-600">
-                              {page.page_name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{page.page_name}</p>
-                            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                              <span>ID: {page.page_id}</span>
-                              <span className="hidden sm:inline">•</span>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                <span>{formatDate(page.created_at)}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 self-start sm:self-auto">
-                          <Badge variant={page.is_active ? "default" : "secondary"}>
-                            {page.is_active ? t("active") : t("inactive")}
-                          </Badge>
-                          {!page.is_active && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => setPageToRemove(page)}
-                            >
-                              <Trash2 className="mr-1 h-4 w-4" />
-                              {t("removePage")}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <AlertDialog open={pageToRemove !== null} onOpenChange={(open) => !open && setPageToRemove(null)}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t("removePageTitle", { name: pageToRemove?.page_name ?? "" })}</AlertDialogTitle>
-                <AlertDialogDescription>{t("removePageDescription")}</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={removingPage}>{t("cancel")}</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  disabled={removingPage}
-                  onClick={async (event) => {
-                    event.preventDefault()
-                    if (!pageToRemove) return
-                    setRemovingPage(true)
-                    try {
-                      await socialFacebookPagesDestroy(pageToRemove.id)
-                      toast.success(t("pageRemoved"))
-                      setPageToRemove(null)
-                      await refetchPages()
-                    } catch {
-                      toast.error(t("pageRemoveFailed"))
-                    } finally {
-                      setRemovingPage(false)
+            {/* Connected Pages List */}
+            {facebookPages.length > 0 && (
+              <SettingsSection
+                title={t("connectedFacebookPages")}
+                hint={`${facebookPages.length} ${t("pagesConnectedCount")}`}
+                testId="facebook-pages"
+              >
+                {facebookPages.map((page) => (
+                  <AccountRow
+                    key={page.id}
+                    avatar={page.page_name.charAt(0).toUpperCase()}
+                    name={page.page_name}
+                    meta={
+                      <span className="inline-flex flex-wrap items-center gap-x-2">
+                        <span>ID: {page.page_id}</span>
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="h-3 w-3" aria-hidden />
+                          {formatDate(page.created_at)}
+                        </span>
+                      </span>
                     }
-                  }}
-                >
-                  {t("removePage")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </TabsContent>
+                    badge={{ label: page.is_active ? t("active") : t("inactive"), tone: page.is_active ? "success" : "neutral" }}
+                    actions={
+                      !page.is_active ? (
+                        <AccountRowAction label={t("removePage")} icon={Trash2} tone="danger" onClick={() => setPageToRemove(page)} testId="facebook-remove-page" />
+                      ) : undefined
+                    }
+                    testId="facebook-page-row"
+                  />
+                ))}
+              </SettingsSection>
+            )}
 
-        {/* Instagram Tab */}
-        <TabsContent value="instagram" className="space-y-6">
-          <Card className={cn(
-            "border-2",
-            isInstagramConnected ? "border-pink-200 bg-pink-50/50" : "border-border"
-          )}>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 text-white">
-                    <Instagram className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">{t("instagramAccounts")}</CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-1">
-                      {isInstagramConnected && instagramStatus ? (
-                        <>
-                          <Check className="h-4 w-4 text-green-600" />
-                          <span>{instagramStatus.accounts_count} {t("accountsConnected")}</span>
-                        </>
-                      ) : (
-                        <>
-                          <X className="h-4 w-4 text-muted-foreground" />
-                          <span>{t("notConnected")}</span>
-                        </>
-                      )}
-                    </CardDescription>
-                  </div>
-                </div>
-                <Badge
-                  variant={isInstagramConnected ? "default" : "secondary"}
-                  className={cn(
-                    "h-8 self-start sm:self-auto",
-                    isInstagramConnected && "bg-pink-600 hover:bg-pink-700"
-                  )}
-                >
-                  {isInstagramConnected ? t("connected") : t("notConnected")}
-                </Badge>
-              </div>
-            </CardHeader>
+            {/* What each requested Meta permission is used for */}
+            {!isConnected && (
+              <SettingsSection title={t("connectPermissions.title")} testId="connect-permissions">
+                <PermissionList
+                  items={CONNECT_PERMISSIONS.map(({ scope, key }) => ({ scope, why: t(`connectPermissions.${key}`) }))}
+                />
+              </SettingsSection>
+            )}
 
-            <CardContent className="space-y-4">
-              {isInstagramConnected && totalInstagramMessages > 0 && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-pink-50 rounded-lg border border-pink-200">
-                  <div className="flex items-center gap-2 text-sm text-pink-700">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>{totalInstagramMessages} {t("totalMessages")}</span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-pink-700 hover:text-pink-800 hover:bg-pink-100 self-end sm:self-auto"
-                    onClick={() => router.push('/social/messages')}
-                  >
-                    {t("viewMessages")}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
+            {/* Meta Human Agent: replies up to 7 days, people only */}
+            <ChannelNote icon={Clock} testId="human-agent-note">{t("humanAgentNote")}</ChannelNote>
+          </>
+        )}
+
+        {/* Instagram */}
+        {channel === "instagram" && (
+          <>
+            <ChannelDetailCard
+              icon={Instagram}
+              color="linear-gradient(135deg,#9333ea,#db2777)"
+              title={t("instagramAccounts")}
+              status={isInstagramConnected && instagramStatus ? `${instagramStatus.accounts_count} ${t("accountsConnected")}` : t("notConnected")}
+              statusIcon={isInstagramConnected && instagramStatus ? Check : X}
+              statusTone={isInstagramConnected && instagramStatus ? "success" : "neutral"}
+              badge={{ label: isInstagramConnected ? t("connected") : t("notConnected"), tone: isInstagramConnected ? "success" : "neutral" }}
+              inbox={
+                isInstagramConnected && totalInstagramMessages > 0
+                  ? { count: totalInstagramMessages, label: t("totalMessages"), actionLabel: t("viewMessages"), onClick: () => router.push('/social/messages') }
+                  : null
+              }
+              actions={
+                isInstagramConnected
+                  ? [{
+                      label: instagramLoading || disconnectInstagram.isPending ? t("disconnecting") : t("disconnectAllAccounts"),
+                      icon: instagramLoading || disconnectInstagram.isPending ? RefreshCw : X,
+                      variant: "danger",
+                      onClick: handleDisconnectInstagram,
+                      disabled: instagramLoading || disconnectInstagram.isPending,
+                      testId: "instagram-disconnect",
+                    }]
+                  : []
+              }
+              testId="instagram-detail"
+            >
+              {!isInstagramConnected && (
+                <SettingsNote tone="info" icon={Info}>{t("instagramConnectsViaFacebook")}</SettingsNote>
               )}
+            </ChannelDetailCard>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                {isInstagramConnected ? (
-                  <Button
-                    onClick={handleDisconnectInstagram}
-                    disabled={instagramLoading || disconnectInstagram.isPending}
-                    variant="destructive"
-                    className="w-full sm:w-auto"
-                  >
-                    {instagramLoading || disconnectInstagram.isPending ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        {t("disconnecting")}
-                      </>
-                    ) : (
-                      <>
-                        <X className="mr-2 h-4 w-4" />
-                        {t("disconnectAllAccounts")}
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      {t("instagramConnectsViaFacebook")}
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+            {/* Connected Instagram Accounts List */}
+            {instagramAccounts.length > 0 && (
+              <SettingsSection
+                title={t("connectedInstagramAccounts")}
+                hint={`${instagramAccounts.length} ${t("accountsConnectedCount")}`}
+                testId="instagram-accounts"
+              >
+                {instagramAccounts.map((account: any) => (
+                  <AccountRow
+                    key={account.id}
+                    avatar={
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={account.profile_picture_url} alt={`@${account.username}`} />
+                        <AvatarFallback className="bg-gradient-to-br from-purple-100 to-pink-100 text-[13px] font-semibold text-pink-600">
+                          {account.username.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    }
+                    name={`@${account.username}`}
+                    meta={
+                      <span className="inline-flex flex-wrap items-center gap-x-2">
+                        <span>ID: {account.instagram_account_id}</span>
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="h-3 w-3" aria-hidden />
+                          {formatDate(account.created_at)}
+                        </span>
+                      </span>
+                    }
+                    badge={{ label: account.is_active ? t("active") : t("inactive"), tone: account.is_active ? "success" : "neutral" }}
+                    testId="instagram-account-row"
+                  />
+                ))}
+              </SettingsSection>
+            )}
+          </>
+        )}
 
-          {/* Connected Instagram Accounts List */}
-          {instagramAccounts.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t("connectedInstagramAccounts")}</CardTitle>
-                <CardDescription>
-                  {instagramAccounts.length} {t("accountsConnectedCount")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {instagramAccounts.map((account: any, index: number) => (
-                    <div key={account.id}>
-                      {index > 0 && <Separator className="my-3" />}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={account.profile_picture_url} alt={`@${account.username}`} />
-                            <AvatarFallback className="bg-gradient-to-br from-purple-100 to-pink-100 text-pink-600">
-                              {account.username.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">@{account.username}</p>
-                            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                              <span>ID: {account.instagram_account_id}</span>
-                              <span className="hidden sm:inline">•</span>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                <span>{formatDate(account.created_at)}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <Badge variant={account.is_active ? "default" : "secondary"} className={cn("self-start sm:self-auto", account.is_active ? "bg-pink-600" : "")}>
-                          {account.is_active ? t("active") : t("inactive")}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+        {channel === "whatsapp" && <WhatsAppConnection />}
+        {channel === "email" && <EmailConnection />}
+        {channel === "widget" && <WidgetConnection />}
+        {channel === "tiktok" && <TikTokConnection />}
+        {channel === "telegram" && <TelegramConnection />}
+      </ConnectionsLayout>
 
-        {/* WhatsApp Tab */}
-        <TabsContent value="whatsapp">
-          <WhatsAppConnection />
-        </TabsContent>
-
-        {/* Email Tab */}
-        <TabsContent value="email">
-          <EmailConnection />
-        </TabsContent>
-
-        {/* Website Widget Tab */}
-        <TabsContent value="widget">
-          <WidgetConnection />
-        </TabsContent>
-
-        {/* TikTok Tab */}
-        <TabsContent value="telegram">
-          <TelegramConnection />
-        </TabsContent>
-
-        <TabsContent value="tiktok">
-          <TikTokConnection />
-        </TabsContent>
-      </Tabs>
-    </div>
+      <AlertDialog open={pageToRemove !== null} onOpenChange={(open) => !open && setPageToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("removePageTitle", { name: pageToRemove?.page_name ?? "" })}</AlertDialogTitle>
+            <AlertDialogDescription>{t("removePageDescription")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removingPage}>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={removingPage}
+              onClick={async (event) => {
+                event.preventDefault()
+                if (!pageToRemove) return
+                setRemovingPage(true)
+                try {
+                  await socialFacebookPagesDestroy(pageToRemove.id)
+                  toast.success(t("pageRemoved"))
+                  setPageToRemove(null)
+                  await refetchPages()
+                } catch {
+                  toast.error(t("pageRemoveFailed"))
+                } finally {
+                  setRemovingPage(false)
+                }
+              }}
+            >
+              {t("removePage")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </SettingsPage>
   );
 }

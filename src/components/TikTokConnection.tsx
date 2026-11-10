@@ -1,17 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   useTikTokStatus,
   useConnectTikTok,
   useDisconnectTikTok,
   TikTokStatus,
 } from '@/hooks/api/useSocial';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Check,
   X,
@@ -19,8 +15,16 @@ import {
   AlertCircle,
   Clock,
   Store,
+  type LucideIcon,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { TonePill } from '@/components/redesign/pill';
+import {
+  AccountRow,
+  ChannelAlert,
+  ChannelDetailCard,
+  SettingsNote,
+  SettingsSection,
+} from '@/components/redesign/settings';
 import { toast } from 'sonner';
 
 // TikTok icon component
@@ -37,6 +41,7 @@ const TikTokIcon = ({ className }: { className?: string }) => (
 
 export function TikTokConnection() {
   const t = useTranslations('social');
+  const locale = useLocale();
 
   // React Query hooks
   const { data: statusData, isLoading: loading, refetch } = useTikTokStatus();
@@ -94,7 +99,7 @@ export function TikTokConnection() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(locale === 'ka' ? 'ka-GE' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -107,154 +112,70 @@ export function TikTokConnection() {
   const account = status?.account;
 
   return (
-    <Card
-      className={cn(
-        'border-2',
-        isConnected ? 'border-gray-300 bg-gray-50/50' : 'border-border'
-      )}
-    >
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-black text-white">
-              <TikTokIcon className="h-6 w-6" />
-            </div>
-            <div>
-              <CardTitle className="text-xl">{t('tiktok.title')}</CardTitle>
-              <CardDescription className="flex items-center gap-2 mt-1">
-                {isConnected && account ? (
-                  <>
-                    <Check className="h-4 w-4 text-green-600" />
-                    <span>{t('tiktok.connected')}</span>
-                  </>
-                ) : (
-                  <>
-                    <X className="h-4 w-4 text-muted-foreground" />
-                    <span>{t('tiktok.notConnected')}</span>
-                  </>
-                )}
-              </CardDescription>
-            </div>
-          </div>
-          <Badge
-            variant={isConnected ? 'default' : 'secondary'}
-            className={cn(
-              'h-8 self-start sm:self-auto',
-              isConnected && 'bg-black hover:bg-gray-800'
-            )}
-          >
-            {isConnected ? t('tiktok.badgeConnected') : t('tiktok.badgeNotConnected')}
-          </Badge>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {!isConnected ? (
-            <Button
-              onClick={handleConnect}
-              disabled={loading || connectTikTok.isPending}
-              className="bg-black hover:bg-gray-800 w-full sm:w-auto"
-            >
-              {loading || connectTikTok.isPending ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  {t('tiktok.connecting')}
-                </>
-              ) : (
-                <>
-                  <TikTokIcon className="mr-2 h-4 w-4" />
-                  {t('tiktok.connectTikTokShop')}
-                </>
-              )}
-            </Button>
-          ) : (
-            <Button
-              onClick={handleDisconnect}
-              disabled={loading || disconnectTikTok.isPending}
-              variant="destructive"
-              className="w-full sm:w-auto"
-            >
-              {disconnectTikTok.isPending ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  {t('tiktok.disconnecting')}
-                </>
-              ) : (
-                <>
-                  <X className="mr-2 h-4 w-4" />
-                  {t('tiktok.disconnect')}
-                </>
-              )}
-            </Button>
-          )}
-          <Button onClick={() => refetch()} disabled={loading} variant="outline" className="w-full sm:w-auto">
-            <RefreshCw
-              className={cn('mr-2 h-4 w-4', loading && 'animate-spin')}
-            />
-            {t('tiktok.refreshStatus')}
-          </Button>
-        </div>
-
-        {/* Connected Account Details */}
-        {isConnected && account && (
-          <div className="space-y-3 pt-4">
-            <h4 className="font-semibold text-sm">{t('tiktok.connectedShop')}</h4>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-white">
-                  <Store className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="font-medium">
-                    {account.seller_name || t('tiktok.defaultSellerName')}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    {account.seller_base_region && (
-                      <Badge variant="outline" className="text-xs">
-                        {account.seller_base_region}
-                      </Badge>
-                    )}
-                    <span className="hidden sm:inline">•</span>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      <span>{formatDate(account.created_at)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-                <Badge
-                  variant={account.is_active ? 'default' : 'secondary'}
-                  className={account.is_active ? 'bg-black' : ''}
-                >
-                  {account.is_active ? t('tiktok.active') : t('tiktok.inactive')}
-                </Badge>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Token expiration warning */}
-        {isConnected && status?.is_token_expired && (
-          <Alert className="bg-amber-50 border-amber-200">
-            <AlertCircle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800">
-              <strong>{t('tiktok.tokenExpired')}</strong> {t('tiktok.tokenExpiredDescription')}
-            </AlertDescription>
-          </Alert>
-        )}
-
+    <>
+      <ChannelDetailCard
+        icon={TikTokIcon as unknown as LucideIcon}
+        color="#000000"
+        title={t('tiktok.title')}
+        status={isConnected && account ? t('tiktok.connected') : t('tiktok.notConnected')}
+        statusIcon={isConnected && account ? Check : X}
+        statusTone={isConnected && account ? 'success' : 'neutral'}
+        badge={{ label: isConnected ? t('tiktok.badgeConnected') : t('tiktok.badgeNotConnected'), tone: isConnected ? 'success' : 'neutral' }}
+        actions={[
+          !isConnected
+            ? {
+                label: loading || connectTikTok.isPending ? t('tiktok.connecting') : t('tiktok.connectTikTokShop'),
+                icon: loading || connectTikTok.isPending ? RefreshCw : (TikTokIcon as unknown as LucideIcon),
+                variant: 'primary' as const,
+                onClick: handleConnect,
+                disabled: loading || connectTikTok.isPending,
+                testId: 'tiktok-connect',
+              }
+            : {
+                label: disconnectTikTok.isPending ? t('tiktok.disconnecting') : t('tiktok.disconnect'),
+                icon: disconnectTikTok.isPending ? RefreshCw : X,
+                variant: 'danger' as const,
+                onClick: handleDisconnect,
+                disabled: loading || disconnectTikTok.isPending,
+                testId: 'tiktok-disconnect',
+              },
+          { label: t('tiktok.refreshStatus'), icon: RefreshCw, variant: 'outline' as const, onClick: () => refetch(), disabled: loading, testId: 'tiktok-refresh' },
+        ]}
+        testId="tiktok-detail"
+      >
         {/* Setup Instructions */}
         {!isConnected && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>{t('tiktok.requirements')}</strong> {t('tiktok.requirementsDescription')}
-            </AlertDescription>
-          </Alert>
+          <SettingsNote tone="info" icon={AlertCircle}>
+            <strong className="font-semibold">{t('tiktok.requirements')}</strong> {t('tiktok.requirementsDescription')}
+          </SettingsNote>
         )}
-      </CardContent>
-    </Card>
+      </ChannelDetailCard>
+
+      {/* Token expiration warning */}
+      {isConnected && status?.is_token_expired && (
+        <ChannelAlert title={t('tiktok.tokenExpired')} text={t('tiktok.tokenExpiredDescription')} testId="tiktok-token-expired" />
+      )}
+
+      {/* Connected Account Details */}
+      {isConnected && account && (
+        <SettingsSection title={t('tiktok.connectedShop')} testId="tiktok-shop">
+          <AccountRow
+            avatar={<Store className="h-[18px] w-[18px]" aria-hidden />}
+            name={account.seller_name || t('tiktok.defaultSellerName')}
+            meta={
+              <span className="inline-flex flex-wrap items-center gap-x-2">
+                {account.seller_base_region && <TonePill tone="neutral">{account.seller_base_region}</TonePill>}
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="h-3 w-3" aria-hidden />
+                  {formatDate(account.created_at)}
+                </span>
+              </span>
+            }
+            badge={{ label: account.is_active ? t('tiktok.active') : t('tiktok.inactive'), tone: account.is_active ? 'success' : 'neutral' }}
+            testId="tiktok-shop-row"
+          />
+        </SettingsSection>
+      )}
+    </>
   );
 }

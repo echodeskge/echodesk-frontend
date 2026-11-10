@@ -17,7 +17,7 @@ import {
   settingsInputClass,
 } from "@/components/redesign/settings";
 import { cn } from "@/lib/utils";
-import { SectionBlock, StackLabel, selectTriggerClass, textareaClass } from "./_components/social-ui";
+import { SectionBlock, StackLabel, selectTriggerClass, textareaClass } from "@/components/social/settings-blocks";
 import {
   useAICompanionSettings,
   useUpdateAICompanionSettings,
