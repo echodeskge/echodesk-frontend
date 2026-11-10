@@ -3,11 +3,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axiosInstance from '@/api/axios';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
+import { TonePill } from '@/components/redesign/pill';
+import { ActionButton, SettingsNote, SettingsSection } from '@/components/redesign/settings';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -175,109 +172,95 @@ export function FeatureManagementCard() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('title')}</CardTitle>
-          <CardDescription>{t('loading')}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <SettingsSection title={t('title')} hint={t('loading')} testId="feature-management">
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden />
+        </div>
+      </SettingsSection>
     );
   }
 
   if (!featuresData) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('title')}</CardTitle>
-          <CardDescription>{t('loadFailed')}</CardDescription>
-        </CardHeader>
-      </Card>
+      <SettingsSection title={t('title')} testId="feature-management">
+        <div className="px-4 py-3.5">
+          <SettingsNote tone="danger">{t('loadFailed')}</SettingsNote>
+        </div>
+      </SettingsSection>
     );
   }
 
   const { agent_count, features_by_category } = featuresData;
+  const busy = addFeatureMutation.isPending || removeFeatureMutation.isPending;
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            {t('title')}
-            <Badge variant="outline">
-              {t('agents', { count: agent_count })}
-            </Badge>
-          </CardTitle>
-          <CardDescription>
-            {t('description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {Object.entries(features_by_category).map(([category, features]) => (
-            <div key={category} className="space-y-4">
-              <h3 className="text-lg font-semibold">{category}</h3>
-              <div className="space-y-3">
-                {features.map((feature) => (
-                  <div
-                    key={feature.id}
-                    className={`flex items-center justify-between p-4 rounded-lg border ${
-                      feature.is_selected ? 'bg-green-50 border-green-200' : 'bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium">{feature.name}</h4>
-                        {feature.is_selected && (
-                          <Badge variant="default" className="bg-green-600">
-                            <Check className="h-3 w-3 mr-1" />
-                            {t('active')}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {feature.description}
-                      </p>
-                      <div className="flex items-center gap-4 mt-2">
-                        <span className="text-sm font-medium">
-                          {t('pricePerAgent', { price: feature.price_per_user_gel.toFixed(2) })}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {t('total', { price: feature.monthly_cost_for_current_agents.toFixed(2) })}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <Button
-                        variant={feature.is_selected ? 'destructive' : 'default'}
-                        size="sm"
-                        onClick={() => handleToggleFeature(feature)}
-                        disabled={addFeatureMutation.isPending || removeFeatureMutation.isPending}
-                      >
-                        {addFeatureMutation.isPending || removeFeatureMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : feature.is_selected ? (
-                          <>
-                            <Minus className="h-4 w-4 mr-1" />
-                            {t('remove')}
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="h-4 w-4 mr-1" />
-                            {t('add')}
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Separator />
+      <SettingsSection
+        title={t('title')}
+        hint={t('description')}
+        actions={<TonePill tone="neutral">{t('agents', { count: agent_count })}</TonePill>}
+        testId="feature-management"
+      >
+        {Object.entries(features_by_category).map(([category, features]) => (
+          <div key={category} className="border-b last:border-b-0">
+            <div className="border-b bg-muted/20 px-4 py-2 text-[11px] font-semibold uppercase tracking-[.05em] text-muted-foreground">
+              {category}
             </div>
-          ))}
-        </CardContent>
-      </Card>
+            {features.map((feature) => (
+              <div
+                key={feature.id}
+                className="flex flex-col gap-3 border-b px-4 py-3.5 last:border-b-0 sm:flex-row sm:items-center sm:gap-4"
+                data-testid="feature-row"
+                data-selected={feature.is_selected || undefined}
+              >
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[13px] font-medium">{feature.name}</span>
+                    {feature.is_selected && (
+                      <TonePill tone="success">
+                        <Check className="me-1 inline h-3 w-3 align-[-2px]" aria-hidden />
+                        {t('active')}
+                      </TonePill>
+                    )}
+                  </div>
+                  <p className="text-xs leading-[17px] text-muted-foreground">
+                    {feature.description}
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-xs">
+                    <span className="font-medium tabular-nums">
+                      {t('pricePerAgent', { price: feature.price_per_user_gel.toFixed(2) })}
+                    </span>
+                    <span className="tabular-nums text-muted-foreground">
+                      {t('total', { price: feature.monthly_cost_for_current_agents.toFixed(2) })}
+                    </span>
+                  </div>
+                </div>
+                <ActionButton
+                  tone={feature.is_selected ? 'danger' : 'default'}
+                  onClick={() => handleToggleFeature(feature)}
+                  disabled={busy}
+                  className="self-start sm:self-auto"
+                  testId={`feature-toggle-${feature.key}`}
+                >
+                  {busy ? (
+                    <Loader2 className="h-[13px] w-[13px] animate-spin" aria-hidden />
+                  ) : feature.is_selected ? (
+                    <>
+                      <Minus className="h-[13px] w-[13px]" aria-hidden />
+                      {t('remove')}
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-[13px] w-[13px]" aria-hidden />
+                      {t('add')}
+                    </>
+                  )}
+                </ActionButton>
+              </div>
+            ))}
+          </div>
+        ))}
+      </SettingsSection>
 
       {/* Confirmation Dialog */}
       <AlertDialog open={confirmDialog.open} onOpenChange={(open) => !open && setConfirmDialog({ ...confirmDialog, open: false })}>

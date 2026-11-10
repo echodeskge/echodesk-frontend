@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useTenantSubscription } from '@/hooks/api/useTenant';
 import { useTenant } from '@/contexts/TenantContext';
@@ -15,17 +15,22 @@ import { UsageStatsCard } from '@/components/subscription/UsageStatsCard';
 import { PaymentMethodCard } from '@/components/subscription/PaymentMethodCard';
 import { InvoiceHistoryTable } from '@/components/subscription/InvoiceHistoryTable';
 import { FeatureManagementCard } from '@/components/subscription/FeatureManagementCard';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Globe, CreditCard } from 'lucide-react';
+import { Segmented } from '@/components/redesign/segmented';
+import { StatGrid } from '@/components/redesign/stats';
+import { TonePill } from '@/components/redesign/pill';
+import { SettingsPage, SettingsSection } from '@/components/redesign/settings';
 import { toast } from 'sonner';
 import { useMyAccess } from '@/hooks/useMyAccess';
 import { getApiErrorMessage } from '@/lib/utils';
 
+type SubscriptionTab = 'features' | 'usage' | 'billing';
+
 export default function SubscriptionPage() {
   const t = useTranslations('settings.subscription');
   const tSub = useTranslations('subscription');
+  // Same tabs as before (default: features); only the active tab is mounted.
+  const [activeTab, setActiveTab] = useState<SubscriptionTab>('features');
 
   // Queries
   const { data: subscription, isLoading: subscriptionLoading } = useTenantSubscription();
@@ -81,88 +86,78 @@ export default function SubscriptionPage() {
   const invoices = invoicesData?.invoices || [];
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{t('page.title')}</h1>
-        <p className="text-muted-foreground">
-          {t('page.description')}
-        </p>
-      </div>
+    <SettingsPage
+      icon={CreditCard}
+      title={t('page.title')}
+      description={t('page.description')}
+      width="wide"
+      testId="settings-subscription"
+    >
+      <Segmented<SubscriptionTab>
+        value={activeTab}
+        onChange={setActiveTab}
+        options={[
+          { value: 'features', label: t('tabs.features') },
+          { value: 'usage', label: t('tabs.usage') },
+          { value: 'billing', label: t('tabs.billing') },
+        ]}
+        ariaLabel={t('page.title')}
+        className="self-start"
+        testId="subscription-tabs"
+      />
 
-      <Tabs defaultValue="features" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="features">{t('tabs.features')}</TabsTrigger>
-          <TabsTrigger value="usage">{t('tabs.usage')}</TabsTrigger>
-          <TabsTrigger value="billing">{t('tabs.billing')}</TabsTrigger>
-        </TabsList>
+      {/* Features Tab */}
+      {activeTab === 'features' && <FeatureManagementCard />}
 
-        {/* Features Tab */}
-        <TabsContent value="features" className="space-y-6">
-          <FeatureManagementCard />
-        </TabsContent>
-
-        {/* Usage Tab */}
-        <TabsContent value="usage" className="space-y-6">
+      {/* Usage Tab */}
+      {activeTab === 'usage' && (
+        <>
           <UsageStatsCard
             subscription={subscription}
             isLoading={subscriptionLoading}
           />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('page.usageDetails.title')}</CardTitle>
-              <CardDescription>
-                {t('page.usageDetails.description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {subscription?.usage && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 border rounded-lg">
-                      <p className="text-sm text-gray-600 mb-1">{t('page.stats.currentUsers')}</p>
-                      <p className="text-2xl font-bold">{subscription.usage.current_users}</p>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <p className="text-sm text-gray-600 mb-1">{t('page.stats.whatsappMessages')}</p>
-                      <p className="text-2xl font-bold">
-                        {subscription.usage.whatsapp_messages_used?.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <p className="text-sm text-gray-600 mb-1">{t('page.stats.storageUsed')}</p>
-                      <p className="text-2xl font-bold">{subscription.usage.storage_used_gb} GB</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <SettingsSection title={t('page.usageDetails.title')} hint={t('page.usageDetails.description')} testId="usage-details">
+            {subscription?.usage ? (
+              <StatGrid
+                className="p-4"
+                items={[
+                  { key: 'users', label: t('page.stats.currentUsers'), value: subscription.usage.current_users },
+                  {
+                    key: 'whatsapp',
+                    label: t('page.stats.whatsappMessages'),
+                    value: subscription.usage.whatsapp_messages_used?.toLocaleString(),
+                  },
+                  { key: 'storage', label: t('page.stats.storageUsed'), value: `${subscription.usage.storage_used_gb} GB` },
+                ]}
+              />
+            ) : (
+              <div className="h-4" />
+            )}
+          </SettingsSection>
+        </>
+      )}
 
-        {/* Billing Tab */}
-        <TabsContent value="billing" className="space-y-6">
+      {/* Billing Tab */}
+      {activeTab === 'billing' && (
+        <>
           {isPaddle ? (
             /* Paddle-managed billing */
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <CardTitle>{tSub('paymentMethods.title')}</CardTitle>
-                  <Badge variant="secondary" className="gap-1">
-                    <Globe className="h-3 w-3" />
-                    Paddle
-                  </Badge>
-                </div>
-                <CardDescription>
-                  {tSub('managedByPaddle')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {tSub('paddleBillingInfo')}
-                </p>
-              </CardContent>
-            </Card>
+            <SettingsSection
+              title={tSub('paymentMethods.title')}
+              hint={tSub('managedByPaddle')}
+              actions={
+                <TonePill tone="neutral">
+                  <Globe className="me-1 inline h-3 w-3 align-[-2px]" aria-hidden />
+                  Paddle
+                </TonePill>
+              }
+              testId="paddle-billing"
+            >
+              <p className="px-4 py-3.5 text-[13px] text-muted-foreground">
+                {tSub('paddleBillingInfo')}
+              </p>
+            </SettingsSection>
           ) : (
             /* BOG saved card management */
             <PaymentMethodCard
@@ -178,8 +173,8 @@ export default function SubscriptionPage() {
             invoices={invoices}
             isLoading={invoicesLoading}
           />
-        </TabsContent>
-      </Tabs>
-    </div>
+        </>
+      )}
+    </SettingsPage>
   );
 }
