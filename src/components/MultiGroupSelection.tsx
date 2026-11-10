@@ -9,12 +9,33 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { TenantGroup } from '@/api/generated/interfaces';
 
+/** Texts of the picker (English defaults; callers inside an intl provider pass translations). */
+export interface MultiGroupSelectionLabels {
+  remove: string;
+  unknown: string;
+  /** "{count} groups selected" with the count already filled in. */
+  selected: (count: number) => string;
+  search: string;
+  noMatch: string;
+  none: string;
+}
+
+const DEFAULT_LABELS: MultiGroupSelectionLabels = {
+  remove: 'Remove group',
+  unknown: 'Unknown Group',
+  selected: (count) => `${count} groups selected`,
+  search: 'Search groups...',
+  noMatch: 'No groups found',
+  none: 'No groups available',
+};
+
 interface MultiGroupSelectionProps {
   groups?: TenantGroup[];
   selectedGroupIds?: number[];
   onChange: (groupIds: number[]) => void;
   disabled?: boolean;
   placeholder?: string;
+  labels?: Partial<MultiGroupSelectionLabels>;
 }
 
 export default function MultiGroupSelection({
@@ -22,8 +43,10 @@ export default function MultiGroupSelection({
   selectedGroupIds = [],
   onChange,
   disabled = false,
-  placeholder = 'Select groups to assign...'
+  placeholder = 'Select groups to assign...',
+  labels: labelsProp,
 }: MultiGroupSelectionProps) {
+  const labels = { ...DEFAULT_LABELS, ...labelsProp };
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -76,10 +99,10 @@ export default function MultiGroupSelection({
 
     if (groupIds.length === 1) {
       const group = (groups || []).find(g => g.id === groupIds[0]);
-      return group ? group.name : 'Unknown Group';
+      return group ? group.name : labels.unknown;
     }
 
-    return `${groupIds.length} groups selected`;
+    return labels.selected(groupIds.length);
   };
 
   const isPlaceholderShown = () => {
@@ -112,7 +135,8 @@ export default function MultiGroupSelection({
                     variant="ghost"
                     size="icon-sm"
                     className="h-4 w-4 p-0 text-red-500 hover:text-red-700"
-                    title="Remove group"
+                    title={labels.remove}
+                    aria-label={labels.remove}
                   >
                     <X className="h-3 w-3" />
                   </Button>
@@ -146,7 +170,7 @@ export default function MultiGroupSelection({
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search groups..."
+                placeholder={labels.search}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 bg-white border-gray-200"
@@ -158,7 +182,7 @@ export default function MultiGroupSelection({
           <div className="max-h-48 overflow-y-auto">
             {filteredGroups.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground text-sm">
-                {searchTerm ? 'No groups found' : 'No groups available'}
+                {searchTerm ? labels.noMatch : labels.none}
               </div>
             ) : (
               filteredGroups.map(group => {

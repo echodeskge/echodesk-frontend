@@ -278,8 +278,7 @@ export default function UserForm({
               {mode === "edit" &&
                 formData.email !== (fullUserData?.email ?? user?.email ?? "") && (
                   <p className="text-xs text-muted-foreground">
-                    Changing the email generates a new password and emails it to
-                    the new address.
+                    {t("ui.form.emailChangeHint")}
                   </p>
                 )}
             </div>
@@ -291,7 +290,7 @@ export default function UserForm({
                 type="text"
                 value={formData.first_name}
                 onChange={(e) => handleChange("first_name", e.target.value)}
-                placeholder="John"
+                placeholder={t("ui.form.firstNamePlaceholder")}
                 className={errors.first_name ? "border-destructive" : ""}
               />
               {errors.first_name && (
@@ -306,7 +305,7 @@ export default function UserForm({
                 type="text"
                 value={formData.last_name}
                 onChange={(e) => handleChange("last_name", e.target.value)}
-                placeholder="Doe"
+                placeholder={t("ui.form.lastNamePlaceholder")}
                 className={errors.last_name ? "border-destructive" : ""}
               />
               {errors.last_name && (
@@ -458,6 +457,14 @@ export default function UserForm({
                     onChange={(groupIds) => handleChange("tenant_group_ids", groupIds)}
                     disabled={isSubmitting || !canManageGroups}
                     placeholder={t("ui.form.selectGroups")}
+                    labels={{
+                      remove: t("ui.groupPicker.remove"),
+                      unknown: t("ui.groupPicker.unknown"),
+                      selected: (count) => t("ui.groupPicker.selected", { count }),
+                      search: t("ui.groupPicker.search"),
+                      noMatch: t("ui.groupPicker.noMatch"),
+                      none: t("ui.groupPicker.none"),
+                    }}
                   />
                   {!canManageGroups && (
                     <p className="text-xs text-muted-foreground">

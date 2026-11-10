@@ -1,0 +1,40 @@
+{
+  "en": {
+    "users": {
+      "ui": {
+        "form": {
+          "emailChangeHint": "Changing the email generates a new password and emails it to the new address.",
+          "firstNamePlaceholder": "John",
+          "lastNamePlaceholder": "Doe"
+        },
+        "groupPicker": {
+          "remove": "Remove group",
+          "unknown": "Unknown group",
+          "selected": "{count} groups selected",
+          "search": "Search groups...",
+          "noMatch": "No groups found",
+          "none": "No groups available"
+        }
+      }
+    }
+  },
+  "ka": {
+    "users": {
+      "ui": {
+        "form": {
+          "emailChangeHint": "ელფოსტის შეცვლისას შეიქმნება ახალი პაროლი და გაიგზავნება ახალ მისამართზე.",
+          "firstNamePlaceholder": "გიორგი",
+          "lastNamePlaceholder": "ბერიძე"
+        },
+        "groupPicker": {
+          "remove": "ჯგუფის მოხსნა",
+          "unknown": "უცნობი ჯგუფი",
+          "selected": "არჩეულია {count} ჯგუფი",
+          "search": "ჯგუფების ძიება...",
+          "noMatch": "ჯგუფები ვერ მოიძებნა",
+          "none": "ჯგუფები არ არის"
+        }
+      }
+    }
+  }
+}
