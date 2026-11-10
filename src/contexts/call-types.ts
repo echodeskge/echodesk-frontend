@@ -72,8 +72,11 @@ export interface ActiveCall {
   answeredElsewhere: boolean;
 }
 
-/** Why `onCallEnded` fired; CallContext maps each reason to one log write. */
-export type CallEndReason = 'ended' | 'failed' | 'rejected' | 'transferred' | 'busy';
+/**
+ * Why `onCallEnded` fired; CallContext maps each reason to one log write.
+ * `no_answer`: our outgoing INVITE got 480 / 408, or a 487 we did not cause.
+ */
+export type CallEndReason = 'ended' | 'failed' | 'rejected' | 'transferred' | 'busy' | 'no_answer';
 
 // ---------------------------------------------------------------------------
 // SIP registration

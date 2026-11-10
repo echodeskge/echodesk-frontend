@@ -729,6 +729,51 @@ describe("SipService", () => {
       expect(onEnded).toHaveBeenLastCalledWith("failed");
     });
 
+    it.each([480, 408, 487])("a %i rejection is a no-answer: onCallFailed with its key, then onCallEnded('no_answer')", async (code) => {
+      const onFailed = vi.fn();
+      const onEnded = vi.fn();
+      service.on("onCallFailed", onFailed);
+      service.on("onCallEnded", onEnded);
+      await initRegistered(service);
+      await service.makeCall("101");
+      lastInviter().fire("Terminated");
+      mockInviteFn.mock.calls[0][0].requestDelegate.onReject({ message: { statusCode: code } });
+      await flush();
+      expect(onFailed).toHaveBeenCalledWith({ key: `sip${code}` });
+      expect(onEnded).toHaveBeenCalledTimes(1);
+      expect(onEnded).toHaveBeenCalledWith("no_answer");
+    });
+
+    it("the 487 answering our own CANCEL is neither a failure nor a no-answer", async () => {
+      const onFailed = vi.fn();
+      const onEnded = vi.fn();
+      service.on("onCallFailed", onFailed);
+      service.on("onCallEnded", onEnded);
+      await initRegistered(service);
+      await service.makeCall("101");
+      await service.endCall(); // cancel(): sip.js terminates, then the 487 reaches requestDelegate.onReject
+      mockInviteFn.mock.calls[0][0].requestDelegate.onReject({ message: { statusCode: 487 } });
+      await flush();
+      expect(mockCancelFn).toHaveBeenCalledTimes(1);
+      expect(onFailed).not.toHaveBeenCalled();
+      expect(onEnded).toHaveBeenCalledTimes(1);
+      expect(onEnded).toHaveBeenCalledWith("rejected");
+    });
+
+    it("the 487 answering the media-timeout CANCEL reports nothing further", async () => {
+      vi.useFakeTimers();
+      const onFailed = vi.fn();
+      service.on("onCallFailed", onFailed);
+      await initRegistered(service);
+      mockInviteFn.mockImplementationOnce(() => new Promise(() => {}));
+      const p = service.makeCall("101");
+      const assertion = expect(p).rejects.toMatchObject({ key: "micTimeout" });
+      await vi.advanceTimersByTimeAsync(15_100);
+      await assertion;
+      mockInviteFn.mock.calls[0][0].requestDelegate.onReject({ message: { statusCode: 487 } });
+      expect(onFailed).not.toHaveBeenCalled();
+    });
+
     it("unknown SIP codes map to sipOther with the code", async () => {
       const onFailed = vi.fn();
       service.on("onCallFailed", onFailed);

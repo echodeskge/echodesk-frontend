@@ -814,6 +814,8 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           status = 'cancelled';
         } else if (reason === 'busy') {
           status = 'busy';
+        } else if (reason === 'no_answer') {
+          status = 'no_answer'; // the Calls "Missed" tab counts no_answer, not failed
         } else if (reason === 'failed') {
           if (wasActive) write = (logId) => callLogsEndCallCreate(logId, { status: 'failed' });
           else status = 'failed';

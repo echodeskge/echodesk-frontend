@@ -133,6 +133,16 @@ export function toCallError(error: unknown, fallbackKey = 'callFailed'): CallErr
   return { key: fallbackKey };
 }
 
+/** Final responses that mean "nobody picked up" rather than a failure. */
+const NO_ANSWER_CODES = new Set([408, 480, 487]);
+
+/** How an outgoing INVITE's rejection ends the leg (486 busy, no answer, or failure). */
+function rejectionReason(statusCode: number | undefined): CallEndReason {
+  if (statusCode === 486) return 'busy';
+  if (statusCode !== undefined && NO_ANSWER_CODES.has(statusCode)) return 'no_answer';
+  return 'failed';
+}
+
 function sipResponseError(statusCode: number | undefined): CallError {
   switch (statusCode) {
     case 401:
@@ -622,14 +632,18 @@ export class SipService {
               if (this.main === leg) this.emit('onCallProgress');
             },
             onReject: (response) => {
+              // A CANCEL we sent (hang-up while ringing, media timeout) is
+              // answered with a 487: the reason is already set, not a failure.
+              if (leg.reason) return;
               const code = response.message.statusCode;
-              leg.reason = code === 486 ? 'busy' : 'failed';
+              leg.reason = rejectionReason(code);
               this.emit('onCallFailed', sipResponseError(code));
             },
           },
         }),
         INVITE_MEDIA_TIMEOUT_MS,
         () => {
+          leg.reason = 'failed';
           inviter.cancel().catch(() => {});
         },
         'micTimeout'

@@ -702,6 +702,25 @@ describe("CallContext flows", () => {
       expect(result.current.state.activeCall).toBeNull();
     });
 
+    it("unanswered outgoing call: the SIP key is shown and the leg is logged no_answer, not failed", async () => {
+      const { result } = await renderRegistered();
+      await act(async () => {
+        await result.current.actions.makeCall("101");
+      });
+      await waitFor(() => expect(result.current.state.activeCall?.logId).toBe(43));
+      sipEmit("onCallProgress");
+      sipEmit("onCallFailed", { key: "sip480" });
+      expect(result.current.state.error).toEqual({ key: "sip480" });
+      sipEmit("onCallEnded", "no_answer");
+      await flushLogs();
+      expect(mockUpdateStatus).toHaveBeenCalledTimes(1);
+      expect(mockUpdateStatus).toHaveBeenCalledWith(43, { status: "no_answer" });
+      expect(mockEndCall).not.toHaveBeenCalled();
+      expect(result.current.state.activeCall).toBeNull();
+      expect(result.current.state.missedCall).toBeNull();
+      expect(result.current.state.callEndedCounter).toBe(1);
+    });
+
     it("ICE failure mid-call -> end_call failed; before answer -> update_status failed", async () => {
       const utils = await answered(await ringIn());
       sipEmit("onCallEnded", "failed");
