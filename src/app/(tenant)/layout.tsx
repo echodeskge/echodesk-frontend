@@ -32,7 +32,7 @@ import dynamic from "next/dynamic";
 
 const TeamChatWidget = dynamic(() => import("@/components/TeamChat").then(m => ({ default: m.TeamChatWidget })), { ssr: false });
 const DialpadWidget = dynamic(() => import("@/components/calls/DialpadWidget"), { ssr: false });
-const IncomingCallSidebar = dynamic(() => import("@/components/calls/IncomingCallSidebar").then(m => ({ default: m.IncomingCallSidebar })), { ssr: false });
+const CallRail = dynamic(() => import("@/components/calls/rail/call-rail").then(m => ({ default: m.CallRail })), { ssr: false });
 const PushNotificationPrompt = dynamic(() => import("@/components/PushNotificationPrompt").then(m => ({ default: m.PushNotificationPrompt })), { ssr: false });
 const StaleAssignmentReminder = dynamic(() => import("@/components/social/StaleAssignmentReminder"), { ssr: false });
 import {
@@ -40,7 +40,6 @@ import {
   useSubscription,
 } from "@/contexts/SubscriptionContext";
 import { CallProvider } from "@/contexts/CallContext";
-import { IncomingCallSidebarProvider } from "@/contexts/IncomingCallSidebarContext";
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
 import { getNotificationSound } from "@/utils/notificationSound";
 import { useSocialSettings } from "@/hooks/api/useSocial";
@@ -743,6 +742,10 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
             {children}
           </div>
         </SidebarInset>
+
+        {/* Call rail: 320px column after the page on md+, full-screen sheet
+            below. Replaces the dock softphone popup and the call sidebar. */}
+        {userProfile?.id && <CallRail />}
       </div>
 
       <TicketCreateSheet />
@@ -751,11 +754,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       {/* Board dialogs (create, settings, users, columns) are mounted by
           BoardAdminHost, which wraps this tree (see TenantLayout). */}
 
-      {/* Floating Dialpad Widget (above Team Chat) */}
+      {/* Phone launcher + call toasts (above Team Chat) */}
       {userProfile?.id && <DialpadWidget />}
-
-      {/* Global Incoming Call Sidebar */}
-      <IncomingCallSidebar />
 
       {/* Push notification permission prompt */}
       <PushNotificationPrompt />
@@ -779,22 +779,20 @@ export default function TenantLayout({
   return (
     <SubscriptionProvider>
       <CallProvider>
-        <IncomingCallSidebarProvider>
-          <TicketCreateProvider>
-            <BugReportProvider>
-              <BoardProvider>
-                <Suspense fallback={null}>
-                  <BoardUrlSync />
-                </Suspense>
-                <BoardAdminHost>
-                  <HeaderActionsProvider>
-                    <TenantLayoutContent>{children}</TenantLayoutContent>
-                  </HeaderActionsProvider>
-                </BoardAdminHost>
-              </BoardProvider>
-            </BugReportProvider>
-          </TicketCreateProvider>
-        </IncomingCallSidebarProvider>
+        <TicketCreateProvider>
+          <BugReportProvider>
+            <BoardProvider>
+              <Suspense fallback={null}>
+                <BoardUrlSync />
+              </Suspense>
+              <BoardAdminHost>
+                <HeaderActionsProvider>
+                  <TenantLayoutContent>{children}</TenantLayoutContent>
+                </HeaderActionsProvider>
+              </BoardAdminHost>
+            </BoardProvider>
+          </BugReportProvider>
+        </TicketCreateProvider>
       </CallProvider>
     </SubscriptionProvider>
   );
