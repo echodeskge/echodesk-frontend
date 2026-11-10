@@ -71,6 +71,15 @@
         "saving": "Saving…",
         "saved": "All changes saved"
       }
+    },
+    "invoices": {
+      "settings": {
+        "saveBar": {
+          "unsaved": "You have unsaved changes",
+          "discard": "Discard",
+          "saved": "All changes saved"
+        }
+      }
     }
   },
   "ka": {
@@ -144,6 +153,15 @@
         "discard": "გაუქმება",
         "saving": "ინახება…",
         "saved": "ყველა ცვლილება შენახულია"
+      }
+    },
+    "invoices": {
+      "settings": {
+        "saveBar": {
+          "unsaved": "გაქვთ შეუნახავი ცვლილებები",
+          "discard": "გაუქმება",
+          "saved": "ყველა ცვლილება შენახულია"
+        }
       }
     }
   }
