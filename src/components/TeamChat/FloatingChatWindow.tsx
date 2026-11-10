@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { LAYOUT, useFloatingChat, type OpenChat } from './FloatingChatContext';
-import { DOCK_PANEL_RIGHT, panelMaxHeight } from './floatingDock';
+import { panelMaxHeight, useDockPanelRight } from './floatingDock';
 import type { TeamChatMessage } from './types';
 
 interface FloatingChatWindowProps {
@@ -228,8 +228,9 @@ export function FloatingChatWindow({
 
   // Calculate position from right (index 0 = rightmost). Windows open to the
   // left of the dock column so they never cover a launcher or a bubble.
+  const dockPanelRight = useDockPanelRight();
   const rightPosition =
-    DOCK_PANEL_RIGHT + rightOffset + index * (LAYOUT.WINDOW.width + LAYOUT.WINDOW.gap);
+    dockPanelRight + rightOffset + index * (LAYOUT.WINDOW.width + LAYOUT.WINDOW.gap);
   const bottomPosition = LAYOUT.MAIN_ICON.bottom;
 
   return (
@@ -240,7 +241,7 @@ export function FloatingChatWindow({
       )}
       style={{
         ...(isCompact
-          ? { left: 8, right: DOCK_PANEL_RIGHT, width: 'auto' }
+          ? { left: 8, right: dockPanelRight, width: 'auto' }
           : { right: rightPosition, width: LAYOUT.WINDOW.width }),
         bottom: bottomPosition,
         height: LAYOUT.WINDOW.height,

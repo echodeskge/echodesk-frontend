@@ -200,7 +200,7 @@ describe("FAB-safe spacing", () => {
     }
   });
 
-  it("the softphone panel is 320px wide (redesign)", () => {
-    expect(DOCK.DIALPAD_PANEL_WIDTH).toBe(320);
+  it("the call rail is 320px wide (redesign)", () => {
+    expect(DOCK.CALL_RAIL_WIDTH).toBe(320);
   });
 });

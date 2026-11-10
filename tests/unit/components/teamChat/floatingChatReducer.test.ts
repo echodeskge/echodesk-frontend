@@ -313,9 +313,9 @@ describe("read receipts flip own messages to read (BE-6)", () => {
   });
 });
 
-describe("dialpad-open width reservation (L3 / L4)", () => {
-  it("fits fewer windows while the dialpad popup takes space beside the dock", () => {
-    const shift = DOCK.DIALPAD_PANEL_WIDTH + DOCK.PANEL_GAP;
+describe("call-rail width reservation (L3 / L4)", () => {
+  it("fits fewer windows while the call rail takes space at the right edge", () => {
+    const shift = DOCK.CALL_RAIL_WIDTH;
     expect(computeMaxOpenChats(1280)).toBe(4);
     expect(computeMaxOpenChats(1280, shift)).toBe(3);
     expect(computeMaxOpenChats(1100, shift)).toBe(2);

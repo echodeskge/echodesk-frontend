@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { DockBadge, dockLauncherClass } from '@/components/calls/dock-launcher';
 import { LAYOUT } from './FloatingChatContext';
+import { useDockRight } from './floatingDock';
 
 interface TeamChatIconProps {
   unreadCount: number;
@@ -14,6 +15,7 @@ interface TeamChatIconProps {
 
 /** Team chat launcher (dock slot 0) with the destructive unread badge. */
 export function TeamChatIcon({ unreadCount, onClick, isOpen }: TeamChatIconProps) {
+  const dockRight = useDockRight();
   const t = useTranslations('calls.dock');
   const label = [
     isOpen ? t('closeTeamChat') : t('openTeamChat'),
@@ -27,7 +29,7 @@ export function TeamChatIcon({ unreadCount, onClick, isOpen }: TeamChatIconProps
       type="button"
       className={cn(dockLauncherClass(isOpen), 'fixed')}
       style={{
-        right: LAYOUT.MAIN_ICON.right,
+        right: dockRight,
         bottom: LAYOUT.MAIN_ICON.bottom,
         zIndex: LAYOUT.Z_INDEX.icon,
         width: LAYOUT.MAIN_ICON.size,
