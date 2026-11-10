@@ -18,7 +18,19 @@
         "defaultSuffix": "(Default)",
         "hourRange": "{day} {from}:00 – {to}:00"
       },
-      "fileTooLarge": "This file is larger than 10 MB. Choose a smaller one."
+      "fileTooLarge": "This file is larger than 10 MB. Choose a smaller one.",
+      "tabsLabel": "Calls settings sections",
+      "upgradePlan": "Upgrade plan",
+      "configsTitle": "SIP configurations",
+      "configTitle": "Configuration",
+      "scheduleTitle": "Weekly schedule",
+      "scheduleHint": "Drag across the grid to mark working hours",
+      "soundsTitle": "Call sounds",
+      "saveBar": {
+        "unsaved": "You have unsaved changes",
+        "discard": "Discard",
+        "saved": "All changes saved"
+      }
     },
     "calls": {
       "settings": {
@@ -47,6 +59,39 @@
             "didRequired": "Enter the DID or pattern."
           }
         }
+      },
+      "page": {
+        "tabsLabel": "PBX sections"
+      },
+      "ui": {
+        "errorTitle": "Could not load this",
+        "errorHint": "Check your connection and try again.",
+        "noAccessTitle": "No access",
+        "noAccessHint": "You do not have permission to view this.",
+        "retry": "Try again",
+        "loading": "Loading…"
+      },
+      "server": {
+        "detailsTitle": "Server",
+        "installTitle": "Install",
+        "deleteLabel": "Delete PBX server"
+      },
+      "list": {
+        "trunks": "{count, plural, one {# trunk} other {# trunks}} · click a row to edit",
+        "queues": "{count, plural, one {# queue} other {# queues}} · click a row to edit",
+        "routes": "{count, plural, one {# route} other {# routes}} · click a row to edit",
+        "actions": "Actions",
+        "removeNumber": "Remove {number}"
+      },
+      "secret": {
+        "show": "Show password",
+        "hide": "Hide password"
+      },
+      "statistics": {
+        "user": {
+          "title": "Agent call activity",
+          "agentFallback": "Agent"
+        }
       }
     }
   },
@@ -69,7 +114,19 @@
         "defaultSuffix": "(ნაგულისხმევი)",
         "hourRange": "{day} {from}:00 – {to}:00"
       },
-      "fileTooLarge": "ფაილი 10 მბ-ზე დიდია. აირჩიეთ უფრო პატარა."
+      "fileTooLarge": "ფაილი 10 მბ-ზე დიდია. აირჩიეთ უფრო პატარა.",
+      "tabsLabel": "ზარების პარამეტრების განყოფილებები",
+      "upgradePlan": "გეგმის განახლება",
+      "configsTitle": "SIP კონფიგურაციები",
+      "configTitle": "კონფიგურაცია",
+      "scheduleTitle": "კვირის განრიგი",
+      "scheduleHint": "სამუშაო საათების მოსანიშნად გადაატარეთ ბადეზე",
+      "soundsTitle": "ზარის ხმები",
+      "saveBar": {
+        "unsaved": "შეუნახავი ცვლილებები გაქვთ",
+        "discard": "გაუქმება",
+        "saved": "ყველა ცვლილება შენახულია"
+      }
     },
     "calls": {
       "settings": {
@@ -97,6 +154,39 @@
           "errors": {
             "didRequired": "შეიყვანეთ DID ან ნიმუში."
           }
+        }
+      },
+      "page": {
+        "tabsLabel": "PBX-ის განყოფილებები"
+      },
+      "ui": {
+        "errorTitle": "ჩატვირთვა ვერ მოხერხდა",
+        "errorHint": "შეამოწმეთ კავშირი და სცადეთ ხელახლა.",
+        "noAccessTitle": "წვდომა არ გაქვთ",
+        "noAccessHint": "ამის ნახვის უფლება არ გაქვთ.",
+        "retry": "ხელახლა ცდა",
+        "loading": "იტვირთება…"
+      },
+      "server": {
+        "detailsTitle": "სერვერი",
+        "installTitle": "ინსტალაცია",
+        "deleteLabel": "PBX სერვერის წაშლა"
+      },
+      "list": {
+        "trunks": "{count} ტრანკი · რედაქტირებისთვის დააჭირეთ სტრიქონს",
+        "queues": "{count} რიგი · რედაქტირებისთვის დააჭირეთ სტრიქონს",
+        "routes": "{count} მარშრუტი · რედაქტირებისთვის დააჭირეთ სტრიქონს",
+        "actions": "მოქმედებები",
+        "removeNumber": "{number}-ის წაშლა"
+      },
+      "secret": {
+        "show": "პაროლის ჩვენება",
+        "hide": "პაროლის დამალვა"
+      },
+      "statistics": {
+        "user": {
+          "title": "აგენტის ზარების აქტივობა",
+          "agentFallback": "აგენტი"
         }
       }
     }
