@@ -41,7 +41,7 @@ export function SettingsToggle({
     >
       <SwitchPrimitives.Thumb
         className={cn(
-          "pointer-events-none block rounded-full bg-white shadow-[0_1px_2px_rgb(0_0_0/0.25)] transition-transform data-[state=unchecked]:translate-x-0",
+          "pointer-events-none block rounded-full bg-white shadow-[0_1px_2px_rgb(0_0_0/0.25)] transition-transform data-[state=checked]:bg-primary-foreground data-[state=unchecked]:translate-x-0",
           size === "md"
             ? "h-[18px] w-[18px] data-[state=checked]:translate-x-[18px] rtl:data-[state=checked]:-translate-x-[18px]"
             : "h-3.5 w-3.5 data-[state=checked]:translate-x-3.5 rtl:data-[state=checked]:-translate-x-3.5"
