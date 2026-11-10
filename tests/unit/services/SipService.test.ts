@@ -996,6 +996,15 @@ describe("SipService", () => {
       expect(mockInsertDTMF).toHaveBeenCalledWith("5", 100, 70);
     });
 
+    it("appends to the tones still queued instead of replacing them (fast key presses)", async () => {
+      const { inviter } = await establishedOutgoing(service);
+      // Chromium plays the first tone for 100 ms; the keys pressed meanwhile sit in toneBuffer.
+      const dtmf = { toneBuffer: "", insertDTMF: vi.fn((tones: string) => { dtmf.toneBuffer = tones; }) };
+      inviter.peerConnection.getSenders = () => [{ track: inviter.track, dtmf }];
+      for (const ch of "2282#") expect(service.sendDTMF(ch)).toBe(true);
+      expect(dtmf.insertDTMF.mock.calls.map((c) => c[0])).toEqual(["2", "22", "228", "2282", "2282#"]);
+    });
+
     it("falls back to SIP INFO when the sender has no dtmf", async () => {
       const { inviter } = await establishedOutgoing(service);
       inviter.peerConnection.getSenders = () => [{ track: inviter.track }];

@@ -877,7 +877,11 @@ export class SipService {
     try {
       const sender = audioSenderOf(target.session);
       if (sender?.dtmf) {
-        sender.dtmf.insertDTMF(tone, 100, 70);
+        // insertDTMF() replaces the tones still queued, so keys pressed while
+        // the previous tone plays (100 ms + 70 ms gap) would be dropped and
+        // only the first and the last digit would reach the PBX: append to
+        // what is still pending.
+        sender.dtmf.insertDTMF(`${sender.dtmf.toneBuffer ?? ''}${tone}`, 100, 70);
         return true;
       }
       // Fallback: SIP INFO
