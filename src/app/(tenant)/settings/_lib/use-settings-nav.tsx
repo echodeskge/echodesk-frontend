@@ -58,8 +58,12 @@ export function useSettingsNav() {
   const visibleItems = filterSettingsNav(settingsNav, { isStaffOrAdmin, hasFeatureAccess, hasBackendPermission })
   const activeId = activeSettingsId(visibleItems, pathname)
   const activeItem = visibleItems.find((i) => i.id === activeId)
+  // The page being shown, for the header crumb and back link, even when its nav item is hidden
+  // for this user (e.g. a no-access page opened by URL). It never changes which items are shown.
+  const pageId = activeId ?? activeSettingsId(settingsNav, pathname)
+  const pageItem = activeItem ?? settingsNav.find((i) => i.id === pageId)
 
-  return { pathname, visibleItems, activeId, activeItem, linkFor, isHome: pathname === "/settings" }
+  return { pathname, visibleItems, activeId, activeItem, pageItem, linkFor, isHome: pathname === "/settings" }
 }
 
 /** Search query shared by the header box, the nav and the home grid. */

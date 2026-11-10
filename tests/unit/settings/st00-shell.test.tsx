@@ -64,6 +64,18 @@ describe("settings shell", () => {
     expect(crumb.getByTestId("settings-header-back")).toHaveAttribute("aria-label", "Back to settings")
   })
 
+  it("keeps the page label and back link on a page whose nav item is hidden for the user", () => {
+    state.pathname = "/settings/calls"
+    state.user = { is_staff: false }
+    state.profile = { is_staff: false, feature_keys: ["settings"], permissions_list: [] }
+    renderShell()
+    expect(within(screen.getByTestId("settings-nav")).queryByTestId("settings-nav-calls")).toBeNull()
+    expect(within(screen.getByTestId("settings-nav")).queryByRole("link", { current: "page" })).toBeNull()
+    const crumb = within(screen.getByTestId("outlet-breadcrumb"))
+    expect(crumb.getByText("Calls & SIP")).toBeInTheDocument()
+    expect(crumb.getByTestId("settings-header-back")).toHaveAttribute("href", "/settings")
+  })
+
   it("adds a drill-down crumb from the page and links the page label", () => {
     state.pathname = "/settings/item-lists/1"
     function Detail() {

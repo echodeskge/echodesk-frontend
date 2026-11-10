@@ -86,15 +86,15 @@ function SettingsHeaderBridge({
  */
 function Shell({ children }: { children: ReactNode }) {
   const t = useTranslations("settings")
-  const { visibleItems, activeId, activeItem, linkFor } = useSettingsNav()
+  const { visibleItems, activeId, pageItem, linkFor } = useSettingsNav()
   const [saveSlot, setSaveSlot] = useState<HTMLDivElement | null>(null)
   const [subLabel, setSubLabel] = useState<string | null>(null)
   return (
     <div className="flex h-full min-h-0 w-full" data-testid="settings-shell">
       <SettingsHeaderBridge
-        pageLabel={activeItem ? t(activeItem.labelKey) : null}
-        pageHref={activeItem ? linkFor(activeItem) : null}
-        subLabel={activeItem ? subLabel : null}
+        pageLabel={pageItem ? t(pageItem.labelKey) : null}
+        pageHref={pageItem ? linkFor(pageItem) : null}
+        subLabel={pageItem ? subLabel : null}
       />
       <SettingsSidebar items={visibleItems} activeId={activeId} linkFor={linkFor} />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
