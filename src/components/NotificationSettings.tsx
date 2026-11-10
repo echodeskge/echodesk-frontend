@@ -3,17 +3,26 @@
 import React, { useState, useEffect } from 'react'
 import { Volume2, VolumeX, Bell, Smartphone, Check, X, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { TonePill } from '@/components/redesign/pill'
+import {
+  ActionButton,
+  FieldRow,
+  SettingsNote,
+  SettingsSection,
+  SettingsToggle,
+} from '@/components/redesign/settings'
 import { getNotificationSound } from '@/utils/notificationSound'
 import { useWebPush } from '@/hooks/useWebPush'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 
-export function NotificationSettings() {
+export function NotificationSettings({
+  variant = 'card',
+}: {
+  /** `settings`: design form section (settings shell); `card`: standalone card (preferences page). */
+  variant?: 'card' | 'settings'
+} = {}) {
   const t = useTranslations('notificationPreferences')
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [volume, setVolume] = useState(50)
@@ -73,48 +82,25 @@ export function NotificationSettings() {
     }
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Bell className="h-5 w-5" />
-          {t('settings.title')}
-        </CardTitle>
-        <CardDescription>
-          {t('settings.description')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Sound Toggle */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="sound-enabled" className="text-base font-medium">
-              {t('settings.sound')}
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              {t('settings.soundDesc')}
-            </p>
-          </div>
-          <Switch
-            id="sound-enabled"
-            checked={soundEnabled}
-            onCheckedChange={handleSoundToggle}
-          />
-        </div>
+  const rows = (
+    <>
+      {/* Sound Toggle */}
+      <FieldRow label={t('settings.sound')} help={t('settings.soundDesc')} htmlFor="sound-enabled" align="center">
+        <SettingsToggle
+          id="sound-enabled"
+          checked={soundEnabled}
+          onCheckedChange={handleSoundToggle}
+        />
+      </FieldRow>
 
-        {/* Volume Slider */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="volume" className="text-base font-medium">
-              {t('settings.volume')}
-            </Label>
-            <span className="text-sm text-muted-foreground">{volume}%</span>
-          </div>
-          <div className="flex items-center gap-3">
+      {/* Volume Slider */}
+      <FieldRow label={t('settings.volume')} htmlFor="volume" disabled={!soundEnabled} align="center">
+        <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 sm:w-[300px] sm:flex-nowrap">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
             {volume === 0 ? (
-              <VolumeX className="h-5 w-5 text-muted-foreground" />
+              <VolumeX className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
             ) : (
-              <Volume2 className="h-5 w-5 text-muted-foreground" />
+              <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
             )}
             <Slider
               id="volume"
@@ -126,118 +112,121 @@ export function NotificationSettings() {
               disabled={!soundEnabled}
               className="flex-1"
             />
+            <span className="w-9 shrink-0 text-end text-xs tabular-nums text-muted-foreground">{volume}%</span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleTestSound}
-            disabled={!soundEnabled}
-            className="w-full"
-          >
+          <ActionButton onClick={handleTestSound} disabled={!soundEnabled} testId="notifications-test-sound">
             {t('settings.testSound')}
-          </Button>
+          </ActionButton>
         </div>
+      </FieldRow>
 
-        {/* Browser Notifications Info */}
-        <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <div className="flex items-start gap-3">
-            <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                {t('settings.browserNotifications')}
-              </p>
-              <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                {t('settings.browserNotificationsDesc')}
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* Browser Notifications Info */}
+      <div className="border-b px-4 py-3.5 last:border-b-0">
+        <SettingsNote tone="info" icon={Bell}>
+          <span className="block font-medium">{t('settings.browserNotifications')}</span>
+          <span className="block">{t('settings.browserNotificationsDesc')}</span>
+        </SettingsNote>
+      </div>
 
-        {/* Web Push Notifications */}
-        {isPushSupported && (
-          <div className="space-y-3 pt-4 border-t">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="push-enabled" className="text-base font-medium">
-                    {t('settings.pushNotifications')}
-                  </Label>
-                  {isPushSubscribed && (
-                    <Badge variant="default" className="text-xs">
-                      <Check className="h-3 w-3 mr-1" />
-                      {t('settings.active')}
-                    </Badge>
-                  )}
-                  {pushPermission === 'denied' && (
-                    <Badge variant="destructive" className="text-xs">
-                      <X className="h-3 w-3 mr-1" />
-                      {t('settings.blocked')}
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {t('settings.pushDesc')}
-                </p>
-              </div>
-              <Switch
-                id="push-enabled"
-                checked={isPushSubscribed}
-                onCheckedChange={handlePushToggle}
-                disabled={isPushLoading || pushPermission === 'denied'}
-              />
-            </div>
+      {/* Web Push Notifications */}
+      {isPushSupported && (
+        <>
+          <FieldRow
+            label={
+              <span className="inline-flex flex-wrap items-center gap-2">
+                {t('settings.pushNotifications')}
+                {isPushSubscribed && (
+                  <TonePill tone="success">
+                    <Check className="me-1 inline h-3 w-3 align-[-2px]" aria-hidden />
+                    {t('settings.active')}
+                  </TonePill>
+                )}
+                {pushPermission === 'denied' && (
+                  <TonePill tone="danger">
+                    <X className="me-1 inline h-3 w-3 align-[-2px]" aria-hidden />
+                    {t('settings.blocked')}
+                  </TonePill>
+                )}
+              </span>
+            }
+            help={t('settings.pushDesc')}
+            htmlFor="push-enabled"
+            align="center"
+          >
+            <SettingsToggle
+              id="push-enabled"
+              checked={isPushSubscribed}
+              onCheckedChange={handlePushToggle}
+              disabled={isPushLoading || pushPermission === 'denied'}
+            />
+          </FieldRow>
 
-            {/* Push Notification Status */}
-            <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-              <Smartphone className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div className="flex-1 space-y-1">
-                <p className="text-sm font-medium">
-                  {pushPermission === 'granted' && isPushSubscribed && t('settings.pushEnabled')}
-                  {pushPermission === 'granted' && !isPushSubscribed && t('settings.pushAvailable')}
-                  {pushPermission === 'denied' && t('settings.pushBlocked')}
-                  {pushPermission === 'default' && t('settings.pushRequiresPermission')}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {pushPermission === 'granted' && isPushSubscribed && t('settings.pushEnabledDesc')}
-                  {pushPermission === 'granted' && !isPushSubscribed && t('settings.pushAvailableDesc')}
-                  {pushPermission === 'denied' && t('settings.pushBlockedDesc')}
-                  {pushPermission === 'default' && t('settings.pushDefaultDesc')}
-                </p>
-              </div>
-            </div>
+          {/* Push Notification Status (+ test button, error) */}
+          <div className="flex flex-col gap-2.5 border-b px-4 py-3.5 last:border-b-0">
+            <SettingsNote tone="neutral" icon={Smartphone}>
+              <span className="block font-medium text-foreground">
+                {pushPermission === 'granted' && isPushSubscribed && t('settings.pushEnabled')}
+                {pushPermission === 'granted' && !isPushSubscribed && t('settings.pushAvailable')}
+                {pushPermission === 'denied' && t('settings.pushBlocked')}
+                {pushPermission === 'default' && t('settings.pushRequiresPermission')}
+              </span>
+              <span className="block">
+                {pushPermission === 'granted' && isPushSubscribed && t('settings.pushEnabledDesc')}
+                {pushPermission === 'granted' && !isPushSubscribed && t('settings.pushAvailableDesc')}
+                {pushPermission === 'denied' && t('settings.pushBlockedDesc')}
+                {pushPermission === 'default' && t('settings.pushDefaultDesc')}
+              </span>
+            </SettingsNote>
 
             {/* Test Push Notification Button */}
             {isPushSubscribed && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleTestPush}
-                disabled={isPushLoading}
-                className="w-full"
-              >
+              <ActionButton onClick={handleTestPush} disabled={isPushLoading} className="self-start" testId="notifications-test-push">
                 {isPushLoading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-[13px] w-[13px] animate-spin" aria-hidden />
                     {t('settings.sending')}
                   </>
                 ) : (
                   <>
-                    <Bell className="h-4 w-4 mr-2" />
+                    <Bell className="h-[13px] w-[13px]" aria-hidden />
                     {t('settings.testPush')}
                   </>
                 )}
-              </Button>
+              </ActionButton>
             )}
 
             {/* Error Message */}
             {pushError && (
-              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
-                <p className="text-sm text-destructive">{pushError.message}</p>
-              </div>
+              <SettingsNote tone="danger">{pushError.message}</SettingsNote>
             )}
           </div>
-        )}
-      </CardContent>
+        </>
+      )}
+    </>
+  )
+
+  // Inside the settings shell: a design form section. Elsewhere
+  // (/preferences/notifications): the same rows in the original card.
+  if (variant === 'settings') {
+    return (
+      <SettingsSection title={t('settings.title')} hint={t('settings.description')} testId="notification-settings">
+        {rows}
+      </SettingsSection>
+    )
+  }
+
+  return (
+    <Card data-testid="notification-settings">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Bell className="h-5 w-5" />
+          {t('settings.title')}
+        </CardTitle>
+        <CardDescription>
+          {t('settings.description')}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="border-t p-0">{rows}</CardContent>
     </Card>
   )
 }
