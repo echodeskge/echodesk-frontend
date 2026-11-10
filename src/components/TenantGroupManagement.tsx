@@ -97,6 +97,8 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
     if (open) {
       fetchFeatures();
     }
+    // `t` is left out on purpose: a locale change must not refetch the feature list (same requests as before).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, group?.id]);
 
   // Reset form data when group changes

@@ -272,7 +272,6 @@ export function EmailConnection() {
   const [showAccessDialog, setShowAccessDialog] = useState(false);
   const [editingConnection, setEditingConnection] = useState<EmailConnectionDetail | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [showEditAdvanced, setShowEditAdvanced] = useState(false);
   const [showEditPassword, setShowEditPassword] = useState(false);
   const [showSignaturePreview, setShowSignaturePreview] = useState(false);
