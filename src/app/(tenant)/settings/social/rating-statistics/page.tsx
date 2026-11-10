@@ -49,15 +49,13 @@ const platformColors: Record<string, string> = {
   phone_callback: 'bg-violet-100 text-violet-800',
 };
 
+// Brand names stay as they are; the rest are translated (ratingStatistics.platforms.*).
 const platformLabels: Record<string, string> = {
   facebook: 'Facebook',
   instagram: 'Instagram',
   whatsapp: 'WhatsApp',
-  email: 'Email',
-  widget: 'Widget',
-  phone_sms: 'SMS',
-  phone_callback: 'Callback',
 };
+const TRANSLATED_PLATFORMS = ['email', 'widget', 'phone_sms', 'phone_callback'] as const;
 
 function isPhonePlatform(platform: string): boolean {
   return platform === 'phone_sms' || platform === 'phone_callback';
@@ -76,7 +74,11 @@ function formatDateTime(dateString: string | null): string {
   });
 }
 
-function formatDuration(start: string | null, end: string | null): string {
+function formatDuration(
+  start: string | null,
+  end: string | null,
+  t: (key: string, values?: Record<string, number>) => string,
+): string {
   if (!start || !end) return '-';
   const startDate = new Date(start);
   const endDate = new Date(end);
@@ -84,11 +86,11 @@ function formatDuration(start: string | null, end: string | null): string {
   const diffMins = Math.floor(diffMs / 60000);
 
   if (diffMins < 60) {
-    return `${diffMins} min`;
+    return t('durationMinutes', { minutes: diffMins });
   }
   const hours = Math.floor(diffMins / 60);
   const mins = diffMins % 60;
-  return `${hours}h ${mins}m`;
+  return t('durationHours', { hours, minutes: mins });
 }
 
 export default function RatingStatisticsPage() {
@@ -244,7 +246,9 @@ export default function RatingStatisticsPage() {
 
   const renderPlatformBadge = (session: ChatSession) => {
     const color = platformColors[session.platform] || 'bg-gray-100 text-gray-800';
-    const label = platformLabels[session.platform] || session.platform;
+    const label = (TRANSLATED_PLATFORMS as readonly string[]).includes(session.platform)
+      ? t(`platforms.${session.platform}`)
+      : platformLabels[session.platform] || session.platform;
 
     if (isPhonePlatform(session.platform)) {
       return (
@@ -681,7 +685,7 @@ export default function RatingStatisticsPage() {
                           <TableCell>
                             <div className="flex items-center gap-1 text-sm">
                               <Clock className="h-3 w-3" />
-                              {formatDuration(session.session_started_at, session.session_ended_at)}
+                              {formatDuration(session.session_started_at, session.session_ended_at, t)}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -730,7 +734,7 @@ export default function RatingStatisticsPage() {
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             <span className="font-medium text-foreground">{t("duration")}:</span>{" "}
-                            {formatDuration(session.session_started_at, session.session_ended_at)}
+                            {formatDuration(session.session_started_at, session.session_ended_at, t)}
                           </div>
                         </div>
                       </CardContent>

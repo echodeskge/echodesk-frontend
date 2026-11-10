@@ -27,10 +27,7 @@ import { AutoPostCard } from "@/components/social/AutoPostCard";
 
 const TONE_OPTIONS = ["professional", "casual", "friendly", "promotional", "informative"];
 const SOURCE_OPTIONS = ["products", "company", "both"];
-const LANGUAGE_OPTIONS = [
-  { value: "en", label: "English" },
-  { value: "ka", label: "Georgian" },
-];
+const LANGUAGE_OPTIONS = ["en", "ka"] as const;
 const TIMEZONE_OPTIONS = [
   "UTC", "Asia/Tbilisi", "Europe/London", "Europe/Berlin",
   "America/New_York", "America/Los_Angeles", "Asia/Tokyo",
@@ -224,7 +221,7 @@ export default function AutoPostingPage() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {LANGUAGE_OPTIONS.map(lang => (
-                        <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+                        <SelectItem key={lang} value={lang}>{t(`languages.${lang}`)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

@@ -190,7 +190,7 @@ function PlatformAutoReplyForm({ platform, settings, onChange }: PlatformAutoRep
         </div>
         {settings.welcome_enabled && (
           <Textarea
-            placeholder={`Hello {{customer_name}}! Welcome to our ${platformLabels[platform]} support. How can we help you today?`}
+            placeholder={t("settingsPage.autoReply.welcomePlaceholder", { platform: platformLabels[platform] })}
             value={settings.welcome_message}
             onChange={(e) => onChange({ ...settings, welcome_message: e.target.value })}
             rows={3}
@@ -219,7 +219,7 @@ function PlatformAutoReplyForm({ platform, settings, onChange }: PlatformAutoRep
         </div>
         {settings.away_enabled && (
           <Textarea
-            placeholder={`Hi {{customer_name}}! Thanks for reaching out. We're currently away but will respond as soon as we're back. Our business hours are Monday-Friday, 9 AM - 6 PM.`}
+            placeholder={t("settingsPage.autoReply.awayPlaceholder")}
             value={settings.away_message}
             onChange={(e) => onChange({ ...settings, away_message: e.target.value })}
             rows={3}

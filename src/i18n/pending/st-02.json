@@ -80,6 +80,28 @@
         "editDescription": "Update the settings of {email}",
         "saveChanges": "Save changes",
         "saving": "Saving…"
+      },
+      "settingsPage": {
+        "autoReply": {
+          "welcomePlaceholder": "Hello '{{customer_name}}'! Welcome to our {platform} support. How can we help you today?",
+          "awayPlaceholder": "Hi '{{customer_name}}'! Thanks for reaching out. We're currently away but will respond as soon as we're back. Our business hours are Monday-Friday, 9 AM - 6 PM."
+        }
+      }
+    },
+    "ratingStatistics": {
+      "platforms": {
+        "email": "Email",
+        "widget": "Widget",
+        "phone_sms": "SMS",
+        "phone_callback": "Callback"
+      },
+      "durationMinutes": "{minutes} min",
+      "durationHours": "{hours}h {minutes}m"
+    },
+    "autoPosting": {
+      "languages": {
+        "en": "English",
+        "ka": "Georgian"
       }
     }
   },
@@ -164,6 +186,28 @@
         "editDescription": "{email}-ის პარამეტრების განახლება",
         "saveChanges": "ცვლილებების შენახვა",
         "saving": "ინახება…"
+      },
+      "settingsPage": {
+        "autoReply": {
+          "welcomePlaceholder": "გამარჯობა '{{customer_name}}'! კეთილი იყოს თქვენი მობრძანება ჩვენს {platform} მხარდაჭერაში. რით შეგვიძლია დაგეხმაროთ?",
+          "awayPlaceholder": "გამარჯობა '{{customer_name}}'! გმადლობთ, რომ დაგვიკავშირდით. ახლა არ ვართ ხელმისაწვდომი, მაგრამ დაბრუნებისთანავე გიპასუხებთ. სამუშაო საათები: ორშაბათი-პარასკევი, 09:00-18:00."
+        }
+      }
+    },
+    "ratingStatistics": {
+      "platforms": {
+        "email": "ელფოსტა",
+        "widget": "ვიჯეტი",
+        "phone_sms": "SMS",
+        "phone_callback": "უკუზარი"
+      },
+      "durationMinutes": "{minutes} წთ",
+      "durationHours": "{hours} სთ {minutes} წთ"
+    },
+    "autoPosting": {
+      "languages": {
+        "en": "ინგლისური",
+        "ka": "ქართული"
       }
     }
   }
