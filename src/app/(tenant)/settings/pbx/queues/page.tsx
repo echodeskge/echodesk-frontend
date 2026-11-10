@@ -2,16 +2,8 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, Pencil, Trash2, Users } from "lucide-react";
+import { ListOrdered, Pencil, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -22,8 +14,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import type { Column } from "@/components/redesign/data-table";
+import { rdButton } from "@/components/redesign/buttons";
+import { TonePill } from "@/components/redesign/pill";
+import { AvatarCell, BadgeCell, SettingsToggle, TextCell } from "@/components/redesign/settings";
+import { LabeledCount, PbxEmpty, PbxListBlock, RowIconButton, dialogInputClass } from "../_components/pbx-ui";
 import {
   Select,
   SelectContent,
@@ -31,14 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -127,6 +114,8 @@ function slugify(input: string): string {
 
 export default function QueuesPage() {
   const t = useTranslations("pbxSettings.queues");
+  const tStatus = useTranslations("pbxSettings.status");
+  const tList = useTranslations("pbxSettings.list");
   const tForm = useTranslations("pbxSettings.form");
   const tToast = useTranslations("pbxSettings.toast");
 
@@ -252,78 +241,87 @@ export default function QueuesPage() {
 
   const saving = createMut.isPending || updateMut.isPending;
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between space-y-0">
-        <div>
-          <CardTitle>{t("title")}</CardTitle>
-          <CardDescription>{t("description")}</CardDescription>
-        </div>
-        <Button onClick={openCreate} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          {t("new")}
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground py-6">…</p>
-        ) : queues.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-6">{t("empty")}</p>
+  const columns: Column<QueueList>[] = [
+    {
+      id: "name",
+      header: t("columns.name"),
+      width: "minmax(0,1.3fr)",
+      mobile: "title",
+      cell: (q) => (
+        <span className="flex min-w-0 items-center gap-2">
+          <AvatarCell name={q.name} sub={q.slug} shape="square" icon={ListOrdered} />
+          {q.is_default && <BadgeCell tone="info">{t("columns.default")}</BadgeCell>}
+        </span>
+      ),
+    },
+    {
+      id: "strategy",
+      header: t("columns.strategy"),
+      width: "minmax(0,1fr)",
+      cell: (q) => <TextCell text={t(`strategies.${(q.strategy as unknown as string) ?? "rrmemory"}` as never)} />,
+    },
+    {
+      id: "group",
+      header: t("columns.group"),
+      width: "minmax(0,1fr)",
+      cell: (q) => <TextCell text={q.group_name} />,
+    },
+    {
+      id: "members",
+      header: t("columns.members"),
+      width: "80px",
+      numeric: true,
+      cell: (q) => <LabeledCount label={t("columns.members")} value={q.member_count} />,
+    },
+    {
+      id: "status",
+      header: t("columns.status"),
+      width: "100px",
+      mobile: "end",
+      cell: (q) =>
+        q.is_active ? (
+          <BadgeCell tone="success" dot>{tStatus("active")}</BadgeCell>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("columns.name")}</TableHead>
-                <TableHead>{t("columns.strategy")}</TableHead>
-                <TableHead>{t("columns.group")}</TableHead>
-                <TableHead>{t("columns.members")}</TableHead>
-                <TableHead>{t("columns.status")}</TableHead>
-                <TableHead className="w-40" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {queues.map((q) => (
-                <TableRow key={q.id}>
-                  <TableCell className="font-medium">
-                    {q.name}
-                    {q.is_default && (
-                      <Badge variant="outline" className="ml-2 text-xs">
-                        {t("columns.default")}
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {t(`strategies.${(q.strategy as unknown as string) ?? "rrmemory"}` as never)}
-                  </TableCell>
-                  <TableCell>{q.group_name}</TableCell>
-                  <TableCell>{q.member_count}</TableCell>
-                  <TableCell>
-                    {q.is_active ? (
-                      <Badge variant="default">Active</Badge>
-                    ) : (
-                      <Badge variant="secondary">Inactive</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 justify-end">
-                      <Button size="sm" variant="ghost" onClick={() => setMembersOpenFor(q)}>
-                        <Users className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => openEdit(q)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(q)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
+          <BadgeCell tone="neutral" dot>{tStatus("inactive")}</BadgeCell>
+        ),
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">{tList("actions")}</span>,
+      width: "96px",
+      align: "end",
+      mobile: "actions",
+      cell: (q) => (
+        <span className="flex items-center gap-0.5">
+          <RowIconButton icon={Users} label={t("membersTitle")} onClick={() => setMembersOpenFor(q)} testId="queue-members" />
+          <RowIconButton icon={Pencil} label={t("edit")} onClick={() => openEdit(q)} />
+          <RowIconButton
+            icon={Trash2}
+            tone="danger"
+            label={tForm("delete")}
+            onClick={() => setDeleteTarget(q)}
+            testId="queue-delete"
+          />
+        </span>
+      ),
+    },
+  ];
 
+  return (
+    <PbxListBlock
+      title={t("title")}
+      description={t("description")}
+      newAction={{ label: t("new"), onClick: openCreate, testId: "queue-new" }}
+      columns={columns}
+      rows={isLoading ? undefined : queues}
+      rowKey={(q) => q.id}
+      onRowClick={openEdit}
+      loading={isLoading}
+      empty={<PbxEmpty icon={ListOrdered} text={t("empty")} />}
+      countLabel={tList("queues", { count: queues.length })}
+      ariaLabel={t("title")}
+      idPrefix="pbx-queues"
+    >
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -331,32 +329,34 @@ export default function QueuesPage() {
             <DialogDescription>{t("description")}</DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-1 gap-4 py-2 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="queue-name">{t("form.name")}</Label>
+              <Label className="text-[13px]" htmlFor="queue-name">{t("form.name")}</Label>
               <Input
+                className={dialogInputClass}
                 id="queue-name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="queue-slug">{t("form.slug")}</Label>
+              <Label className="text-[13px]" htmlFor="queue-slug">{t("form.slug")}</Label>
               <Input
+                className={dialogInputClass}
                 id="queue-slug"
                 value={form.slug}
                 onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })}
               />
-              <p className="text-xs text-muted-foreground">{t("form.slugHelp")}</p>
+              <p className="text-xs leading-[17px] text-muted-foreground">{t("form.slugHelp")}</p>
             </div>
 
             <div className="space-y-2">
-              <Label>{t("form.strategy")}</Label>
+              <Label className="text-[13px]">{t("form.strategy")}</Label>
               <Select
                 value={form.strategy}
                 onValueChange={(v) => setForm({ ...form, strategy: v as QueueFormState["strategy"] })}
               >
-                <SelectTrigger>
+                <SelectTrigger className={dialogInputClass}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -370,12 +370,12 @@ export default function QueuesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t("form.group")}</Label>
+              <Label className="text-[13px]">{t("form.group")}</Label>
               <Select
                 value={form.group != null ? String(form.group) : ""}
                 onValueChange={(v) => setForm({ ...form, group: Number(v) })}
               >
-                <SelectTrigger>
+                <SelectTrigger className={dialogInputClass}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -386,12 +386,13 @@ export default function QueuesPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">{t("form.groupHelp")}</p>
+              <p className="text-xs leading-[17px] text-muted-foreground">{t("form.groupHelp")}</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="queue-timeout">{t("form.timeoutSeconds")}</Label>
+              <Label className="text-[13px]" htmlFor="queue-timeout">{t("form.timeoutSeconds")}</Label>
               <Input
+                className={dialogInputClass}
                 id="queue-timeout"
                 type="number"
                 value={form.timeout_seconds}
@@ -401,8 +402,9 @@ export default function QueuesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="queue-maxwait">{t("form.maxWaitSeconds")}</Label>
+              <Label className="text-[13px]" htmlFor="queue-maxwait">{t("form.maxWaitSeconds")}</Label>
               <Input
+                className={dialogInputClass}
                 id="queue-maxwait"
                 type="number"
                 value={form.max_wait_seconds}
@@ -413,18 +415,20 @@ export default function QueuesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="queue-maxlen">{t("form.maxLen")}</Label>
+              <Label className="text-[13px]" htmlFor="queue-maxlen">{t("form.maxLen")}</Label>
               <Input
+                className={dialogInputClass}
                 id="queue-maxlen"
                 type="number"
                 value={form.max_len}
                 onChange={(e) => setForm({ ...form, max_len: Number(e.target.value) || 0 })}
               />
-              <p className="text-xs text-muted-foreground">{t("form.maxLenHelp")}</p>
+              <p className="text-xs leading-[17px] text-muted-foreground">{t("form.maxLenHelp")}</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="queue-wrapup">{t("form.wrapupTime")}</Label>
+              <Label className="text-[13px]" htmlFor="queue-wrapup">{t("form.wrapupTime")}</Label>
               <Input
+                className={dialogInputClass}
                 id="queue-wrapup"
                 type="number"
                 value={form.wrapup_time}
@@ -435,8 +439,9 @@ export default function QueuesPage() {
             </div>
 
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="queue-moh">{t("form.musicOnHold")}</Label>
+              <Label className="text-[13px]" htmlFor="queue-moh">{t("form.musicOnHold")}</Label>
               <Input
+                className={dialogInputClass}
                 id="queue-moh"
                 value={form.music_on_hold}
                 onChange={(e) => setForm({ ...form, music_on_hold: e.target.value })}
@@ -444,87 +449,87 @@ export default function QueuesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t("form.joinempty")}</Label>
+              <Label className="text-[13px]">{t("form.joinempty")}</Label>
               <Select
                 value={form.joinempty}
                 onValueChange={(v) =>
                   setForm({ ...form, joinempty: v as QueueFormState["joinempty"] })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className={dialogInputClass}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {JOIN_EMPTY.map((v) => (
                     <SelectItem key={v} value={v}>
-                      {v}
+                      {t(`emptyModes.${v}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>{t("form.leavewhenempty")}</Label>
+              <Label className="text-[13px]">{t("form.leavewhenempty")}</Label>
               <Select
                 value={form.leavewhenempty}
                 onValueChange={(v) =>
                   setForm({ ...form, leavewhenempty: v as QueueFormState["leavewhenempty"] })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className={dialogInputClass}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {LEAVE_WHEN_EMPTY.map((v) => (
                     <SelectItem key={v} value={v}>
-                      {v}
+                      {t(`emptyModes.${v}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Switch
+            <div className="flex items-center gap-3 rounded-lg border px-3 py-2.5">
+              <SettingsToggle
                 id="queue-announce-pos"
                 checked={form.announce_position}
                 onCheckedChange={(v) => setForm({ ...form, announce_position: v })}
               />
-              <Label htmlFor="queue-announce-pos">{t("form.announcePosition")}</Label>
+              <Label className="text-[13px]" htmlFor="queue-announce-pos">{t("form.announcePosition")}</Label>
             </div>
-            <div className="flex items-center gap-3">
-              <Switch
+            <div className="flex items-center gap-3 rounded-lg border px-3 py-2.5">
+              <SettingsToggle
                 id="queue-announce-hold"
                 checked={form.announce_holdtime}
                 onCheckedChange={(v) => setForm({ ...form, announce_holdtime: v })}
               />
-              <Label htmlFor="queue-announce-hold">{t("form.announceHoldtime")}</Label>
+              <Label className="text-[13px]" htmlFor="queue-announce-hold">{t("form.announceHoldtime")}</Label>
             </div>
-            <div className="flex items-center gap-3">
-              <Switch
+            <div className="flex items-center gap-3 rounded-lg border px-3 py-2.5">
+              <SettingsToggle
                 id="queue-default"
                 checked={form.is_default}
                 onCheckedChange={(v) => setForm({ ...form, is_default: v })}
               />
-              <Label htmlFor="queue-default">{t("form.isDefault")}</Label>
+              <Label className="text-[13px]" htmlFor="queue-default">{t("form.isDefault")}</Label>
             </div>
-            <div className="flex items-center gap-3">
-              <Switch
+            <div className="flex items-center gap-3 rounded-lg border px-3 py-2.5">
+              <SettingsToggle
                 id="queue-active"
                 checked={form.is_active}
                 onCheckedChange={(v) => setForm({ ...form, is_active: v })}
               />
-              <Label htmlFor="queue-active">{t("form.isActive")}</Label>
+              <Label className="text-[13px]" htmlFor="queue-active">{t("form.isActive")}</Label>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <button type="button" className={rdButton.outline} onClick={() => setDialogOpen(false)}>
               {tForm("cancel")}
-            </Button>
-            <Button onClick={handleSubmit} disabled={saving}>
+            </button>
+            <button type="button" className={rdButton.primary} onClick={handleSubmit} disabled={saving} data-testid="pbx-dialog-submit">
               {saving ? tForm("saving") : editing ? tForm("update") : tForm("create")}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -539,7 +544,11 @@ export default function QueuesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{tForm("cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleteMut.isPending}>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteMut.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {deleteMut.isPending ? tForm("deleting") : tForm("confirmDelete")}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -558,7 +567,7 @@ export default function QueuesPage() {
           {membersOpenFor && <QueueMembersInline queueId={membersOpenFor.id} />}
         </DialogContent>
       </Dialog>
-    </Card>
+    </PbxListBlock>
   );
 }
 
@@ -573,16 +582,16 @@ function QueueMembersInline({ queueId }: { queueId: number }) {
     return all.filter((m) => m.queue === queueId);
   }, [data, queueId]);
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">…</p>;
+  if (isLoading) return <p className="text-[13px] text-muted-foreground">…</p>;
   if (members.length === 0) {
-    return <p className="text-sm text-muted-foreground">{t("noMembers")}</p>;
+    return <p className="rounded-lg border border-dashed px-3 py-4 text-center text-[13px] text-muted-foreground">{t("noMembers")}</p>;
   }
   return (
-    <ul className="divide-y text-sm">
+    <ul className="divide-y overflow-hidden rounded-lg border text-[13px]" data-testid="queue-members-list">
       {members.map((m) => (
-        <li key={m.id} className="py-2 flex items-center justify-between">
-          <span className="font-mono">ext {m.extension}</span>
-          {m.paused && <Badge variant="secondary">paused</Badge>}
+        <li key={m.id} className="flex min-h-10 items-center justify-between gap-2 px-3 py-2">
+          <span className="font-mono text-xs tabular-nums">{t("ext", { extension: m.extension })}</span>
+          {m.paused && <TonePill tone="warning">{t("paused")}</TonePill>}
         </li>
       ))}
     </ul>

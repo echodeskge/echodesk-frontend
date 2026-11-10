@@ -2,16 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import { Network, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -21,17 +13,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import type { Column } from "@/components/redesign/data-table";
+import { rdButton } from "@/components/redesign/buttons";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  AvatarCell,
+  BadgeCell,
+  SecretInput,
+  SettingsToggle,
+  TextCell,
+} from "@/components/redesign/settings";
+import {
+  DialogField,
+  DialogSwitchRow,
+  PbxEmpty,
+  PbxListBlock,
+  RowIconButton,
+  dialogInputClass,
+} from "../_components/pbx-ui";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -85,6 +83,9 @@ const EMPTY_FORM: TrunkFormState = {
 
 export default function TrunksPage() {
   const t = useTranslations("pbxSettings.trunks");
+  const tStatus = useTranslations("pbxSettings.status");
+  const tList = useTranslations("pbxSettings.list");
+  const tSecret = useTranslations("pbxSettings.secret");
   const tForm = useTranslations("pbxSettings.form");
   const tToast = useTranslations("pbxSettings.toast");
 
@@ -207,77 +208,87 @@ export default function TrunksPage() {
 
   const saving = createMut.isPending || updateMut.isPending;
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between space-y-0">
-        <div>
-          <CardTitle>{t("title")}</CardTitle>
-          <CardDescription>{t("description")}</CardDescription>
-        </div>
-        <Button onClick={openCreate} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          {t("new")}
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground py-6">…</p>
-        ) : trunks.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-6">{t("empty")}</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("columns.name")}</TableHead>
-                <TableHead>{t("columns.provider")}</TableHead>
-                <TableHead>{t("columns.sipServer")}</TableHead>
-                <TableHead>{t("columns.phoneNumbers")}</TableHead>
-                <TableHead>{t("columns.status")}</TableHead>
-                <TableHead className="w-32" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {trunks.map((trunk) => {
-                const phones = Array.isArray(trunk.phone_numbers)
-                  ? (trunk.phone_numbers as string[])
-                  : [];
-                return (
-                  <TableRow key={trunk.id}>
-                    <TableCell className="font-medium">{trunk.name}</TableCell>
-                    <TableCell>{trunk.provider ?? "—"}</TableCell>
-                    <TableCell className="font-mono text-xs">—</TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {phones.length ? phones.join(", ") : "—"}
-                    </TableCell>
-                    <TableCell>
-                      {trunk.is_active ? (
-                        <Badge variant="default">Active</Badge>
-                      ) : (
-                        <Badge variant="secondary">Inactive</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 justify-end">
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(trunk)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setDeleteTarget(trunk)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
+  const phonesOf = (trunk: TrunkList): string[] =>
+    Array.isArray(trunk.phone_numbers) ? (trunk.phone_numbers as string[]) : [];
 
+  const columns: Column<TrunkList>[] = [
+    {
+      id: "name",
+      header: t("columns.name"),
+      width: "minmax(0,1.3fr)",
+      mobile: "title",
+      cell: (trunk) => <AvatarCell name={trunk.name} shape="square" icon={Network} />,
+    },
+    {
+      id: "provider",
+      header: t("columns.provider"),
+      width: "minmax(0,0.8fr)",
+      cell: (trunk) => <TextCell text={trunk.provider ?? "—"} />,
+    },
+    {
+      id: "sipServer",
+      header: t("columns.sipServer"),
+      width: "minmax(0,0.8fr)",
+      mobile: "hidden",
+      cell: () => <TextCell text="—" mono muted />,
+    },
+    {
+      id: "phones",
+      header: t("columns.phoneNumbers"),
+      width: "minmax(0,1.2fr)",
+      cell: (trunk) => {
+        const phones = phonesOf(trunk);
+        return <TextCell text={phones.length ? phones.join(", ") : "—"} mono />;
+      },
+    },
+    {
+      id: "status",
+      header: t("columns.status"),
+      width: "100px",
+      mobile: "end",
+      cell: (trunk) =>
+        trunk.is_active ? (
+          <BadgeCell tone="success" dot>{tStatus("active")}</BadgeCell>
+        ) : (
+          <BadgeCell tone="neutral" dot>{tStatus("inactive")}</BadgeCell>
+        ),
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">{tList("actions")}</span>,
+      width: "68px",
+      align: "end",
+      mobile: "actions",
+      cell: (trunk) => (
+        <span className="flex items-center gap-0.5">
+          <RowIconButton icon={Pencil} label={t("edit")} onClick={() => openEdit(trunk)} />
+          <RowIconButton
+            icon={Trash2}
+            tone="danger"
+            label={tForm("delete")}
+            onClick={() => setDeleteTarget(trunk)}
+            testId="trunk-delete"
+          />
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <PbxListBlock
+      title={t("title")}
+      description={t("description")}
+      newAction={{ label: t("new"), onClick: openCreate, testId: "trunk-new" }}
+      columns={columns}
+      rows={isLoading ? undefined : trunks}
+      rowKey={(trunk) => trunk.id}
+      onRowClick={openEdit}
+      loading={isLoading}
+      empty={<PbxEmpty icon={Network} text={t("empty")} />}
+      countLabel={tList("trunks", { count: trunks.length })}
+      ariaLabel={t("title")}
+      idPrefix="pbx-trunks"
+    >
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -285,106 +296,111 @@ export default function TrunksPage() {
             <DialogDescription>{t("description")}</DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-            <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="trunk-name">{t("form.name")}</Label>
+          <div className="grid grid-cols-1 gap-4 py-2 md:grid-cols-2">
+            <DialogField className="md:col-span-2" label={t("form.name")} htmlFor="trunk-name" help={t("form.nameHelp")}>
               <Input
                 id="trunk-name"
+                className={dialogInputClass}
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
-              <p className="text-xs text-muted-foreground">{t("form.nameHelp")}</p>
-            </div>
+            </DialogField>
 
-            <div className="space-y-2">
-              <Label htmlFor="trunk-provider">{t("form.provider")}</Label>
+            <DialogField label={t("form.provider")} htmlFor="trunk-provider" help={t("form.providerHelp")}>
               <Input
                 id="trunk-provider"
+                className={dialogInputClass}
                 value={form.provider}
                 onChange={(e) => setForm({ ...form, provider: e.target.value })}
               />
-              <p className="text-xs text-muted-foreground">{t("form.providerHelp")}</p>
-            </div>
+            </DialogField>
 
-            <div className="space-y-2">
-              <Label htmlFor="trunk-caller-id">{t("form.callerIdNumber")}</Label>
+            <DialogField label={t("form.callerIdNumber")} htmlFor="trunk-caller-id">
               <Input
                 id="trunk-caller-id"
+                className={dialogInputClass}
                 value={form.caller_id_number}
                 onChange={(e) => setForm({ ...form, caller_id_number: e.target.value })}
               />
-            </div>
+            </DialogField>
 
-            <div className="space-y-2">
-              <Label htmlFor="trunk-sip-server">{t("form.sipServer")}</Label>
+            <DialogField label={t("form.sipServer")} htmlFor="trunk-sip-server">
               <Input
                 id="trunk-sip-server"
+                className={dialogInputClass}
                 value={form.sip_server}
                 onChange={(e) => setForm({ ...form, sip_server: e.target.value })}
               />
-            </div>
+            </DialogField>
 
-            <div className="space-y-2">
-              <Label htmlFor="trunk-sip-port">{t("form.sipPort")}</Label>
+            <DialogField label={t("form.sipPort")} htmlFor="trunk-sip-port">
               <Input
                 id="trunk-sip-port"
                 type="number"
+                className={dialogInputClass}
                 value={form.sip_port}
                 onChange={(e) => setForm({ ...form, sip_port: Number(e.target.value) || 5060 })}
               />
-            </div>
+            </DialogField>
 
-            <div className="space-y-2">
-              <Label htmlFor="trunk-username">{t("form.username")}</Label>
+            <DialogField label={t("form.username")} htmlFor="trunk-username">
               <Input
                 id="trunk-username"
+                className={dialogInputClass}
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
               />
-            </div>
+            </DialogField>
 
-            <div className="space-y-2">
-              <Label htmlFor="trunk-password">{t("form.password")}</Label>
-              <Input
+            <DialogField label={t("form.password")} htmlFor="trunk-password">
+              <SecretInput
                 id="trunk-password"
-                type="password"
                 value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                onChange={(v) => setForm({ ...form, password: v })}
+                showLabel={tSecret("show")}
+                hideLabel={tSecret("hide")}
+                autoComplete="new-password"
+                mono={false}
               />
-            </div>
+            </DialogField>
 
-            <div className="space-y-2">
-              <Label htmlFor="trunk-realm">{t("form.realm")}</Label>
+            <DialogField label={t("form.realm")} htmlFor="trunk-realm">
               <Input
                 id="trunk-realm"
+                className={dialogInputClass}
                 value={form.realm}
                 onChange={(e) => setForm({ ...form, realm: e.target.value })}
               />
-            </div>
+            </DialogField>
 
-            <div className="space-y-2">
-              <Label htmlFor="trunk-proxy">{t("form.proxy")}</Label>
+            <DialogField label={t("form.proxy")} htmlFor="trunk-proxy">
               <Input
                 id="trunk-proxy"
+                className={dialogInputClass}
                 value={form.proxy}
                 onChange={(e) => setForm({ ...form, proxy: e.target.value })}
               />
-            </div>
+            </DialogField>
 
-            <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="trunk-codecs">{t("form.codecs")}</Label>
+            <DialogField className="md:col-span-2" label={t("form.codecs")} htmlFor="trunk-codecs" help={t("form.codecsHelp")}>
               <Input
                 id="trunk-codecs"
+                className={dialogInputClass}
                 value={form.codecs}
                 onChange={(e) => setForm({ ...form, codecs: e.target.value })}
               />
-              <p className="text-xs text-muted-foreground">{t("form.codecsHelp")}</p>
-            </div>
+            </DialogField>
 
-            <div className="md:col-span-2 space-y-2">
-              <Label>{t("form.phoneNumbers")}</Label>
+            <DialogField
+              className="md:col-span-2"
+              label={t("form.phoneNumbers")}
+              htmlFor="trunk-new-phone"
+              help={t("form.phoneNumbersHelp")}
+            >
               <div className="flex gap-2">
                 <Input
+                  id="trunk-new-phone"
+                  className={dialogInputClass}
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
                   onKeyDown={(e) => {
@@ -395,58 +411,71 @@ export default function TrunksPage() {
                   }}
                   placeholder="+995322421219"
                 />
-                <Button type="button" variant="outline" onClick={addPhone}>
+                <button type="button" className={rdButton.outline} onClick={addPhone}>
                   {t("form.addPhoneNumber")}
-                </Button>
+                </button>
               </div>
-              <p className="text-xs text-muted-foreground">{t("form.phoneNumbersHelp")}</p>
               {form.phone_numbers.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-2">
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {form.phone_numbers.map((n) => (
-                    <Badge key={n} variant="secondary" className="pl-2 pr-1 py-1 gap-1">
-                      <span className="font-mono">{n}</span>
+                    <span
+                      key={n}
+                      className="inline-flex h-6 items-center gap-1 rounded-md border bg-muted/50 ps-2 pe-1 font-mono text-xs"
+                    >
+                      {n}
                       <button
                         type="button"
                         onClick={() => removePhone(n)}
-                        className="hover:text-destructive"
+                        aria-label={tList("removeNumber", { number: n })}
+                        className="inline-flex h-4 w-4 items-center justify-center rounded text-muted-foreground hover:text-destructive"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-3 w-3" aria-hidden />
                       </button>
-                    </Badge>
+                    </span>
                   ))}
                 </div>
               )}
-            </div>
+            </DialogField>
 
-            <div className="flex items-center gap-3">
-              <Switch
-                id="trunk-register"
-                checked={form.register}
-                onCheckedChange={(v) => setForm({ ...form, register: v })}
-              />
-              <div>
-                <Label htmlFor="trunk-register">{t("form.register")}</Label>
-                <p className="text-xs text-muted-foreground">{t("form.registerHelp")}</p>
-              </div>
-            </div>
+            <DialogSwitchRow
+              label={t("form.register")}
+              htmlFor="trunk-register"
+              help={t("form.registerHelp")}
+              control={
+                <SettingsToggle
+                  id="trunk-register"
+                  checked={form.register}
+                  onCheckedChange={(v) => setForm({ ...form, register: v })}
+                />
+              }
+            />
 
-            <div className="flex items-center gap-3">
-              <Switch
-                id="trunk-active"
-                checked={form.is_active}
-                onCheckedChange={(v) => setForm({ ...form, is_active: v })}
-              />
-              <Label htmlFor="trunk-active">{t("form.isActive")}</Label>
-            </div>
+            <DialogSwitchRow
+              label={t("form.isActive")}
+              htmlFor="trunk-active"
+              control={
+                <SettingsToggle
+                  id="trunk-active"
+                  checked={form.is_active}
+                  onCheckedChange={(v) => setForm({ ...form, is_active: v })}
+                />
+              }
+            />
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <button type="button" className={rdButton.outline} onClick={() => setDialogOpen(false)}>
               {tForm("cancel")}
-            </Button>
-            <Button onClick={handleSubmit} disabled={saving}>
+            </button>
+            <button
+              type="button"
+              className={rdButton.primary}
+              onClick={handleSubmit}
+              disabled={saving}
+              data-testid="trunk-submit"
+            >
               {saving ? tForm("saving") : editing ? tForm("update") : tForm("create")}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -461,12 +490,16 @@ export default function TrunksPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{tForm("cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleteMut.isPending}>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteMut.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {deleteMut.isPending ? tForm("deleting") : tForm("confirmDelete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </PbxListBlock>
   );
 }

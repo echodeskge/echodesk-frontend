@@ -1,7 +1,6 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { rdButton } from "@/components/redesign/buttons";
 import type { SipConfigurationDetail } from "@/api/generated/interfaces";
 
 interface SipConfigFormProps {
@@ -64,10 +63,11 @@ export function SipConfigForm({
 
         <div className="space-y-4">
           {/* Basic Configuration */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">{t("settings.configurationName")} *</Label>
+              <Label className="text-[13px]" htmlFor="name">{t("settings.configurationName")} *</Label>
               <Input
+                className="h-[34px] text-[13px]"
                 id="name"
                 value={configForm.name || ""}
                 onChange={(e) => updateFormField("name", e.target.value)}
@@ -76,8 +76,9 @@ export function SipConfigForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone_number">{t("settings.trunkPhoneNumber")}</Label>
+              <Label className="text-[13px]" htmlFor="phone_number">{t("settings.trunkPhoneNumber")}</Label>
               <Input
+                className="h-[34px] text-[13px]"
                 id="phone_number"
                 value={(configForm as any).phone_number || ""}
                 onChange={(e) => updateFormField("phone_number", e.target.value)}
@@ -86,10 +87,11 @@ export function SipConfigForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2 space-y-2">
-              <Label htmlFor="sip_server">{t("settings.sipServer")} *</Label>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="space-y-2 sm:col-span-2">
+              <Label className="text-[13px]" htmlFor="sip_server">{t("settings.sipServer")} *</Label>
               <Input
+                className="h-[34px] text-[13px]"
                 id="sip_server"
                 value={configForm.sip_server || ""}
                 onChange={(e) => updateFormField("sip_server", e.target.value)}
@@ -98,8 +100,9 @@ export function SipConfigForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sip_port">{t("settings.port")}</Label>
+              <Label className="text-[13px]" htmlFor="sip_port">{t("settings.port")}</Label>
               <Input
+                className="h-[34px] text-[13px]"
                 id="sip_port"
                 type="number"
                 value={configForm.sip_port || 5060}
@@ -112,16 +115,15 @@ export function SipConfigForm({
           </div>
 
           {/* Trunk Credentials */}
-          <Card>
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm">{t("settings.trunkCredentials")}</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 space-y-4">
-              <p className="text-xs text-muted-foreground">{t("settings.trunkCredentialsDesc")}</p>
-              <div className="grid grid-cols-2 gap-4">
+          <fieldset className="space-y-4 rounded-[10px] border px-4 pb-4 pt-3">
+            <legend className="px-1 text-[13px] font-semibold">{t("settings.trunkCredentials")}</legend>
+            <div className="space-y-4">
+              <p className="text-xs leading-[17px] text-muted-foreground">{t("settings.trunkCredentialsDesc")}</p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="username">{t("settings.trunkUsername")} *</Label>
+                  <Label className="text-[13px]" htmlFor="username">{t("settings.trunkUsername")} *</Label>
                   <Input
+                    className="h-[34px] text-[13px]"
                     id="username"
                     value={configForm.username || ""}
                     onChange={(e) => updateFormField("username", e.target.value)}
@@ -130,11 +132,12 @@ export function SipConfigForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">
+                  <Label className="text-[13px]" htmlFor="password">
                     {t("settings.trunkPassword")}
                     {editingConfig ? "" : " *"}
                   </Label>
                   <Input
+                    className="h-[34px] text-[13px]"
                     id="password"
                     type="password"
                     value={(configForm as any).password || ""}
@@ -144,10 +147,11 @@ export function SipConfigForm({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="realm">{t("settings.realm")}</Label>
+                  <Label className="text-[13px]" htmlFor="realm">{t("settings.realm")}</Label>
                   <Input
+                    className="h-[34px] text-[13px]"
                     id="realm"
                     value={configForm.realm || ""}
                     onChange={(e) => updateFormField("realm", e.target.value)}
@@ -156,8 +160,9 @@ export function SipConfigForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="proxy">{t("settings.proxy")}</Label>
+                  <Label className="text-[13px]" htmlFor="proxy">{t("settings.proxy")}</Label>
                   <Input
+                    className="h-[34px] text-[13px]"
                     id="proxy"
                     value={configForm.proxy || ""}
                     onChange={(e) => updateFormField("proxy", e.target.value)}
@@ -165,31 +170,31 @@ export function SipConfigForm({
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </fieldset>
 
           <div className="space-y-2">
-            <Label htmlFor="websocket_path">{t("settings.websocketPath")}</Label>
+            <Label className="text-[13px]" htmlFor="websocket_path">{t("settings.websocketPath")}</Label>
             <Input
+              className="h-[34px] text-[13px]"
               id="websocket_path"
               value={(configForm as any).websocket_path || "/ws"}
               onChange={(e) => updateFormField("websocket_path", e.target.value)}
               placeholder="/ws"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs leading-[17px] text-muted-foreground">
               {t("settings.websocketPathHint")}
             </p>
           </div>
 
           {/* WebRTC Configuration */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">{t("settings.webrtcSettings")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <fieldset className="space-y-4 rounded-[10px] border px-4 pb-4 pt-3">
+            <legend className="px-1 text-[13px] font-semibold">{t("settings.webrtcSettings")}</legend>
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="stun_server">{t("settings.stunServer")}</Label>
+                <Label className="text-[13px]" htmlFor="stun_server">{t("settings.stunServer")}</Label>
                 <Input
+                  className="h-[34px] text-[13px]"
                   id="stun_server"
                   value={configForm.stun_server || ""}
                   onChange={(e) => updateFormField("stun_server", e.target.value)}
@@ -197,10 +202,11 @@ export function SipConfigForm({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-1 space-y-2">
-                  <Label htmlFor="turn_server">{t("settings.turnServer")}</Label>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="space-y-2 sm:col-span-1">
+                  <Label className="text-[13px]" htmlFor="turn_server">{t("settings.turnServer")}</Label>
                   <Input
+                    className="h-[34px] text-[13px]"
                     id="turn_server"
                     value={configForm.turn_server || ""}
                     onChange={(e) =>
@@ -211,8 +217,9 @@ export function SipConfigForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="turn_username">{t("settings.turnUsername")}</Label>
+                  <Label className="text-[13px]" htmlFor="turn_username">{t("settings.turnUsername")}</Label>
                   <Input
+                    className="h-[34px] text-[13px]"
                     id="turn_username"
                     value={configForm.turn_username || ""}
                     onChange={(e) =>
@@ -223,8 +230,9 @@ export function SipConfigForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="max_concurrent_calls">{t("settings.maxCalls")}</Label>
+                  <Label className="text-[13px]" htmlFor="max_concurrent_calls">{t("settings.maxCalls")}</Label>
                   <Input
+                    className="h-[34px] text-[13px]"
                     id="max_concurrent_calls"
                     type="number"
                     value={configForm.max_concurrent_calls || 5}
@@ -240,11 +248,11 @@ export function SipConfigForm({
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </fieldset>
 
           {/* Status Options */}
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="is_active"
@@ -253,7 +261,7 @@ export function SipConfigForm({
                   updateFormField("is_active", checked)
                 }
               />
-              <Label htmlFor="is_active" className="cursor-pointer">
+              <Label htmlFor="is_active" className="cursor-pointer text-[13px]">
                 {t("settings.activeConfiguration")}
               </Label>
             </div>
@@ -266,7 +274,7 @@ export function SipConfigForm({
                   updateFormField("is_default", checked)
                 }
               />
-              <Label htmlFor="is_default" className="cursor-pointer">
+              <Label htmlFor="is_default" className="cursor-pointer text-[13px]">
                 {t("settings.setAsDefault")}
               </Label>
             </div>
@@ -274,16 +282,22 @@ export function SipConfigForm({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>
+          <button type="button" className={rdButton.outline} onClick={onClose} disabled={saving}>
             {tCommon("cancel")}
-          </Button>
-          <Button onClick={handleSave} disabled={!isValid || saving}>
+          </button>
+          <button
+            type="button"
+            className={rdButton.primary}
+            onClick={handleSave}
+            disabled={!isValid || saving}
+            data-testid="sip-form-submit"
+          >
             {saving
               ? tCommon("saving")
               : editingConfig
               ? t("settings.updateConfiguration")
               : t("settings.createConfiguration")}
-          </Button>
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

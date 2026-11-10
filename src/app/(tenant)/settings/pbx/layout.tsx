@@ -1,14 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { cn } from "@/lib/utils";
+import { Headset, Lock } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { profileHasPermission } from "@/lib/backendPermissions";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { SettingsPage } from "@/components/redesign/settings";
+import { EmptyState } from "@/app/(tenant)/tickets/_components/primitives/empty-state";
+import { PbxTabs } from "./_components/pbx-ui";
 
 const PBX_TABS = [
   { id: "overview", href: "/settings/pbx", exact: true },
@@ -23,15 +24,11 @@ const PBX_TABS = [
 function UpgradeRequired() {
   const t = useTranslations("pbxSettings.page");
   return (
-    <div className="container mx-auto py-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("upgradeTitle")}</CardTitle>
-          <CardDescription>{t("upgradeDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent />
-      </Card>
-    </div>
+    <SettingsPage icon={Headset} title={t("title")} width="list" gap={16}>
+      <div className="rounded-[10px] border bg-card" data-testid="pbx-upgrade">
+        <EmptyState icon={Lock} title={t("upgradeTitle")} description={t("upgradeDescription")} />
+      </div>
+    </SettingsPage>
   );
 }
 
@@ -68,47 +65,35 @@ export default function PbxLayout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("page.title")}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{t("page.description")}</p>
-      </div>
-
-      <nav className="flex flex-wrap gap-1 border-b">
-        {visibleTabs.map((tab) => {
-          const isActive = tab.exact
+    <SettingsPage
+      icon={Headset}
+      title={t("page.title")}
+      description={t("page.description")}
+      width="list"
+      gap={16}
+      testId="pbx-layout"
+    >
+      <PbxTabs
+        ariaLabel={t("page.tabsLabel")}
+        tabs={visibleTabs.map((tab) => ({
+          id: tab.id,
+          href: tab.href,
+          label: t(`tabs.${tab.id}`),
+          active: tab.exact
             ? pathname === tab.href
-            : pathname === tab.href || pathname.startsWith(tab.href + "/");
-          return (
-            <Link
-              key={tab.id}
-              href={tab.href}
-              className={cn(
-                "inline-flex items-center px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
-                isActive
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
-              )}
-            >
-              {t(`tabs.${tab.id}`)}
-            </Link>
-          );
-        })}
-      </nav>
+            : pathname === tab.href || pathname.startsWith(tab.href + "/"),
+        }))}
+      />
 
-      <div>
+      <div className="flex min-w-0 flex-col gap-5">
         {onAllowedTab ? (
           children
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("page.noAccessTitle")}</CardTitle>
-              <CardDescription>{t("page.noAccessDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent />
-          </Card>
+          <div className="rounded-[10px] border bg-card" data-testid="pbx-no-access">
+            <EmptyState icon={Lock} title={t("page.noAccessTitle")} description={t("page.noAccessDescription")} />
+          </div>
         )}
       </div>
-    </div>
+    </SettingsPage>
   );
 }

@@ -1,22 +1,33 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
 import { SipConfigForm } from "@/components/calls/SipConfigForm";
 import { SipConfigList } from "@/components/calls/SipConfigList";
 import { UserPhoneAssignments } from "@/components/calls/UserPhoneAssignments";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Plus, Zap, Upload, Trash2, Loader2 } from "lucide-react";
+import { Lock, Phone, Plus, Zap, Upload, Trash2, Loader2 } from "lucide-react";
+import { Segmented } from "@/components/redesign/segmented";
+import { rdButton } from "@/components/redesign/buttons";
+import { LoadingBlock } from "@/components/redesign/states";
+import { EmptyState } from "@/app/(tenant)/tickets/_components/primitives/empty-state";
+import {
+  ActionButton,
+  ChoiceControl,
+  FieldRow,
+  SecretInput,
+  SettingsNote,
+  SettingsPage,
+  SettingsSection,
+  SettingsToggle,
+  StickySaveBar,
+  settingsFieldWidth,
+  settingsInputClass,
+} from "@/components/redesign/settings";
+import { cn } from "@/lib/utils";
 import {
   sipConfigurationsList,
   sipConfigurationsCreate,
@@ -59,15 +70,10 @@ const TIMEZONES = [
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
-const DAY_LABELS: Record<string, string> = {
-  monday: 'Mon',
-  tuesday: 'Tue',
-  wednesday: 'Wed',
-  thursday: 'Thu',
-  friday: 'Fri',
-  saturday: 'Sat',
-  sunday: 'Sun',
-};
+/** Weekday name in the UI locale (index 0 = Monday; 2024-01-01 was a Monday, UTC). */
+function dayLabel(index: number, locale: string, weekday: 'short' | 'long'): string {
+  return new Intl.DateTimeFormat(locale, { weekday, timeZone: 'UTC' }).format(new Date(Date.UTC(2024, 0, 1 + index)));
+}
 
 type WorkingHoursSchedule = Record<string, number[]>;
 
@@ -190,6 +196,7 @@ function WorkingHoursGrid({
   disabled?: boolean;
 }) {
   const ts = useTranslations("callsSettings");
+  const locale = useLocale();
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionMode, setSelectionMode] = useState<'select' | 'deselect'>('select');
 
@@ -249,10 +256,10 @@ function WorkingHoursGrid({
         </div>
 
         {/* Day rows */}
-        {DAYS.map(day => (
+        {DAYS.map((day, dayIndex) => (
           <div key={day} className="flex mb-px">
             <div className="w-20 shrink-0 text-sm font-medium capitalize py-1">
-              {DAY_LABELS[day]}
+              {dayLabel(dayIndex, locale, 'short')}
             </div>
             <div className="flex flex-1 gap-px">
               {HOURS.map(hour => (
@@ -268,7 +275,7 @@ function WorkingHoursGrid({
                   `}
                   onMouseDown={() => handleMouseDown(day, hour)}
                   onMouseEnter={() => handleMouseEnter(day, hour)}
-                  title={`${day.charAt(0).toUpperCase() + day.slice(1)} ${hour}:00 - ${hour + 1}:00`}
+                  title={ts('sip.hourRange', { day: dayLabel(dayIndex, locale, 'long'), from: hour, to: hour + 1 })}
                 />
               ))}
             </div>
@@ -291,9 +298,9 @@ function WorkingHoursGrid({
   );
 }
 
-// ─── Sound Card ──────────────────────────────────────────────────────────────
+// ─── Sound Row ───────────────────────────────────────────────────────────────
 
-function SoundCard({
+function SoundRow({
   title,
   description,
   soundUrl,
@@ -310,6 +317,7 @@ function SoundCard({
 }) {
   const ts = useTranslations("callsSettings");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [tooLarge, setTooLarge] = useState(false);
 
   const fileName = soundUrl ? soundUrl.split('/').pop() || 'custom sound' : null;
 
@@ -317,50 +325,45 @@ function SoundCard({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      return; // 10MB limit
+      // 10MB limit: say so (it used to ignore the file silently) and let the
+      // same file be picked again.
+      setTooLarge(true);
+      e.target.value = '';
+      return;
     }
+    setTooLarge(false);
     onUpload(file);
     // Reset the input so the same file can be re-selected
     e.target.value = '';
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-          <div>
-            <CardTitle className="text-base">{title}</CardTitle>
-            <CardDescription className="text-sm">{description}</CardDescription>
-          </div>
-          {soundUrl && (
-            <Badge variant="secondary" className="shrink-0 max-w-[150px] sm:max-w-[200px] truncate">
+    <FieldRow
+      label={title}
+      help={
+        <>
+          {description}
+          {tooLarge && (
+            <span role="alert" className="mt-1 block text-destructive">{ts("fileTooLarge")}</span>
+          )}
+        </>
+      }
+      testId="sound-row"
+    >
+      <div className="flex w-full min-w-0 flex-col gap-2 sm:w-[320px]">
+        {soundUrl ? (
+          <>
+            <span className="truncate font-mono text-[11px] text-muted-foreground" title={fileName ?? undefined}>
               {fileName}
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          {soundUrl ? (
-            <>
-              <audio controls preload="none" className="h-8 flex-1">
-                <source src={soundUrl} />
-              </audio>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={onRemove}
-                disabled={uploading}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                {ts("removeSound")}
-              </Button>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground flex-1">
-              {ts("noCustomSound")}
-            </p>
-          )}
+            </span>
+            <audio controls preload="none" className="h-8 w-full">
+              <source src={soundUrl} />
+            </audio>
+          </>
+        ) : (
+          <span className="text-xs text-muted-foreground">{ts("noCustomSound")}</span>
+        )}
+        <div className="flex flex-wrap gap-2">
           <input
             ref={fileInputRef}
             type="file"
@@ -368,23 +371,23 @@ function SoundCard({
             className="hidden"
             onChange={handleFileChange}
           />
-          <Button
-            variant="outline"
-            size="sm"
+          <ActionButton
+            icon={uploading ? undefined : Upload}
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
+            testId="sound-upload"
           >
-            {uploading ? (
-              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-            ) : (
-              <Upload className="h-4 w-4 mr-1" />
-            )}
+            {uploading && <Loader2 className="h-[13px] w-[13px] animate-spin" aria-hidden />}
             {ts("uploadSound")}
-          </Button>
+          </ActionButton>
+          {soundUrl && (
+            <ActionButton icon={Trash2} tone="danger" onClick={onRemove} disabled={uploading} testId="sound-remove">
+              {ts("removeSound")}
+            </ActionButton>
+          )}
         </div>
-        <p className="text-xs text-muted-foreground mt-2">{ts("soundRequirements")}</p>
-      </CardContent>
-    </Card>
+      </div>
+    </FieldRow>
   );
 }
 
@@ -436,6 +439,9 @@ export default function CallSettingsPage() {
   const [pbxSettings, setPbxSettings] = useState<PbxSettings>(DEFAULT_PBX_SETTINGS);
   const [pbxLoading, setPbxLoading] = useState(false);
   const [pbxSaving, setPbxSaving] = useState(false);
+  // Last loaded / saved working-hours values (save bar dirty check + Discard).
+  const [pbxLoaded, setPbxLoaded] = useState<PbxSettings | null>(null);
+  const [activeTab, setActiveTab] = useState<"sip" | "working-hours" | "sounds">("sip");
 
   // ── Sound Management State (Tab 3) ──
   const [soundSipConfigId, setSoundSipConfigId] = useState<string>("");
@@ -456,7 +462,7 @@ export default function CallSettingsPage() {
       setError("");
     } catch (err: unknown) {
       console.error("Failed to fetch SIP configs:", err);
-      setError("Failed to load SIP configurations");
+      setError(ts("sip.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -501,13 +507,20 @@ export default function CallSettingsPage() {
         stun_server: config.stun_server || "",
         turn_server: config.turn_server || "",
         turn_username: config.turn_username || "",
+        // Without these the edit dialog showed Active / Default unticked,
+        // 5 max calls, "/ws" and an empty trunk number whatever was stored.
+        phone_number: config.phone_number || "",
+        websocket_path: config.websocket_path || "/ws",
+        is_active: config.is_active,
+        is_default: config.is_default,
+        max_concurrent_calls: config.max_concurrent_calls,
       });
       setShowModal(true);
     } catch (error) {
       console.error("Error loading SIP configuration:", error);
       toast({
-        title: "Error",
-        description: "Failed to load SIP configuration",
+        title: ts("error"),
+        description: ts("sip.loadOneFailed"),
         variant: "destructive",
       });
     }
@@ -537,25 +550,25 @@ export default function CallSettingsPage() {
   const saveConfig = async () => {
     try {
       setSaving(true);
-      const { password, turn_password, ...apiConfig } = configForm;
-
       if (editingConfig) {
         await sipConfigurationsUpdate(editingConfig.id, configForm as any);
         toast({
-          title: "Success",
-          description: "SIP configuration updated successfully",
+          title: ts("success"),
+          description: ts("sip.updated"),
         });
       } else {
+        // The form asks for the trunk password on create (it is required
+        // there), so send it: dropping it left new configs without one.
         const createData = {
-          ...apiConfig,
+          ...configForm,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           id: 0,
         } as SipConfiguration;
         await sipConfigurationsCreate(createData);
         toast({
-          title: "Success",
-          description: "SIP configuration created successfully",
+          title: ts("success"),
+          description: ts("sip.created"),
         });
       }
 
@@ -565,8 +578,8 @@ export default function CallSettingsPage() {
     } catch (err: unknown) {
       console.error("Failed to save SIP config:", err);
       toast({
-        title: "Error",
-        description: "Failed to save SIP configuration",
+        title: ts("error"),
+        description: ts("sip.saveFailed"),
         variant: "destructive",
       });
     } finally {
@@ -575,7 +588,7 @@ export default function CallSettingsPage() {
   };
 
   const deleteConfig = async (configId: number) => {
-    if (!confirm("Are you sure you want to delete this SIP configuration?")) {
+    if (!confirm(ts("sip.deleteConfirm"))) {
       return;
     }
 
@@ -585,14 +598,14 @@ export default function CallSettingsPage() {
       await fetchSipConfigs();
       setError("");
       toast({
-        title: "Success",
-        description: "SIP configuration deleted successfully",
+        title: ts("success"),
+        description: ts("sip.deleted"),
       });
     } catch (err: unknown) {
       console.error("Failed to delete SIP config:", err);
       toast({
-        title: "Error",
-        description: "Failed to delete SIP configuration",
+        title: ts("error"),
+        description: ts("sip.deleteFailed"),
         variant: "destructive",
       });
     } finally {
@@ -608,14 +621,14 @@ export default function CallSettingsPage() {
       await fetchSipConfigs();
       setError("");
       toast({
-        title: "Success",
-        description: "Default SIP configuration updated",
+        title: ts("success"),
+        description: ts("sip.defaultUpdated"),
       });
     } catch (err: unknown) {
       console.error("Failed to set default SIP config:", err);
       toast({
-        title: "Error",
-        description: "Failed to set default SIP configuration",
+        title: ts("error"),
+        description: ts("sip.defaultFailed"),
         variant: "destructive",
       });
     } finally {
@@ -632,15 +645,15 @@ export default function CallSettingsPage() {
         fullConfig as any
       );
       toast({
-        title: result.success ? "Connection Successful" : "Connection Failed",
+        title: result.success ? ts("sip.testOk") : ts("sip.testFailed"),
         description: result.message || "",
         variant: result.success ? "default" : "destructive",
       });
     } catch (err: unknown) {
       console.error("Failed to test SIP config:", err);
       toast({
-        title: "Error",
-        description: "Connection test failed",
+        title: ts("error"),
+        description: ts("sip.testError"),
         variant: "destructive",
       });
     } finally {
@@ -682,8 +695,10 @@ export default function CallSettingsPage() {
       if (cancelled) return;
       if (data) {
         setPbxSettings(data);
+        setPbxLoaded(data);
       } else {
         setPbxSettings(DEFAULT_PBX_SETTINGS);
+        setPbxLoaded(DEFAULT_PBX_SETTINGS);
       }
       setPbxLoading(false);
     });
@@ -725,6 +740,7 @@ export default function CallSettingsPage() {
         review_delay_hours: pbxSettings.review_delay_hours,
         review_cooldown_hours: pbxSettings.review_cooldown_hours,
       });
+      setPbxLoaded(pbxSettings);
       toast({
         title: ts("success"),
         description: ts("saved"),
@@ -758,6 +774,7 @@ export default function CallSettingsPage() {
         // Also update working hours settings if same config
         if (sipConfigId === selectedSipConfigId) {
           setPbxSettings(data);
+          setPbxLoaded(data);
         }
       }
       toast({
@@ -789,6 +806,7 @@ export default function CallSettingsPage() {
         setSoundSettings(data);
         if (sipConfigId === selectedSipConfigId) {
           setPbxSettings(data);
+          setPbxLoaded(data);
         }
       }
       toast({
@@ -807,80 +825,143 @@ export default function CallSettingsPage() {
     }
   };
 
+  // ── Working-hours save bar (same save, new place) ──
+  const savedFieldsOf = (p: PbxSettings) =>
+    JSON.stringify([
+      p.working_hours_enabled,
+      p.timezone,
+      p.working_hours,
+      p.holidays,
+      p.after_hours_action,
+      p.forward_number,
+      p.review_method,
+      p.sms_api_key,
+      p.sms_rating_template_ka,
+      p.sms_rating_template_en,
+      p.review_delay_hours,
+      p.review_cooldown_hours,
+    ]);
+  const pbxDirty = pbxLoaded != null && savedFieldsOf(pbxSettings) !== savedFieldsOf(pbxLoaded);
+  const discardWorkingHours = () => {
+    if (pbxLoaded) setPbxSettings(pbxLoaded);
+  };
+
+  const configSelect = (value: string, onChange: (v: string) => void, testId: string) =>
+    sipConfigs.length === 0 ? (
+      <p className="text-xs text-muted-foreground">{ts("noSipConfigs")}</p>
+    ) : (
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className={cn(settingsFieldWidth, "h-[34px] text-[13px]")} data-testid={testId}>
+          <SelectValue placeholder={ts("selectSipConfig")} />
+        </SelectTrigger>
+        <SelectContent>
+          {sipConfigs.map((config) => (
+            <SelectItem key={config.id} value={String(config.id)}>
+              {config.name} {config.is_default ? ts("sip.defaultSuffix") : ""}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+
   // ── Render ──
   if (!profileLoading && !canManagePbx) {
     return (
-      <div className="container mx-auto p-4 sm:p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{tPbx("page.noAccessTitle")}</CardTitle>
-            <CardDescription>{tPbx("page.noAccessDescription")}</CardDescription>
-          </CardHeader>
-          <CardContent />
-        </Card>
-      </div>
+      <SettingsPage icon={Phone} title={t("settings.title")} width="wide" testId="calls-settings">
+        <div className="rounded-[10px] border bg-card" data-testid="calls-no-access">
+          <EmptyState
+            icon={Lock}
+            title={tPbx("page.noAccessTitle")}
+            description={tPbx("page.noAccessDescription")}
+          />
+        </div>
+      </SettingsPage>
     );
   }
 
   return (
-    <FeatureGate feature="ip_calling" showUpgrade={true}>
-      <div className="container mx-auto p-4 sm:p-6 space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("settings.title")}</h1>
-          <p className="text-muted-foreground">
-            {t("settings.subtitle")}
-          </p>
-        </div>
+    <FeatureGate
+      feature="ip_calling"
+      showUpgrade={true}
+      fallback={
+        <SettingsPage icon={Phone} title={t("settings.title")} width="wide" testId="calls-settings">
+          <div className="rounded-[10px] border bg-card" data-testid="calls-upgrade">
+            <EmptyState
+              icon={Lock}
+              title={tPbx("page.upgradeTitle")}
+              description={tPbx("page.upgradeDescription")}
+              action={
+                <Link href="/settings/subscription" className={rdButton.outline}>
+                  {ts("upgradePlan")}
+                </Link>
+              }
+            />
+          </div>
+        </SettingsPage>
+      }
+    >
+      <SettingsPage
+        icon={Phone}
+        title={t("settings.title")}
+        description={t("settings.subtitle")}
+        width="wide"
+        testId="calls-settings"
+      >
+        <Segmented
+          size="md"
+          value={activeTab}
+          onChange={setActiveTab}
+          ariaLabel={ts("tabsLabel")}
+          className="self-start"
+          testId="calls-tabs"
+          options={[
+            { value: "sip", label: ts("sipTab") },
+            { value: "working-hours", label: ts("workingHoursTab") },
+            { value: "sounds", label: ts("soundsTab") },
+          ]}
+        />
 
-        <Tabs defaultValue="sip" className="space-y-6">
-          <TabsList className="w-full sm:w-auto flex flex-col sm:flex-row h-auto sm:h-10 gap-1 sm:gap-0">
-            <TabsTrigger value="sip" className="w-full sm:w-auto">{ts("sipTab")}</TabsTrigger>
-            <TabsTrigger value="working-hours" className="w-full sm:w-auto">{ts("workingHoursTab")}</TabsTrigger>
-            <TabsTrigger value="sounds" className="w-full sm:w-auto">{ts("soundsTab")}</TabsTrigger>
-          </TabsList>
-
-          {/* ── Tab 1: SIP Configurations ── */}
-          <TabsContent value="sip" className="space-y-6">
-            {/* Action buttons */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
-              <Button variant="outline" onClick={setupAsteriskServer}>
-                <Zap className="h-4 w-4 mr-2" />
-                {t("settings.quickSetup")}
-              </Button>
-              <Button onClick={() => openModal()}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t("settings.addConfiguration")}
-              </Button>
-            </div>
-
-            {/* Error Alert */}
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {/* Loading State */}
-            {loading ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground">
-                    {tCommon("loading")}
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <SipConfigList
-                configs={sipConfigs}
-                onEdit={openModal}
-                onDelete={deleteConfig}
-                onSetDefault={setDefaultConfig}
-                onTest={testConnection}
-                actionLoading={actionLoading}
-              />
-            )}
+        {/* ── Tab 1: SIP Configurations ── */}
+        {activeTab === "sip" && (
+          <>
+            <SettingsSection
+              title={ts("configsTitle")}
+              actions={
+                <>
+                  <ActionButton icon={Zap} onClick={setupAsteriskServer} testId="sip-quick-setup">
+                    {t("settings.quickSetup")}
+                  </ActionButton>
+                  <button
+                    type="button"
+                    className={cn(rdButton.primarySm, "h-[30px] px-2.5")}
+                    onClick={() => openModal()}
+                    data-testid="sip-add"
+                  >
+                    <Plus className="h-3.5 w-3.5" aria-hidden />
+                    {t("settings.addConfiguration")}
+                  </button>
+                </>
+              }
+              testId="sip-configs"
+            >
+              {error && (
+                <div className="border-b px-4 py-3">
+                  <SettingsNote tone="danger">{error}</SettingsNote>
+                </div>
+              )}
+              {loading ? (
+                <LoadingBlock label={tCommon("loading")} className="py-10" />
+              ) : (
+                <SipConfigList
+                  configs={sipConfigs}
+                  onEdit={openModal}
+                  onDelete={deleteConfig}
+                  onSetDefault={setDefaultConfig}
+                  onTest={testConnection}
+                  actionLoading={actionLoading}
+                />
+              )}
+            </SettingsSection>
 
             {/* User Phone Assignments per SIP Config */}
             {sipConfigs.map((config) => (
@@ -901,375 +982,287 @@ export default function CallSettingsPage() {
               editingConfig={editingConfig}
               saving={saving}
             />
-          </TabsContent>
+          </>
+        )}
 
-          {/* ── Tab 2: Working Hours ── */}
-          <TabsContent value="working-hours" className="space-y-6">
-            {/* SIP Config Selector */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{ts("selectSipConfig")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {sipConfigs.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{ts("noSipConfigs")}</p>
-                ) : (
-                  <Select
-                    value={selectedSipConfigId}
-                    onValueChange={setSelectedSipConfigId}
-                  >
-                    <SelectTrigger className="w-full max-w-sm">
-                      <SelectValue placeholder={ts("selectSipConfig")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sipConfigs.map((config) => (
-                        <SelectItem key={config.id} value={String(config.id)}>
-                          {config.name} {config.is_default ? "(Default)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </CardContent>
-            </Card>
+        {/* ── Tab 2: Working Hours ── */}
+        {activeTab === "working-hours" && (
+          <>
+            <SettingsSection title={ts("configTitle")}>
+              <FieldRow label={ts("selectSipConfig")} align="center">
+                {configSelect(selectedSipConfigId, setSelectedSipConfigId, "hours-config")}
+              </FieldRow>
+            </SettingsSection>
 
             {selectedSipConfigId && (
-              <>
-                {pbxLoading ? (
-                  <Card>
-                    <CardContent className="p-8 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-                      <p className="text-muted-foreground">{tCommon("loading")}</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <>
-                    {/* Enable/Disable Switch */}
-                    <Card>
-                      <CardContent className="pt-6">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="space-y-0.5">
-                            <Label className="text-base font-medium">{ts("workingHoursEnabled")}</Label>
-                            <p className="text-sm text-muted-foreground">
-                              {ts("workingHoursDescription")}
-                            </p>
-                          </div>
-                          <Switch
-                            checked={pbxSettings.working_hours_enabled}
-                            onCheckedChange={(checked) =>
-                              setPbxSettings((prev) => ({ ...prev, working_hours_enabled: checked }))
-                            }
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
+              pbxLoading ? (
+                <div className="rounded-[10px] border bg-card">
+                  <LoadingBlock label={tCommon("loading")} />
+                </div>
+              ) : (
+                <>
+                  <SettingsSection title={ts("workingHoursTab")} hint={ts("workingHoursDescription")} testId="hours-main">
+                    <FieldRow label={ts("workingHoursEnabled")} htmlFor="wh-enabled" align="center">
+                      <SettingsToggle
+                        id="wh-enabled"
+                        checked={pbxSettings.working_hours_enabled}
+                        onCheckedChange={(checked) =>
+                          setPbxSettings((prev) => ({ ...prev, working_hours_enabled: checked }))
+                        }
+                      />
+                    </FieldRow>
+                    <FieldRow label={ts("timezone")} align="center">
+                      <Select
+                        value={pbxSettings.timezone}
+                        onValueChange={(value) =>
+                          setPbxSettings((prev) => ({ ...prev, timezone: value }))
+                        }
+                      >
+                        <SelectTrigger className={cn(settingsFieldWidth, "h-[34px] text-[13px]")} data-testid="hours-timezone">
+                          <SelectValue placeholder={ts("selectTimezone")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TIMEZONES.map((tz) => (
+                            <SelectItem key={tz.value} value={tz.value}>
+                              {tz.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FieldRow>
+                  </SettingsSection>
 
-                    {/* Timezone Selector */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">{ts("timezone")}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Select
-                          value={pbxSettings.timezone}
-                          onValueChange={(value) =>
-                            setPbxSettings((prev) => ({ ...prev, timezone: value }))
-                          }
-                        >
-                          <SelectTrigger className="w-full max-w-sm">
-                            <SelectValue placeholder={ts("selectTimezone")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {TIMEZONES.map((tz) => (
-                              <SelectItem key={tz.value} value={tz.value}>
-                                {tz.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </CardContent>
-                    </Card>
+                  <SettingsSection title={ts("scheduleTitle")} hint={ts("scheduleHint")} testId="hours-grid">
+                    <div className="px-4 py-3.5">
+                      <WorkingHoursGrid
+                        schedule={pbxSettings.working_hours}
+                        onChange={(schedule) =>
+                          setPbxSettings((prev) => ({ ...prev, working_hours: schedule }))
+                        }
+                      />
+                    </div>
+                  </SettingsSection>
 
-                    {/* Working Hours Grid */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">{ts("workingHoursTab")}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <WorkingHoursGrid
-                          schedule={pbxSettings.working_hours}
-                          onChange={(schedule) =>
-                            setPbxSettings((prev) => ({ ...prev, working_hours: schedule }))
+                  <SettingsSection title={ts("afterHoursAction")} testId="hours-after">
+                    <FieldRow label={ts("afterHoursAction")} align="center">
+                      <Select
+                        value={pbxSettings.after_hours_action}
+                        onValueChange={(value: 'announcement' | 'voicemail' | 'forward') =>
+                          setPbxSettings((prev) => ({ ...prev, after_hours_action: value }))
+                        }
+                      >
+                        <SelectTrigger className={cn(settingsFieldWidth, "h-[34px] text-[13px]")} data-testid="hours-after-action">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="announcement">{ts("playAnnouncement")}</SelectItem>
+                          <SelectItem value="voicemail">{ts("voicemail")}</SelectItem>
+                          <SelectItem value="forward">{ts("forwardCall")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FieldRow>
+                    {pbxSettings.after_hours_action === 'forward' && (
+                      <FieldRow label={ts("forwardNumber")} htmlFor="wh-forward" align="center">
+                        <input
+                          id="wh-forward"
+                          type="tel"
+                          placeholder="+1234567890"
+                          className={cn(settingsInputClass, settingsFieldWidth)}
+                          value={pbxSettings.forward_number}
+                          onChange={(e) =>
+                            setPbxSettings((prev) => ({ ...prev, forward_number: e.target.value }))
                           }
                         />
-                      </CardContent>
-                    </Card>
+                      </FieldRow>
+                    )}
+                  </SettingsSection>
 
-                    {/* After-Hours Action */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">{ts("afterHoursAction")}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <Select
-                          value={pbxSettings.after_hours_action}
-                          onValueChange={(value: 'announcement' | 'voicemail' | 'forward') =>
-                            setPbxSettings((prev) => ({ ...prev, after_hours_action: value }))
-                          }
-                        >
-                          <SelectTrigger className="w-full max-w-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="announcement">{ts("playAnnouncement")}</SelectItem>
-                            <SelectItem value="voicemail">{ts("voicemail")}</SelectItem>
-                            <SelectItem value="forward">{ts("forwardCall")}</SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        {pbxSettings.after_hours_action === 'forward' && (
-                          <div className="space-y-2">
-                            <Label>{ts("forwardNumber")}</Label>
-                            <Input
-                              type="tel"
-                              placeholder="+1234567890"
-                              className="max-w-sm"
-                              value={pbxSettings.forward_number}
-                              onChange={(e) =>
-                                setPbxSettings((prev) => ({ ...prev, forward_number: e.target.value }))
-                              }
-                            />
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    {/* Holidays */}
-                    <Card>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base">{ts("holidays")}</CardTitle>
-                        <p className="text-sm text-muted-foreground">{ts("holidaysDescription")}</p>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {(pbxSettings.holidays || []).map((holiday, index) => (
-                          <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3">
-                            <Input
-                              type="date"
-                              value={holiday.date}
-                              onChange={(e) => {
-                                const updated = [...pbxSettings.holidays];
-                                updated[index] = { ...updated[index], date: e.target.value };
-                                setPbxSettings((prev) => ({ ...prev, holidays: updated }));
-                              }}
-                              className="sm:w-44"
-                            />
-                            <Input
-                              value={holiday.name}
-                              placeholder={ts("holidayNamePlaceholder")}
-                              onChange={(e) => {
-                                const updated = [...pbxSettings.holidays];
-                                updated[index] = { ...updated[index], name: e.target.value };
-                                setPbxSettings((prev) => ({ ...prev, holidays: updated }));
-                              }}
-                              className="flex-1"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                const updated = pbxSettings.holidays.filter((_, i) => i !== index);
-                                setPbxSettings((prev) => ({ ...prev, holidays: updated }));
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        ))}
-                        {(!pbxSettings.holidays || pbxSettings.holidays.length === 0) && (
-                          <p className="text-sm text-muted-foreground py-4 text-center">{ts("noHolidays")}</p>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
+                  <SettingsSection
+                    title={ts("holidays")}
+                    hint={ts("holidaysDescription")}
+                    testId="hours-holidays"
+                    actions={
+                      <ActionButton
+                        icon={Plus}
+                        testId="holiday-add"
+                        onClick={() => {
+                          const updated = [...(pbxSettings.holidays || []), { date: '', name: '' }];
+                          setPbxSettings((prev) => ({ ...prev, holidays: updated }));
+                        }}
+                      >
+                        {ts("addHoliday")}
+                      </ActionButton>
+                    }
+                  >
+                    {(pbxSettings.holidays || []).map((holiday, index) => (
+                      <div key={index} className="flex flex-col gap-2 border-b px-4 py-3 last:border-b-0 sm:flex-row sm:items-center" data-testid="holiday-row">
+                        <input
+                          type="date"
+                          aria-label={ts("holidayDate")}
+                          value={holiday.date}
+                          onChange={(e) => {
+                            const updated = [...pbxSettings.holidays];
+                            updated[index] = { ...updated[index], date: e.target.value };
+                            setPbxSettings((prev) => ({ ...prev, holidays: updated }));
+                          }}
+                          className={cn(settingsInputClass, "sm:w-44")}
+                        />
+                        <input
+                          aria-label={ts("holidayName")}
+                          value={holiday.name}
+                          placeholder={ts("holidayNamePlaceholder")}
+                          onChange={(e) => {
+                            const updated = [...pbxSettings.holidays];
+                            updated[index] = { ...updated[index], name: e.target.value };
+                            setPbxSettings((prev) => ({ ...prev, holidays: updated }));
+                          }}
+                          className={cn(settingsInputClass, "flex-1")}
+                        />
+                        <button
+                          type="button"
+                          aria-label={ts("deleteHoliday")}
+                          title={ts("deleteHoliday")}
+                          className={cn(rdButton.ghostIconSm, "self-end hover:bg-destructive/10 hover:text-destructive sm:self-auto")}
                           onClick={() => {
-                            const updated = [...(pbxSettings.holidays || []), { date: '', name: '' }];
+                            const updated = pbxSettings.holidays.filter((_, i) => i !== index);
                             setPbxSettings((prev) => ({ ...prev, holidays: updated }));
                           }}
                         >
-                          <Plus className="h-4 w-4 mr-2" />
-                          {ts("addHoliday")}
-                        </Button>
-                      </CardContent>
-                    </Card>
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                        </button>
+                      </div>
+                    ))}
+                    {(!pbxSettings.holidays || pbxSettings.holidays.length === 0) && (
+                      <p className="px-4 py-5 text-center text-[13px] text-muted-foreground">{ts("noHolidays")}</p>
+                    )}
+                  </SettingsSection>
 
-                    {/* Review Settings */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">{ts("reviewSettings")}</CardTitle>
-                        <p className="text-sm text-muted-foreground">{ts("reviewSettingsDesc")}</p>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {/* Review Method */}
-                        <div className="space-y-2">
-                          <Label>{ts("reviewMethod")}</Label>
-                          <Select
-                            value={pbxSettings.review_method}
-                            onValueChange={(value) =>
-                              setPbxSettings((prev) => ({ ...prev, review_method: value }))
+                  <SettingsSection title={ts("reviewSettings")} hint={ts("reviewSettingsDesc")} testId="hours-review">
+                    <FieldRow label={ts("reviewMethod")} align="center">
+                      <ChoiceControl<string>
+                        value={pbxSettings.review_method}
+                        onChange={(value) =>
+                          setPbxSettings((prev) => ({ ...prev, review_method: value }))
+                        }
+                        ariaLabel={ts("reviewMethod")}
+                        testId="review-method"
+                        options={[
+                          { value: "none", label: ts("reviewDisabled") },
+                          { value: "callback", label: ts("reviewCallback") },
+                          { value: "sms", label: ts("reviewSms") },
+                          { value: "both", label: ts("reviewBoth") },
+                        ]}
+                      />
+                    </FieldRow>
+
+                    {/* SMS Settings — shown when sms or both */}
+                    {(pbxSettings.review_method === 'sms' || pbxSettings.review_method === 'both') && (
+                      <>
+                        <FieldRow label={ts("smsApiKey")} htmlFor="review-sms-key" align="center">
+                          <SecretInput
+                            id="review-sms-key"
+                            className={settingsFieldWidth}
+                            value={pbxSettings.sms_api_key}
+                            onChange={(v) => setPbxSettings((prev) => ({ ...prev, sms_api_key: v }))}
+                            placeholder="sender.ge API key"
+                            showLabel={tPbx("secret.show")}
+                            hideLabel={tPbx("secret.hide")}
+                          />
+                        </FieldRow>
+                        <FieldRow label={ts("smsTemplateKa")} htmlFor="review-sms-ka" help={ts("smsTemplatePlaceholder")}>
+                          <Textarea
+                            id="review-sms-ka"
+                            value={pbxSettings.sms_rating_template_ka}
+                            onChange={(e) =>
+                              setPbxSettings((prev) => ({ ...prev, sms_rating_template_ka: e.target.value }))
                             }
-                          >
-                            <SelectTrigger className="w-full max-w-sm">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">{ts("reviewDisabled")}</SelectItem>
-                              <SelectItem value="callback">{ts("reviewCallback")}</SelectItem>
-                              <SelectItem value="sms">{ts("reviewSms")}</SelectItem>
-                              <SelectItem value="both">{ts("reviewBoth")}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                            placeholder={`გმადლობთ! შეაფასეთ: {link}`}
+                            rows={2}
+                            className={cn(settingsFieldWidth, "resize-none text-[13px]")}
+                          />
+                        </FieldRow>
+                        <FieldRow label={ts("smsTemplateEn")} htmlFor="review-sms-en" help={ts("smsTemplatePlaceholder")}>
+                          <Textarea
+                            id="review-sms-en"
+                            value={pbxSettings.sms_rating_template_en}
+                            onChange={(e) =>
+                              setPbxSettings((prev) => ({ ...prev, sms_rating_template_en: e.target.value }))
+                            }
+                            placeholder="Thank you! Rate us: {link}"
+                            rows={2}
+                            className={cn(settingsFieldWidth, "resize-none text-[13px]")}
+                          />
+                        </FieldRow>
+                      </>
+                    )}
 
-                        {/* SMS Settings — shown when sms or both */}
-                        {(pbxSettings.review_method === 'sms' || pbxSettings.review_method === 'both') && (
-                          <>
-                            <div className="space-y-2">
-                              <Label>{ts("smsApiKey")}</Label>
-                              <Input
-                                type="password"
-                                className="max-w-sm"
-                                value={pbxSettings.sms_api_key}
-                                onChange={(e) =>
-                                  setPbxSettings((prev) => ({ ...prev, sms_api_key: e.target.value }))
-                                }
-                                placeholder="sender.ge API key"
-                              />
-                            </div>
+                    <FieldRow label={ts("reviewDelay")} htmlFor="review-delay" help={ts("reviewDelayDesc")} align="center">
+                      <input
+                        id="review-delay"
+                        type="number"
+                        min={0}
+                        className={cn(settingsInputClass, "w-full sm:w-[120px]")}
+                        value={pbxSettings.review_delay_hours}
+                        onChange={(e) =>
+                          setPbxSettings((prev) => ({ ...prev, review_delay_hours: Number(e.target.value) }))
+                        }
+                      />
+                    </FieldRow>
+                    <FieldRow label={ts("reviewCooldown")} htmlFor="review-cooldown" help={ts("reviewCooldownDesc")} align="center">
+                      <input
+                        id="review-cooldown"
+                        type="number"
+                        min={0}
+                        className={cn(settingsInputClass, "w-full sm:w-[120px]")}
+                        value={pbxSettings.review_cooldown_hours}
+                        onChange={(e) =>
+                          setPbxSettings((prev) => ({ ...prev, review_cooldown_hours: Number(e.target.value) }))
+                        }
+                      />
+                    </FieldRow>
+                  </SettingsSection>
 
-                            <div className="space-y-2">
-                              <Label>{ts("smsTemplateKa")}</Label>
-                              <Textarea
-                                value={pbxSettings.sms_rating_template_ka}
-                                onChange={(e) =>
-                                  setPbxSettings((prev) => ({ ...prev, sms_rating_template_ka: e.target.value }))
-                                }
-                                placeholder={`\u10D2\u10DB\u10D0\u10D3\u10DA\u10DD\u10D1\u10D7! \u10E8\u10D4\u10D0\u10E4\u10D0\u10E1\u10D4\u10D7: {link}`}
-                                rows={2}
-                                className="resize-none"
-                              />
-                              <p className="text-xs text-muted-foreground">{ts("smsTemplatePlaceholder")}</p>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label>{ts("smsTemplateEn")}</Label>
-                              <Textarea
-                                value={pbxSettings.sms_rating_template_en}
-                                onChange={(e) =>
-                                  setPbxSettings((prev) => ({ ...prev, sms_rating_template_en: e.target.value }))
-                                }
-                                placeholder="Thank you! Rate us: {link}"
-                                rows={2}
-                                className="resize-none"
-                              />
-                              <p className="text-xs text-muted-foreground">{ts("smsTemplatePlaceholder")}</p>
-                            </div>
-                          </>
-                        )}
-
-                        {/* Delay & Cooldown */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>{ts("reviewDelay")}</Label>
-                            <Input
-                              type="number"
-                              min={0}
-                              className="max-w-sm"
-                              value={pbxSettings.review_delay_hours}
-                              onChange={(e) =>
-                                setPbxSettings((prev) => ({ ...prev, review_delay_hours: Number(e.target.value) }))
-                              }
-                            />
-                            <p className="text-xs text-muted-foreground">{ts("reviewDelayDesc")}</p>
-                          </div>
-                          <div className="space-y-2">
-                            <Label>{ts("reviewCooldown")}</Label>
-                            <Input
-                              type="number"
-                              min={0}
-                              className="max-w-sm"
-                              value={pbxSettings.review_cooldown_hours}
-                              onChange={(e) =>
-                                setPbxSettings((prev) => ({ ...prev, review_cooldown_hours: Number(e.target.value) }))
-                              }
-                            />
-                            <p className="text-xs text-muted-foreground">{ts("reviewCooldownDesc")}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Save Button */}
-                    <div className="flex justify-end">
-                      <Button onClick={saveWorkingHours} disabled={pbxSaving}>
-                        {pbxSaving ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            {ts("saving")}
-                          </>
-                        ) : (
-                          ts("save")
-                        )}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </>
+                  {/* The old always-visible Save button, now in the sticky save bar. */}
+                  <StickySaveBar
+                    mode="always"
+                    dirty={pbxDirty}
+                    saving={pbxSaving}
+                    onSave={saveWorkingHours}
+                    onDiscard={discardWorkingHours}
+                    labels={{
+                      unsaved: ts("saveBar.unsaved"),
+                      discard: ts("saveBar.discard"),
+                      save: ts("save"),
+                      saving: ts("saving"),
+                      saved: ts("saveBar.saved"),
+                    }}
+                    testId="calls-savebar"
+                  />
+                </>
+              )
             )}
-          </TabsContent>
+          </>
+        )}
 
-          {/* ── Tab 3: Sound Management ── */}
-          <TabsContent value="sounds" className="space-y-6">
-            {/* SIP Config Selector */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{ts("selectSipConfig")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {sipConfigs.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{ts("noSipConfigs")}</p>
-                ) : (
-                  <Select
-                    value={soundSipConfigId}
-                    onValueChange={setSoundSipConfigId}
-                  >
-                    <SelectTrigger className="w-full max-w-sm">
-                      <SelectValue placeholder={ts("selectSipConfig")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sipConfigs.map((config) => (
-                        <SelectItem key={config.id} value={String(config.id)}>
-                          {config.name} {config.is_default ? "(Default)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </CardContent>
-            </Card>
+        {/* ── Tab 3: Sound Management ── */}
+        {activeTab === "sounds" && (
+          <>
+            <SettingsSection title={ts("configTitle")}>
+              <FieldRow label={ts("selectSipConfig")} align="center">
+                {configSelect(soundSipConfigId, setSoundSipConfigId, "sounds-config")}
+              </FieldRow>
+            </SettingsSection>
 
             {soundSipConfigId && (
-              <>
-                {soundLoading ? (
-                  <Card>
-                    <CardContent className="p-8 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-                      <p className="text-muted-foreground">{tCommon("loading")}</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid gap-4">
+              soundLoading ? (
+                <div className="rounded-[10px] border bg-card">
+                  <LoadingBlock label={tCommon("loading")} />
+                </div>
+              ) : (
+                <>
+                  <SettingsSection title={ts("soundsTitle")} hint={ts("soundRequirements")} testId="sounds-main">
                     {SOUND_TYPES.map((sound) => (
-                      <SoundCard
+                      <SoundRow
                         key={sound.key}
                         title={ts(sound.titleKey)}
                         description={ts(sound.descKey)}
@@ -1279,15 +1272,12 @@ export default function CallSettingsPage() {
                         uploading={uploadingSoundType === sound.key}
                       />
                     ))}
+                  </SettingsSection>
 
-                    {/* Queue Position Announcements */}
-                    <div className="col-span-full">
-                      <h3 className="text-lg font-semibold mt-6 mb-2">{ts("queuePositionTitle")}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">{ts("queuePositionDescription")}</p>
-                    </div>
-
+                  {/* Queue Position Announcements */}
+                  <SettingsSection title={ts("queuePositionTitle")} hint={ts("queuePositionDescription")} testId="sounds-queue">
                     {QUEUE_POSITION_SOUND_TYPES.map((sound) => (
-                      <SoundCard
+                      <SoundRow
                         key={sound.key}
                         title={ts(sound.titleKey)}
                         description={ts(sound.descKey)}
@@ -1297,13 +1287,13 @@ export default function CallSettingsPage() {
                         uploading={uploadingSoundType === sound.key}
                       />
                     ))}
-                  </div>
-                )}
-              </>
+                  </SettingsSection>
+                </>
+              )
             )}
-          </TabsContent>
-        </Tabs>
-      </div>
+          </>
+        )}
+      </SettingsPage>
     </FeatureGate>
   );
 }
