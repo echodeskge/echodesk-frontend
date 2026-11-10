@@ -3,6 +3,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { getNotificationBroadcast } from '@/utils/notificationBroadcast';
 import { getNotificationQueue } from '@/utils/notificationQueue';
 import { useOnlineStatus } from './useOnlineStatus';
+import { isCallEventPayload, publishCallEvent } from '@/lib/call-events';
 
 interface WebSocketMessage {
   type: string;
@@ -222,6 +223,15 @@ export function useNotificationsWebSocket({
               break;
 
             case 'pong':
+              break;
+
+            case 'call_event':
+              // Call-log create / status change for one of this user's legs.
+              // CallContext (answered-elsewhere, list refresh) listens on the
+              // module emitter; the bell itself does nothing with it.
+              if (isCallEventPayload(data.call)) {
+                publishCallEvent(data.call);
+              }
               break;
 
             case 'error':
