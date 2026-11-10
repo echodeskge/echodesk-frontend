@@ -571,13 +571,20 @@ describe("CallContext flows", () => {
       expect(result.current.state.activeCall).toBeNull();
     });
 
-    it("remote cancel while ringing -> missed call + end_call", async () => {
+    it("remote cancel while ringing -> the leg waits as `ending`; end_call says missed -> missed toast", async () => {
+      mockEndCall.mockResolvedValue({ id: 42, status: "missed" });
       const { result } = await ringIn();
       sipEmit("onCallEnded", "ended");
-      await flushLogs();
-      expect(result.current.state.missedCall).toMatchObject({ number: "+995555000111" });
+      // No verdict yet: no toast, the call is still there.
+      expect(result.current.state.activeCall).toMatchObject({ id: expect.any(String), status: "ending" });
+      expect(result.current.state.missedCall).toBeNull();
+
+      await waitFor(() => expect(result.current.state.activeCall).toBeNull());
       expect(mockEndCall).toHaveBeenCalledWith(42, { status: "ended" });
       expect(mockUpdateStatus).not.toHaveBeenCalled();
+      expect(result.current.state.missedCall).toMatchObject({ number: "+995555000111" });
+      expect(result.current.state.answeredElsewhereNotice).toBeNull();
+      expect(result.current.state.callEndedCounter).toBe(1);
       act(() => {
         result.current.actions.clearMissedCall();
       });
@@ -987,6 +994,11 @@ describe("CallContext flows", () => {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ["calls"] });
       expect(result.current.state.activeCall?.answeredElsewhere).toBe(true);
       expect(result.current.state.activeCall?.status).toBe("ringing");
+      expect(result.current.state.answeredElsewhereNotice).toMatchObject({
+        callId: result.current.state.activeCall?.id,
+        number: "+995555000111",
+        handledBy: 2,
+      });
 
       sipEmit("onCallEnded", "ended");
       await flushLogs();
@@ -994,14 +1006,177 @@ describe("CallContext flows", () => {
       expect(mockEndCall).not.toHaveBeenCalled();
       expect(mockUpdateStatus).not.toHaveBeenCalled();
       expect(result.current.state.activeCall).toBeNull();
+      // The notice outlives the leg.
+      expect(result.current.state.answeredElsewhereNotice).toMatchObject({ handledBy: 2 });
     });
 
-    it("treats a cancelled event for our own leg the same way", async () => {
+    it("treats a cancelled event for our own leg the same way (agent unknown)", async () => {
       const { result } = await ringIn();
       act(() => {
         publishCallEvent({ id: 42, call_id: "c-42", sip_call_id: "sip-1", status: "cancelled", handled_by: 1 });
       });
       expect(result.current.state.activeCall?.answeredElsewhere).toBe(true);
+      expect(result.current.state.answeredElsewhereNotice).toMatchObject({ handledBy: null });
+    });
+
+    it("the notice clears itself after 3 s", async () => {
+      const { result } = await ringIn();
+      vi.useFakeTimers();
+      act(() => {
+        publishCallEvent({ id: 42, call_id: "c-42", sip_call_id: "sip-1", status: "cancelled", handled_by: 1 });
+      });
+      expect(result.current.state.answeredElsewhereNotice).not.toBeNull();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2_900);
+      });
+      expect(result.current.state.answeredElsewhereNotice).not.toBeNull();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(200);
+      });
+      expect(result.current.state.answeredElsewhereNotice).toBeNull();
+    });
+
+    // Asterisk CANCELs the losing ringall legs before the winner's browser
+    // has PATCHed `answered`, so the loser's leg usually ends first.
+    describe("CANCEL before the event (ringall race)", () => {
+      it("end_call answers cancelled -> notice, no missed toast, call cleared", async () => {
+        mockEndCall.mockResolvedValue({ id: 42, status: "cancelled" });
+        const { result } = await ringIn();
+        sipEmit("onCallEnded", "ended");
+        expect(result.current.state.activeCall?.status).toBe("ending");
+        expect(result.current.state.missedCall).toBeNull();
+
+        await waitFor(() => expect(result.current.state.activeCall).toBeNull());
+        expect(mockEndCall).toHaveBeenCalledWith(42, { status: "ended" });
+        expect(mockUpdateStatus).not.toHaveBeenCalled();
+        expect(result.current.state.missedCall).toBeNull();
+        expect(result.current.state.answeredElsewhereNotice).toMatchObject({ number: "+995555000111", handledBy: null });
+        expect(result.current.state.callEndedCounter).toBe(1);
+      });
+
+      it("an event arriving while the verdict is pending wins over a `missed` answer", async () => {
+        let resolveEnd: (v: unknown) => void = () => {};
+        mockEndCall.mockImplementation(() => new Promise((r) => (resolveEnd = r)));
+        const { result } = await ringIn();
+        sipEmit("onCallEnded", "ended");
+        await waitFor(() => expect(mockEndCall).toHaveBeenCalledTimes(1));
+        act(() => {
+          publishCallEvent({ id: 42, call_id: "c-42", sip_call_id: "sip-1", status: "cancelled", handled_by: 1 });
+        });
+        expect(result.current.state.activeCall).toMatchObject({ status: "ending", answeredElsewhere: true });
+        await act(async () => {
+          resolveEnd({ id: 42, status: "missed" });
+        });
+        await waitFor(() => expect(result.current.state.activeCall).toBeNull());
+        expect(result.current.state.missedCall).toBeNull();
+        expect(result.current.state.answeredElsewhereNotice).not.toBeNull();
+      });
+
+      it("a late event after a `missed` verdict retracts the toast and shows the notice", async () => {
+        mockEndCall.mockResolvedValue({ id: 42, status: "missed" });
+        const { result } = await ringIn();
+        sipEmit("onCallEnded", "ended");
+        await waitFor(() => expect(result.current.state.missedCall).not.toBeNull());
+        expect(result.current.state.activeCall).toBeNull();
+
+        act(() => {
+          publishCallEvent({ id: 42, call_id: "c-42", sip_call_id: "sip-1", status: "cancelled", handled_by: 1 });
+        });
+        expect(result.current.state.missedCall).toBeNull();
+        expect(result.current.state.answeredElsewhereNotice).toMatchObject({ number: "+995555000111", handledBy: null });
+        expect(mockUpdateStatus).not.toHaveBeenCalled();
+
+        // A sibling's `answered` adds the agent without restarting anything.
+        act(() => {
+          publishCallEvent({ id: 77, call_id: "c-77", pbx_call_id: "pbx-1", sip_call_id: "sip-other", status: "answered", handled_by: 2 });
+        });
+        expect(result.current.state.answeredElsewhereNotice).toMatchObject({ handledBy: 2 });
+      });
+
+      it("does not retract a toast the user already dismissed, nor a different call's", async () => {
+        mockEndCall.mockResolvedValue({ id: 42, status: "missed" });
+        const { result } = await ringIn();
+        sipEmit("onCallEnded", "ended");
+        await waitFor(() => expect(result.current.state.missedCall).not.toBeNull());
+        act(() => {
+          result.current.actions.clearMissedCall();
+        });
+        sipEmit("onCallBusyRejected", { number: "+995555000222", sipCallId: "sip-2" });
+        act(() => {
+          publishCallEvent({ id: 42, call_id: "c-42", sip_call_id: "sip-1", status: "cancelled", handled_by: 1 });
+        });
+        expect(result.current.state.missedCall).toMatchObject({ number: "+995555000222" });
+        expect(result.current.state.answeredElsewhereNotice).toMatchObject({ number: "+995555000111" });
+      });
+
+      it("ignores a late event once the leg is older than 10 s", async () => {
+        mockEndCall.mockResolvedValue({ id: 42, status: "missed" });
+        const { result } = await ringIn();
+        vi.useFakeTimers();
+        sipEmit("onCallEnded", "ended");
+        await act(async () => {
+          for (let i = 0; i < 20; i += 1) await Promise.resolve();
+        });
+        expect(result.current.state.missedCall).not.toBeNull();
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(10_100);
+        });
+        act(() => {
+          publishCallEvent({ id: 42, call_id: "c-42", sip_call_id: "sip-1", status: "cancelled", handled_by: 1 });
+        });
+        expect(result.current.state.missedCall).not.toBeNull();
+        expect(result.current.state.answeredElsewhereNotice).toBeNull();
+      });
+
+      it("a leg whose log is still pending waits for the log, then end_calls", async () => {
+        let resolveLog: (v: unknown) => void = () => {};
+        mockLogIncoming.mockImplementation(() => new Promise((r) => (resolveLog = r)));
+        mockEndCall.mockResolvedValue({ id: 42, status: "cancelled" });
+        const { result } = await renderRegistered();
+        sipEmit("onIncomingCall", INVITATION);
+        sipEmit("onCallEnded", "ended");
+        expect(result.current.state.activeCall).toMatchObject({ status: "ending", logId: null, logPending: true });
+        await flushLogs();
+        expect(mockEndCall).not.toHaveBeenCalled();
+
+        await act(async () => {
+          resolveLog({ id: 42 });
+        });
+        await waitFor(() => expect(mockEndCall).toHaveBeenCalledWith(42, { status: "ended" }));
+        await waitFor(() => expect(result.current.state.activeCall).toBeNull());
+        expect(result.current.state.answeredElsewhereNotice).not.toBeNull();
+        expect(result.current.state.missedCall).toBeNull();
+      });
+
+      it("a leg whose log failed is cleared as missed without a write", async () => {
+        const { result } = await ringIn({ logFails: true });
+        sipEmit("onCallEnded", "ended");
+        await waitFor(() => expect(result.current.state.activeCall).toBeNull());
+        expect(mockEndCall).not.toHaveBeenCalled();
+        expect(result.current.state.missedCall).toMatchObject({ number: "+995555000111" });
+        expect(result.current.state.callEndedCounter).toBe(1);
+      });
+
+      it("end_call failing still clears the leg (as missed)", async () => {
+        mockEndCall.mockRejectedValue(new Error("500"));
+        const { result } = await ringIn();
+        sipEmit("onCallEnded", "ended");
+        await waitFor(() => expect(result.current.state.activeCall).toBeNull());
+        expect(result.current.state.missedCall).toMatchObject({ number: "+995555000111" });
+        expect(result.current.state.answeredElsewhereNotice).toBeNull();
+      });
+
+      it("a decline (reject) is never held for a verdict", async () => {
+        const { result } = await ringIn();
+        await act(async () => {
+          await result.current.actions.rejectCall();
+        });
+        sipEmit("onCallEnded", "rejected");
+        expect(result.current.state.activeCall).toBeNull();
+        await flushLogs();
+        expect(mockEndCall).not.toHaveBeenCalled();
+        expect(mockUpdateStatus).toHaveBeenCalledWith(42, { status: "cancelled" });
+      });
     });
 
     it("ignores our own answered event and unrelated calls", async () => {

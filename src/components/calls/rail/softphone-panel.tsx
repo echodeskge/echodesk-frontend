@@ -1,20 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Delete, Phone, PhoneOff, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ActiveCall } from "@/contexts/call-types";
 import { callInitials, sanitizeDial } from "../call-format";
 import { useSoftphoneData, type RecentContact } from "../useSoftphoneData";
 import { DIAL_KEYS, dialKeyTestId } from "./dial-keys";
 import { InCallView } from "./in-call-view";
 import { useCallActions, useCallState } from "@/contexts/CallContext";
-
-const ANSWERED_ELSEWHERE_MS = 3000;
-
-/** CL-01 may attach the answering agent's name; the type model has no field for it yet. */
-type ActiveCallWithAgent = ActiveCall & { answeredBy?: string };
 
 interface DialPadViewProps {
   value: string;
@@ -192,32 +186,19 @@ function AnsweredElsewhere({ agent }: { agent?: string }) {
 }
 
 /**
- * Switches between the idle dial pad and the in-call view; keeps the
- * answered-elsewhere notice on screen for 3 s after the sibling leg is torn
- * down, then returns to idle.
+ * Switches between the idle dial pad and the in-call view. While the
+ * provider holds an answered-elsewhere notice (it keeps it for a few
+ * seconds after the sibling leg is torn down) the notice replaces both,
+ * unless another call has started since.
  */
 export function SoftphonePanel() {
-  const { activeCall, dialNumber, callEndedCounter, sipState } = useCallState();
+  const { activeCall, dialNumber, callEndedCounter, sipState, answeredElsewhereNotice } = useCallState();
   const { setDialNumber, makeCall } = useCallActions();
   const idle = !activeCall;
   const { recents, matchedName } = useSoftphoneData(dialNumber, callEndedCounter, idle);
 
-  const [answered, setAnswered] = useState<{ id: string; agent?: string } | null>(null);
-  const answeredElsewhere = !!activeCall?.answeredElsewhere;
-  const answeredBy = (activeCall as ActiveCallWithAgent | null)?.answeredBy;
-  const callId = activeCall?.id;
-  useEffect(() => {
-    if (answeredElsewhere && callId) setAnswered({ id: callId, agent: answeredBy });
-  }, [answeredElsewhere, callId, answeredBy]);
-  useEffect(() => {
-    if (!answered) return;
-    const timer = setTimeout(() => setAnswered(null), ANSWERED_ELSEWHERE_MS);
-    return () => clearTimeout(timer);
-  }, [answered]);
-
-  if (answered && (!activeCall || activeCall.id === answered.id)) {
-    return <AnsweredElsewhere agent={answered.agent} />;
-  }
+  const notice = answeredElsewhereNotice && (!activeCall || activeCall.id === answeredElsewhereNotice.callId) ? answeredElsewhereNotice : null;
+  if (notice) return <AnsweredElsewhere />;
   if (activeCall) return <InCallView call={activeCall} />;
 
   return (

@@ -197,29 +197,37 @@ describe("CallRail — strips and banners", () => {
 });
 
 describe("CallRail — answered elsewhere", () => {
-  it("shows 'Answered by {agent}' for 3 s after the sibling leg is torn down, then idle", () => {
-    vi.useFakeTimers();
-    h.state = makeState({ activeCall: makeActiveCall({ status: "ringing", answeredElsewhere: true, answeredBy: "Ana Lomidze" }) });
+  const notice = { callId: "c1", number: "+995555123456", handledBy: null, time: new Date() };
+
+  it("shows the notice instead of Accept while the leg rings, keeps it after the PBX CANCEL, idle once the provider clears it", () => {
+    h.state = makeState({ activeCall: makeActiveCall({ status: "ringing", answeredElsewhere: true }), answeredElsewhereNotice: notice });
     const { rerender } = renderWithProviders(<CallRail />);
-    expect(screen.getByTestId("call-rail-answered-elsewhere")).toHaveTextContent("Answered by Ana Lomidze");
+    expect(screen.getByTestId("call-rail-answered-elsewhere")).toHaveTextContent("Answered by another agent");
     expect(screen.queryByTestId("call-rail-accept")).toBeNull();
 
-    // The PBX CANCEL clears the call; the notice stays until the timer ends.
-    h.state = makeState({ activeCall: null });
+    // The PBX CANCEL clears the call; the notice stays as long as the provider holds it.
+    h.state = makeState({ activeCall: null, answeredElsewhereNotice: notice });
     rerender(<CallRail />);
     expect(screen.getByTestId("call-rail-answered-elsewhere")).toBeInTheDocument();
     expect(screen.getByTestId("call-rail")).toBeInTheDocument();
 
-    act(() => {
-      vi.advanceTimersByTime(3000);
-    });
+    h.state = makeState({ activeCall: null, answeredElsewhereNotice: null });
+    rerender(<CallRail />);
     expect(screen.queryByTestId("call-rail-answered-elsewhere")).toBeNull();
     expect(screen.getByTestId("call-rail-idle")).toBeInTheDocument();
   });
 
-  it("uses the generic line when the agent is unknown", () => {
-    h.state = makeState({ activeCall: makeActiveCall({ status: "ringing", answeredElsewhere: true }) });
+  it("also covers the leg while it waits for the backend's verdict (status ending)", () => {
+    h.state = makeState({ activeCall: makeActiveCall({ status: "ending", answeredElsewhere: true }), answeredElsewhereNotice: notice });
     renderWithProviders(<CallRail />);
-    expect(screen.getByTestId("call-rail-answered-elsewhere")).toHaveTextContent("Answered by another agent");
+    expect(screen.getByTestId("call-rail-answered-elsewhere")).toBeInTheDocument();
+    expect(screen.queryByTestId("call-rail-in-call")).toBeNull();
+  });
+
+  it("a newer call wins over a lingering notice", () => {
+    h.state = makeState({ activeCall: makeActiveCall({ id: "c2", status: "ringing" }), answeredElsewhereNotice: notice });
+    renderWithProviders(<CallRail />);
+    expect(screen.queryByTestId("call-rail-answered-elsewhere")).toBeNull();
+    expect(screen.getByTestId("call-rail-accept")).toBeInTheDocument();
   });
 });

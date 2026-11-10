@@ -65,7 +65,9 @@ export interface ActiveCall {
   consultationCall: ConsultationCall | null;
   /**
    * A ringall sibling answered this call. The PBX CANCEL that follows must
-   * not be logged as missed nor `end_call`ed.
+   * not be logged as missed nor `end_call`ed. Often the CANCEL arrives
+   * first: then the leg stays as `ending` until `end_call` answers
+   * `cancelled` (answered elsewhere) or `missed`.
    */
   answeredElsewhere: boolean;
 }
@@ -130,6 +132,21 @@ export interface BusyRejectedCall {
   time: Date;
 }
 
+/**
+ * A ringall sibling answered an incoming call that rang here. The rail shows
+ * "Answered by {agent}" instead of the dial pad while this is set; the
+ * provider clears it after a few seconds. Set when a `call_event` says so,
+ * or when `end_call` answers `cancelled` for a leg the PBX cancelled.
+ */
+export interface AnsweredElsewhereNotice {
+  /** Client id (`ActiveCall.id`) of the leg that was answered elsewhere. */
+  callId: string;
+  number: string;
+  /** User id of the agent who answered, when the event carried one. */
+  handledBy: number | null;
+  time: Date;
+}
+
 // ---------------------------------------------------------------------------
 // Context values
 // ---------------------------------------------------------------------------
@@ -148,6 +165,8 @@ export interface CallStateValue {
   callEndedCounter: number;
   missedCall: MissedCall | null;
   busyRejected: BusyRejectedCall | null;
+  /** The last incoming leg a ringall sibling took; the rail shows the notice while set. */
+  answeredElsewhereNotice: AnsweredElsewhereNotice | null;
   /** Ringtone `AudioContext` is suspended (autoplay policy); show the unlock banner. */
   soundBlocked: boolean;
 }

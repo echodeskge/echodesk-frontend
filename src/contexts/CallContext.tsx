@@ -44,6 +44,7 @@ import { useCallingAccess } from '@/lib/calling-access';
 import { onCallEvent, type CallEventPayload } from '@/lib/call-events';
 import type {
   ActiveCall,
+  AnsweredElsewhereNotice,
   CallActionsValue,
   CallEndReason,
   CallError,
@@ -98,7 +99,19 @@ interface LogTracker {
   chain: Promise<unknown>;
 }
 
+/** A leg that ended recently; late `call_event`s are matched against it. */
+interface RecentEndedLeg {
+  call: ActiveCall;
+  /** The missed-call toast raised for this leg, retracted if it turns out answered elsewhere. */
+  missed: MissedCall | null;
+  timer: ReturnType<typeof setTimeout>;
+}
+
 const ERROR_AUTO_CLEAR_MS = 6_000;
+/** How long the rail shows "Answered by {agent}" after a ringall sibling took the call. */
+export const ANSWERED_ELSEWHERE_NOTICE_MS = 3_000;
+/** How long an ended leg stays matchable by a late `call_event`. */
+export const RECENT_ENDED_MS = 10_000;
 const UNREGISTERED_RETRIES = 5;
 const UNREGISTERED_RETRY_STEP_MS = 5_000;
 const REGISTRATION_RETRIES = 3;
@@ -152,6 +165,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [callEndedCounter, setCallEndedCounter] = useState(0);
   const [missedCall, setMissedCall] = useState<MissedCall | null>(null);
   const [busyRejected, setBusyRejected] = useState<BusyRejectedCall | null>(null);
+  const [answeredElsewhereNotice, setAnsweredElsewhereNotice] = useState<AnsweredElsewhereNotice | null>(null);
   const [soundBlocked, setSoundBlocked] = useState(false);
 
   // ---- Refs (synchronous mirrors read by SIP event handlers and actions) ----
@@ -171,6 +185,9 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     timer: null,
   });
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const noticeRef = useRef<AnsweredElsewhereNotice | null>(null);
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recentEndedRef = useRef(new Map<string, RecentEndedLeg>());
   const audioContextRef = useRef<AudioContext | null>(null);
   const ringingRef = useRef(false);
   const ringTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -429,22 +446,36 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     logsRef.current.delete(callId);
   }, []);
 
-  /** Run `write` once the log exists; writes for one call are serialised. */
-  const queueLogWrite = useCallback((callId: string, write: (logId: number) => Promise<unknown>, final = false) => {
-    const tracker = logsRef.current.get(callId);
-    if (!tracker) return;
-    tracker.chain = tracker.chain
-      .then(() => tracker.logId)
-      .then((id) => (id === null ? undefined : write(id)))
-      .catch((err) => {
+  /**
+   * Run `write` once the log exists; writes for one call are serialised.
+   * Resolves to the write's result, or null when the call has no log (the
+   * write failed or was abandoned). Rejects when `write` does.
+   */
+  const enqueueLogWrite = useCallback(
+    <T,>(callId: string, write: (logId: number) => Promise<T>, final = false): Promise<T | null> => {
+      const tracker = logsRef.current.get(callId);
+      if (!tracker) return Promise.resolve(null);
+      const run = tracker.chain.then(() => tracker.logId).then((id) => (id === null ? null : write(id)));
+      tracker.chain = run.catch((err) => {
         console.error('[calls] call log update failed:', err);
       });
-    if (final) {
-      tracker.chain.finally(() => {
-        if (logsRef.current.get(callId) === tracker) logsRef.current.delete(callId);
-      });
-    }
-  }, []);
+      if (final) {
+        tracker.chain.finally(() => {
+          if (logsRef.current.get(callId) === tracker) logsRef.current.delete(callId);
+        });
+      }
+      return run;
+    },
+    []
+  );
+
+  /** Fire-and-forget `enqueueLogWrite`; failures are logged by the chain. */
+  const queueLogWrite = useCallback(
+    (callId: string, write: (logId: number) => Promise<unknown>, final = false) => {
+      enqueueLogWrite(callId, write, final).catch(() => {});
+    },
+    [enqueueLogWrite]
+  );
 
   /** Resolve the backend log id of a call, waiting for a pending write. */
   const awaitLogId = useCallback(async (callId: string): Promise<number | null> => {
@@ -456,6 +487,115 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const bumpCallEnded = useCallback(() => {
     if (mountedRef.current) setCallEndedCounter((c) => c + 1);
   }, []);
+
+  // ---------------------------------------------------------------------------
+  // Answered elsewhere (ringall)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Keep an ended leg matchable for `RECENT_ENDED_MS`: Asterisk CANCELs the
+   * losing ringall legs before the winner's browser has written `answered`,
+   * so the `call_event` that settles the leg can arrive after it is gone.
+   */
+  const rememberEnded = useCallback((call: ActiveCall, missed: MissedCall | null) => {
+    const map = recentEndedRef.current;
+    const prev = map.get(call.id);
+    if (prev) clearTimeout(prev.timer);
+    const timer = setTimeout(() => map.delete(call.id), RECENT_ENDED_MS);
+    map.set(call.id, { call, missed, timer });
+  }, []);
+
+  const setNotice = useCallback((next: AnsweredElsewhereNotice | null) => {
+    noticeRef.current = next;
+    if (mountedRef.current) setAnsweredElsewhereNotice(next);
+  }, []);
+
+  /**
+   * A ringall sibling took `call`: silence the ringtone, flag the leg (no
+   * missed / end_call write), retract a missed toast already raised for
+   * it and show the notice for `ANSWERED_ELSEWHERE_NOTICE_MS`.
+   */
+  const markAnsweredElsewhere = useCallback(
+    (call: ActiveCall, handledBy: number | null) => {
+      const existing = noticeRef.current;
+      const shown = existing?.callId === call.id;
+      if (shown && (handledBy === null || existing.handledBy === handledBy)) return;
+
+      stopRingtone();
+      updateCall((prev) => (prev && prev.id === call.id && !prev.answeredElsewhere ? { ...prev, answeredElsewhere: true } : prev));
+
+      const recent = recentEndedRef.current.get(call.id);
+      if (recent?.missed) {
+        const retract = recent.missed;
+        recent.missed = null;
+        setMissedCall((prev) => (prev === retract ? null : prev));
+      }
+
+      const notice: AnsweredElsewhereNotice = {
+        callId: call.id,
+        number: call.number,
+        handledBy: handledBy ?? (shown ? existing.handledBy : null),
+        time: shown ? existing.time : new Date(),
+      };
+      setNotice(notice);
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+      noticeTimerRef.current = setTimeout(() => {
+        noticeTimerRef.current = null;
+        if (noticeRef.current === notice) setNotice(null);
+      }, ANSWERED_ELSEWHERE_NOTICE_MS);
+    },
+    [setNotice, stopRingtone, updateCall]
+  );
+
+  /**
+   * The PBX cancelled an incoming leg nobody here answered. That is either
+   * a caller who gave up (missed) or a ringall sibling who won — and the
+   * CANCEL usually beats the sibling's `answered` write, so the backend's
+   * verdict decides: the leg stays `ending` until `end_call` answers
+   * `cancelled` (answered elsewhere, notice) or `missed` (toast).
+   */
+  const settleUnansweredLeg = useCallback(
+    (call: ActiveCall) => {
+      updateCall((prev) => (prev && prev.id === call.id && prev.status !== 'ending' ? { ...prev, status: 'ending' } : prev));
+      rememberEnded(call, null);
+
+      const finish = (verdict: string | null) => {
+        const live = activeCallRef.current;
+        const flagged = (live?.id === call.id && live.answeredElsewhere) || noticeRef.current?.callId === call.id;
+        if (verdict === 'cancelled' || flagged) {
+          markAnsweredElsewhere(call, null);
+        } else {
+          const missed: MissedCall = { number: call.number, time: new Date() };
+          const recent = recentEndedRef.current.get(call.id);
+          if (recent) recent.missed = missed;
+          setMissedCall(missed);
+        }
+        updateCall((prev) => (prev && prev.id === call.id ? null : prev));
+        bumpCallEnded();
+      };
+
+      const endCallWrite = (logId: number) => callLogsEndCallCreate(logId, { status: 'ended' });
+      const pending: Promise<CallLog | null> = logsRef.current.has(call.id)
+        ? enqueueLogWrite(call.id, endCallWrite, true)
+        : call.logId !== null
+          ? endCallWrite(call.logId)
+          : Promise.resolve(null);
+      pending.then(
+        (row) => finish(row?.status ?? null),
+        () => finish(null) // logged by the chain; without a verdict the leg counts as missed
+      );
+    },
+    [bumpCallEnded, enqueueLogWrite, markAnsweredElsewhere, rememberEnded, updateCall]
+  );
+
+  useEffect(
+    () => () => {
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+      recentEndedRef.current.forEach((entry) => clearTimeout(entry.timer));
+      recentEndedRef.current.clear();
+    },
+    []
+  );
 
   // ---------------------------------------------------------------------------
   // Registration retries (C4)
@@ -663,9 +803,11 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (current.answeredElsewhere || reason === 'transferred') {
           // The backend already settled this leg (cancelled by the answering
           // sibling, or complete_attended_transfer).
+          if (current.answeredElsewhere) rememberEnded(current, null);
         } else if (reason === 'ended') {
           if (unansweredIncoming) {
-            setMissedCall({ number: current.number, time: new Date() });
+            settleUnansweredLeg(current); // stays `ending` until the backend's verdict
+            return;
           }
           write = (logId) => callLogsEndCallCreate(logId, { status: 'ended' });
         } else if (reason === 'rejected') {
@@ -747,9 +889,11 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       clearRetry,
       playRingtone,
       queueLogWrite,
+      rememberEnded,
       scheduleReconnect,
       setError,
       setSipState,
+      settleUnansweredLeg,
       startLog,
       stopRingtone,
       teardownSipService,
@@ -1203,23 +1347,30 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       onCallEvent((call: CallEventPayload) => {
         queryClient.invalidateQueries({ queryKey: ['calls'] });
 
-        const current = activeCallRef.current;
-        if (!current || current.answeredElsewhere) return;
-        const sameSip = Boolean(call.sip_call_id && current.sipCallId && call.sip_call_id === current.sipCallId);
-        const samePbx = Boolean(call.pbx_call_id && current.pbxCallId && call.pbx_call_id === current.pbxCallId);
-        if (!sameSip && !samePbx) return;
-
         const me = userIdRef.current;
         const byOther = call.handled_by !== null && call.handled_by !== undefined && call.handled_by !== me;
-        const answeredElsewhere = call.status === 'answered' && byOther;
-        const ownLegCancelled = call.status === 'cancelled' && sameSip && current.status !== 'active';
-        if (!answeredElsewhere && !ownLegCancelled) return;
-        if (current.status === 'active') return; // we are on this call ourselves
+        const answeredByOther = call.status === 'answered' && byOther;
+        const sameSip = (leg: ActiveCall) => Boolean(call.sip_call_id && leg.sipCallId && call.sip_call_id === leg.sipCallId);
+        const samePbx = (leg: ActiveCall) => Boolean(call.pbx_call_id && leg.pbxCallId && call.pbx_call_id === leg.pbxCallId);
+        // Our own leg relabelled `cancelled`, or a sibling's `answered`.
+        const settlesElsewhere = (leg: ActiveCall) =>
+          (sameSip(leg) || samePbx(leg)) && (answeredByOther || (call.status === 'cancelled' && sameSip(leg)));
+        const handledBy = answeredByOther ? (call.handled_by as number) : null;
 
-        stopRingtone();
-        updateCall((prev) => (prev && prev.id === current.id ? { ...prev, answeredElsewhere: true } : prev));
+        const current = activeCallRef.current;
+        if (current && (sameSip(current) || samePbx(current))) {
+          if (current.status === 'active') return; // we are on this call ourselves
+          if (settlesElsewhere(current)) markAnsweredElsewhere(current, handledBy);
+          return;
+        }
+
+        // The leg is already gone (CANCEL before the event): settle it late.
+        for (const recent of recentEndedRef.current.values()) {
+          if (recent.call.status === 'active' || Boolean(recent.call.startTime)) continue;
+          if (settlesElsewhere(recent.call)) markAnsweredElsewhere(recent.call, handledBy);
+        }
       }),
-    [queryClient, stopRingtone, updateCall]
+    [markAnsweredElsewhere, queryClient]
   );
 
   // ---------------------------------------------------------------------------
@@ -1238,6 +1389,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       callEndedCounter,
       missedCall,
       busyRejected,
+      answeredElsewhereNotice,
       soundBlocked,
     }),
     [
@@ -1251,6 +1403,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       callEndedCounter,
       missedCall,
       busyRejected,
+      answeredElsewhereNotice,
       soundBlocked,
     ]
   );

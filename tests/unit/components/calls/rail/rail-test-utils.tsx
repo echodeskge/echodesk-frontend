@@ -50,6 +50,7 @@ export function makeState(overrides: Partial<CallStateValue> = {}): CallStateVal
     callEndedCounter: 0,
     missedCall: null,
     busyRejected: null,
+    answeredElsewhereNotice: null,
     soundBlocked: false,
     ...overrides,
   };
