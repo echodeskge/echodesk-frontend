@@ -2,20 +2,27 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
 import { AppearanceSettingsSkeleton } from "@/components/AppearanceSettingsSkeleton";
 import { toast } from "sonner";
-import { Sun, Moon, Monitor, GripVertical, RotateCcw, Check } from "lucide-react";
+import { Sun, Moon, Monitor, GripVertical, Palette } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useDashboardAppearance, useUpdateDashboardAppearance, useResetDashboardAppearance } from "@/hooks/api";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { navigationConfig } from "@/config/navigationConfig";
 import { cn } from "@/lib/utils";
+import {
+  ChoiceControl,
+  DangerZone,
+  FieldRow,
+  SettingsFormPage,
+  SettingsSection,
+  StickySaveBar,
+  SwatchPicker,
+  settingsInputClass,
+} from "@/components/redesign/settings";
+import { useSettingsSaveBarLabels } from "../_lib/settings-ui-labels";
 
 // HSL to Hex conversion
 function hslToHex(hsl: string): string {
@@ -105,10 +112,48 @@ interface SidebarItem {
   icon: string;
 }
 
+type AppearanceForm = {
+  primary_color: string;
+  primary_color_dark: string;
+  secondary_color: string;
+  accent_color: string;
+  sidebar_background: string;
+  sidebar_primary: string;
+  border_radius: string;
+  sidebar_order: string[];
+};
+type HexInputs = Record<"primary_color" | "secondary_color" | "accent_color" | "sidebar_background", string>;
+
+// The form values for loaded appearance data (same defaults as before), used
+// to initialise the form, to tell whether it changed and for Discard.
+function formFromAppearance(appearanceData: any): AppearanceForm {
+  return {
+    primary_color: appearanceData?.primary_color || "240 5.9% 10%",
+    primary_color_dark: appearanceData?.primary_color_dark || "0 0% 98%",
+    secondary_color: appearanceData?.secondary_color || "239 49% 32%",
+    accent_color: appearanceData?.accent_color || "240 4.8% 95.9%",
+    sidebar_background: appearanceData?.sidebar_background || "0 0% 100%",
+    sidebar_primary: appearanceData?.sidebar_primary || "240 5.9% 10%",
+    border_radius: appearanceData?.border_radius || "0.5rem",
+    sidebar_order: appearanceData?.sidebar_order || [],
+  };
+}
+
+function hexFromAppearance(appearanceData: any): HexInputs {
+  return {
+    primary_color: hslToHex(appearanceData?.primary_color || "240 5.9% 10%"),
+    secondary_color: hslToHex(appearanceData?.secondary_color || "239 49% 32%"),
+    accent_color: hslToHex(appearanceData?.accent_color || "240 4.8% 95.9%"),
+    sidebar_background: hslToHex(appearanceData?.sidebar_background || "0 0% 100%"),
+  };
+}
+
 export default function AppearanceSettingsPage() {
   const t = useTranslations('settings.appearance');
   const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
+  const tSettings = useTranslations('settings');
+  const saveBarLabels = useSettingsSaveBarLabels();
 
   const { mode, setMode, resolvedMode, setAppearance: setThemeAppearance } = useTheme();
   const { data: userProfile } = useUserProfile();
@@ -193,26 +238,21 @@ export default function AppearanceSettingsPage() {
   // Initialize form data when appearance data loads
   useEffect(() => {
     if (appearanceData) {
-      setFormData({
-        primary_color: appearanceData.primary_color || "240 5.9% 10%",
-        primary_color_dark: appearanceData.primary_color_dark || "0 0% 98%",
-        secondary_color: appearanceData.secondary_color || "239 49% 32%",
-        accent_color: appearanceData.accent_color || "240 4.8% 95.9%",
-        sidebar_background: appearanceData.sidebar_background || "0 0% 100%",
-        sidebar_primary: appearanceData.sidebar_primary || "240 5.9% 10%",
-        border_radius: appearanceData.border_radius || "0.5rem",
-        sidebar_order: appearanceData.sidebar_order || [],
-      });
+      setFormData(formFromAppearance(appearanceData));
 
       // Update hex inputs
-      setHexInputs({
-        primary_color: hslToHex(appearanceData.primary_color || "240 5.9% 10%"),
-        secondary_color: hslToHex(appearanceData.secondary_color || "239 49% 32%"),
-        accent_color: hslToHex(appearanceData.accent_color || "240 4.8% 95.9%"),
-        sidebar_background: hslToHex(appearanceData.sidebar_background || "0 0% 100%"),
-      });
+      setHexInputs(hexFromAppearance(appearanceData));
     }
   }, [appearanceData]);
+
+  // Explicit save (sticky save bar): dirty = differs from the loaded values;
+  // Discard restores them (and with them the live preview).
+  const loadedForm = useMemo(() => formFromAppearance(appearanceData), [appearanceData]);
+  const isDirty = JSON.stringify(formData) !== JSON.stringify(loadedForm);
+  const handleDiscard = () => {
+    setFormData(formFromAppearance(appearanceData));
+    setHexInputs(appearanceData ? hexFromAppearance(appearanceData) : { primary_color: "", secondary_color: "", accent_color: "", sidebar_background: "" });
+  };
 
   // Update theme context when form data changes (live preview)
   useEffect(() => {
@@ -279,285 +319,166 @@ export default function AppearanceSettingsPage() {
     return <AppearanceSettingsSkeleton />;
   }
 
+  const colorRows: { field: keyof HexInputs; label: string; placeholder: string }[] = [
+    { field: "primary_color", label: t('primaryColor'), placeholder: "#000000" },
+    { field: "secondary_color", label: t('secondaryColor'), placeholder: "#000000" },
+    { field: "accent_color", label: t('accentColor'), placeholder: "#000000" },
+    { field: "sidebar_background", label: t('sidebarColor'), placeholder: "#ffffff" },
+  ];
+  const activePreset = PRESET_THEMES.find((p) => p.hsl === formData.primary_color)?.name ?? null;
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Display Mode - Available to all users */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('modeTitle')}</CardTitle>
-          <CardDescription>{t('modeDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              variant={mode === 'light' ? 'default' : 'outline'}
-              onClick={() => setMode('light')}
-              className="flex items-center gap-2"
-            >
-              <Sun className="h-4 w-4" />
-              {t('light')}
-            </Button>
-            <Button
-              variant={mode === 'dark' ? 'default' : 'outline'}
-              onClick={() => setMode('dark')}
-              className="flex items-center gap-2"
-            >
-              <Moon className="h-4 w-4" />
-              {t('dark')}
-            </Button>
-            <Button
-              variant={mode === 'system' ? 'default' : 'outline'}
-              onClick={() => setMode('system')}
-              className="flex items-center gap-2"
-            >
-              <Monitor className="h-4 w-4" />
-              {t('system')}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+    <SettingsFormPage
+      icon={Palette}
+      title={tSettings('nav.appearance')}
+      description={tSettings('navDesc.appearance')}
+      testId="settings-appearance"
+    >
+      {/* Display Mode - Available to all users (saved locally, instantly) */}
+      <SettingsSection title={t('sections.display')} testId="appearance-mode">
+        <FieldRow label={t('modeTitle')} help={t('modeDescription')} align="center">
+          <ChoiceControl<"light" | "dark" | "system">
+            value={mode}
+            onChange={(m) => setMode(m)}
+            options={[
+              { value: "light", label: t('light'), icon: Sun },
+              { value: "dark", label: t('dark'), icon: Moon },
+              { value: "system", label: t('system'), icon: Monitor },
+            ]}
+            ariaLabel={t('modeTitle')}
+            testId="appearance-mode-choice"
+          />
+        </FieldRow>
+      </SettingsSection>
 
-      {/* Theme Colors - Superadmin only */}
+      {/* Theme Colors + Border Radius - Superadmin only */}
       {isSuperuser && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('themeTitle')}</CardTitle>
-            <CardDescription>{t('themeDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Preset Colors */}
-            <div>
-              <Label className="mb-3 block">{t('presetColors')}</Label>
-              <div className="flex flex-wrap gap-2">
-                {PRESET_THEMES.map((preset) => (
-                  <button
-                    key={preset.name}
-                    onClick={() => handlePresetClick(preset)}
-                    className={cn(
-                      "w-10 h-10 rounded-full border-2 transition-all flex items-center justify-center",
-                      formData.primary_color === preset.hsl
-                        ? "border-primary ring-2 ring-primary ring-offset-2"
-                        : "border-transparent hover:scale-110"
-                    )}
-                    style={{ backgroundColor: preset.hex }}
-                    title={t(`presets.${preset.name.toLowerCase()}`)}
-                  >
-                    {formData.primary_color === preset.hsl && (
-                      <Check className="h-5 w-5 text-white drop-shadow-md" />
-                    )}
-                  </button>
-                ))}
+        <SettingsSection title={t('themeTitle')} hint={t('themeDescription')} testId="appearance-theme">
+          <FieldRow label={t('presetColors')} align="center">
+            <SwatchPicker
+              value={activePreset}
+              onChange={(name) => {
+                const preset = PRESET_THEMES.find((p) => p.name === name);
+                if (preset) handlePresetClick(preset);
+              }}
+              options={PRESET_THEMES.map((preset) => ({
+                value: preset.name,
+                label: t(`presets.${preset.name.toLowerCase()}`),
+                color: preset.hex,
+              }))}
+              ariaLabel={t('presetColors')}
+              testId="appearance-presets"
+            />
+          </FieldRow>
+          {colorRows.map(({ field, label, placeholder }) => (
+            <FieldRow key={field} label={label} htmlFor={`appearance-${field}`} align="center">
+              <div className="flex w-full items-center gap-2 sm:w-[200px]">
+                <input
+                  type="color"
+                  value={hexInputs[field]}
+                  onChange={(e) => handleColorChange(field, e.target.value)}
+                  aria-label={label}
+                  className="h-[34px] w-[38px] shrink-0 cursor-pointer rounded-md border bg-background p-0.5"
+                />
+                <input
+                  id={`appearance-${field}`}
+                  value={hexInputs[field]}
+                  onChange={(e) => handleHexInputChange(field, e.target.value)}
+                  placeholder={placeholder}
+                  className={cn(settingsInputClass, "flex-1 font-mono")}
+                />
               </div>
-            </div>
-
-            {/* Custom Color Pickers */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Primary Color */}
-              <div className="space-y-2">
-                <Label>{t('primaryColor')}</Label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={hexInputs.primary_color}
-                    onChange={(e) => handleColorChange('primary_color', e.target.value)}
-                    className="w-12 h-10 rounded cursor-pointer border"
-                  />
-                  <Input
-                    value={hexInputs.primary_color}
-                    onChange={(e) => handleHexInputChange('primary_color', e.target.value)}
-                    placeholder="#000000"
-                    className="flex-1 font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Secondary Color */}
-              <div className="space-y-2">
-                <Label>{t('secondaryColor')}</Label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={hexInputs.secondary_color}
-                    onChange={(e) => handleColorChange('secondary_color', e.target.value)}
-                    className="w-12 h-10 rounded cursor-pointer border"
-                  />
-                  <Input
-                    value={hexInputs.secondary_color}
-                    onChange={(e) => handleHexInputChange('secondary_color', e.target.value)}
-                    placeholder="#000000"
-                    className="flex-1 font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Accent Color */}
-              <div className="space-y-2">
-                <Label>{t('accentColor')}</Label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={hexInputs.accent_color}
-                    onChange={(e) => handleColorChange('accent_color', e.target.value)}
-                    className="w-12 h-10 rounded cursor-pointer border"
-                  />
-                  <Input
-                    value={hexInputs.accent_color}
-                    onChange={(e) => handleHexInputChange('accent_color', e.target.value)}
-                    placeholder="#000000"
-                    className="flex-1 font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Sidebar Background */}
-              <div className="space-y-2">
-                <Label>{t('sidebarColor')}</Label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={hexInputs.sidebar_background}
-                    onChange={(e) => handleColorChange('sidebar_background', e.target.value)}
-                    className="w-12 h-10 rounded cursor-pointer border"
-                  />
-                  <Input
-                    value={hexInputs.sidebar_background}
-                    onChange={(e) => handleHexInputChange('sidebar_background', e.target.value)}
-                    placeholder="#ffffff"
-                    className="flex-1 font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Border Radius - Superadmin only */}
-      {isSuperuser && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('borderRadius')}</CardTitle>
-            <CardDescription>{t('borderRadiusDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {BORDER_RADIUS_OPTIONS.map((option) => (
-                <Button
-                  key={option.value}
-                  variant={formData.border_radius === option.value ? 'default' : 'outline'}
-                  onClick={() => handleBorderRadiusChange(option.value)}
-                  style={{ borderRadius: option.value }}
-                >
-                  {t(`radius.${option.label}`)}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+            </FieldRow>
+          ))}
+          <FieldRow label={t('borderRadius')} help={t('borderRadiusDescription')}>
+            <ChoiceControl
+              value={formData.border_radius}
+              onChange={handleBorderRadiusChange}
+              options={BORDER_RADIUS_OPTIONS.map((option) => ({
+                value: option.value,
+                label: t(`radius.${option.label}`),
+              }))}
+              ariaLabel={t('borderRadius')}
+              testId="appearance-radius"
+            />
+          </FieldRow>
+        </SettingsSection>
       )}
 
       {/* Preview Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('preview')}</CardTitle>
-          <CardDescription>{t('previewDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-3">
-              <Button>{t('previewPrimary')}</Button>
-              <Button variant="secondary">{t('previewSecondary')}</Button>
-              <Button variant="outline">{t('previewOutline')}</Button>
-              <Button variant="destructive">{t('previewDestructive')}</Button>
-            </div>
-            <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-semibold mb-2">{t('previewCardTitle')}</h4>
-              <p className="text-sm text-muted-foreground">
-                {t('previewCardText')}
-              </p>
-            </div>
+      <SettingsSection title={t('preview')} hint={t('previewDescription')} testId="appearance-preview">
+        <div className="flex flex-col gap-3 px-4 py-3.5">
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm">{t('previewPrimary')}</Button>
+            <Button size="sm" variant="secondary">{t('previewSecondary')}</Button>
+            <Button size="sm" variant="outline">{t('previewOutline')}</Button>
+            <Button size="sm" variant="destructive">{t('previewDestructive')}</Button>
           </div>
-        </CardContent>
-      </Card>
+          <div className="rounded-lg border bg-card p-3.5">
+            <h4 className="mb-1 text-[13px] font-semibold">{t('previewCardTitle')}</h4>
+            <p className="text-xs text-muted-foreground">{t('previewCardText')}</p>
+          </div>
+        </div>
+      </SettingsSection>
 
       {/* Sidebar Order - Superadmin only */}
       {isSuperuser && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('sidebarOrder')}</CardTitle>
-            <CardDescription>{t('sidebarOrderDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="sidebar-items">
-                {(provided) => (
-                  <div
-                    {...provided.droppableProps}
-                    ref={provided.innerRef}
-                    className="space-y-2"
-                  >
-                    {orderedSidebarItems.map((item, index) => (
-                      <Draggable key={item.id} draggableId={item.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={cn(
-                              "flex items-center gap-3 p-3 rounded-lg border bg-card transition-colors",
-                              snapshot.isDragging && "shadow-lg bg-accent"
-                            )}
-                          >
-                            <GripVertical className="h-5 w-5 text-muted-foreground" />
-                            <span className="font-medium">{item.label}</span>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
-          </CardContent>
-        </Card>
+        <SettingsSection title={t('sidebarOrder')} hint={t('sidebarOrderDescription')} testId="appearance-sidebar-order">
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="sidebar-items">
+              {(provided) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className="flex flex-col gap-1.5 p-3"
+                >
+                  {orderedSidebarItems.map((item, index) => (
+                    <Draggable key={item.id} draggableId={item.id} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className={cn(
+                            "flex min-h-9 items-center gap-2.5 rounded-md border bg-background px-2.5 text-[13px] transition-colors",
+                            snapshot.isDragging && "bg-accent shadow-lg"
+                          )}
+                        >
+                          <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                          <span className="min-w-0 truncate font-medium">{item.label}</span>
+                          <span className="ms-auto text-[11px] tabular-nums text-muted-foreground">{index + 1}</span>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </SettingsSection>
       )}
 
-      {/* Action Buttons - Superadmin only */}
+      {/* Reset + Save - Superadmin only (Reset runs at once, as before) */}
       {isSuperuser && (
-        <div className="flex justify-end gap-3">
-          <Button
-            variant="outline"
-            onClick={handleReset}
-            disabled={resetAppearance.isPending}
-          >
-            {resetAppearance.isPending ? (
-              <>
-                <Spinner className="mr-2 h-4 w-4" />
-                {tCommon('loading')}
-              </>
-            ) : (
-              <>
-                <RotateCcw className="mr-2 h-4 w-4" />
-                {t('reset')}
-              </>
-            )}
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={updateAppearance.isPending}
-          >
-            {updateAppearance.isPending ? (
-              <>
-                <Spinner className="mr-2 h-4 w-4" />
-                {tCommon('saving')}
-              </>
-            ) : (
-              tCommon('save')
-            )}
-          </Button>
-        </div>
+        <DangerZone
+          label={t('resetTitle')}
+          help={t('resetHelp')}
+          actionLabel={resetAppearance.isPending ? tCommon('loading') : t('reset')}
+          onAction={handleReset}
+          disabled={resetAppearance.isPending}
+          testId="appearance-reset"
+        />
       )}
-    </div>
+      {isSuperuser && (
+        <StickySaveBar
+          dirty={isDirty}
+          saving={updateAppearance.isPending}
+          onSave={handleSave}
+          onDiscard={handleDiscard}
+          labels={saveBarLabels}
+        />
+      )}
+    </SettingsFormPage>
   );
 }
