@@ -139,7 +139,17 @@ export default function PbxServerPage() {
     };
     try {
       if (pbx) {
-        await updateMut.mutateAsync({ id: pbx.id, data: payload });
+        // The blank realtime_db_* placeholders are only for the create
+        // request (provisioning fills them). Sending them on an edit wiped
+        // the provisioned database host / name / user, which the Asterisk
+        // realtime routing reads, so an edit is a PATCH without them.
+        const {
+          realtime_db_host: _host,
+          realtime_db_name: _name,
+          realtime_db_user: _user,
+          ...editPayload
+        } = payload;
+        await updateMut.mutateAsync({ id: pbx.id, data: editPayload });
         toast.success(tToast("updated"));
       } else {
         await createMut.mutateAsync(payload);
