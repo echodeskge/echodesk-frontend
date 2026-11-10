@@ -18,27 +18,14 @@ import {
   profileHasPermission,
   type ProfilePermissionFields,
 } from '@/lib/backendPermissions';
+import { parseFeatureKeys } from '@/lib/feature-keys';
+
+// Dependency-free home: `@/lib/feature-keys` (for components that must not
+// import the subscription / auth contexts). Re-exported for existing callers.
+export { parseFeatureKeys };
 
 export const CALLING_FEATURE = 'ip_calling';
 export const MAKE_CALLS_PERMISSION = 'make_calls';
-
-/**
- * `feature_keys` arrives either as a JSON string (legacy `AuthUser`) or as an
- * array (generated `User`). Anything unparsable or of another shape is `[]`
- * so a bad value can never crash a layout.
- */
-export function parseFeatureKeys(raw: unknown): string[] {
-  let value: unknown = raw;
-  if (typeof raw === 'string') {
-    try {
-      value = JSON.parse(raw);
-    } catch {
-      return [];
-    }
-  }
-  if (!Array.isArray(value)) return [];
-  return value.filter((key): key is string => typeof key === 'string');
-}
 
 export interface CallingAccessUser extends ProfilePermissionFields {
   feature_keys?: unknown;

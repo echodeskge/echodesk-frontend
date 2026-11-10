@@ -45,6 +45,11 @@ function agent(opts: {
 }
 
 describe("parseFeatureKeys", () => {
+  it("is re-exported from the dependency-free @/lib/feature-keys", async () => {
+    const { parseFeatureKeys: standalone } = await import("@/lib/feature-keys");
+    expect(parseFeatureKeys).toBe(standalone);
+  });
+
   it("parses a JSON string", () => {
     expect(parseFeatureKeys('["ip_calling","tickets"]')).toEqual(["ip_calling", "tickets"]);
   });

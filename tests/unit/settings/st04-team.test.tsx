@@ -34,8 +34,9 @@ vi.mock("@/hooks/api/useUsers", () => ({
   useDeleteUser: () => ({ mutateAsync: vi.fn() }),
   userKeys: { lists: () => ["users", "list"] },
 }))
+const profileState = vi.hoisted(() => ({ featureKeys: ["booking_management"] as unknown }))
 vi.mock("@/hooks/useUserProfile", () => ({
-  useUserProfile: () => ({ data: { id: 1, is_superuser: true, feature_keys: ["booking_management"] } }),
+  useUserProfile: () => ({ data: { id: 1, is_superuser: true, feature_keys: profileState.featureKeys } }),
 }))
 vi.mock("@tanstack/react-query", async (orig) => ({
   ...(await orig<typeof import("@tanstack/react-query")>()),
@@ -167,6 +168,17 @@ describe("settings/users (AGENTS)", () => {
     expect(screen.queryByTestId("user-form-create")).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId("users-add"))
     expect(screen.getByTestId("user-form-create")).toBeInTheDocument()
+  })
+
+  it("survives a profile whose feature_keys is not valid JSON (guarded parse)", () => {
+    profileState.featureKeys = '{"not": json'
+    try {
+      usersState.data = { count: 1, next: null, previous: null, results: [makeUser({ id: 1 })] }
+      expect(() => renderSt(<UserManagement />)).not.toThrow()
+      expect(screen.getByRole("heading", { name: "User Management" })).toBeInTheDocument()
+    } finally {
+      profileState.featureKeys = ["booking_management"]
+    }
   })
 
   it("marks the active/inactive tiles as page counts when the list has more pages", () => {
