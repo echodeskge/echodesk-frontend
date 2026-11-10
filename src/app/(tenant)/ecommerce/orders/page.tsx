@@ -2,24 +2,47 @@
 
 import { downloadBlob } from "@/lib/downloadBlob"
 import { useState, useEffect, useCallback } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
+import { useQueryClient } from "@tanstack/react-query"
 import { ecommerceAdminOrdersList } from "@/api/generated"
 import axiosInstance from "@/api/axios"
 import { toast } from "sonner"
-import { Download } from "lucide-react"
+import { Archive, Download, RotateCcw } from "lucide-react"
 import { getApiErrorMessage } from "@/lib/utils"
+import { useMyAccess } from "@/hooks/useMyAccess"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import type { BulkUpdateStatusResponse } from "@/api/generated/interfaces"
 import { OrderListItem } from "./_types"
 import { OrdersTable } from "./_components/orders-table"
 import { OrdersBulkActionsBar } from "./_components/orders-bulk-actions-bar"
 import { OrdersTableToolbar } from "./_components/orders-table-toolbar"
-import { EcPage, EcommerceHeaderBridge } from "../_components/ui"
+import { EcBanner, EcPage, EcommerceHeaderBridge, rdButton } from "../_components/ui"
 
 const DEFAULT_PAGE_SIZE = 20
+const ORDERS_URL = "/api/ecommerce/admin/orders/"
+const RESTORE_URL = "/api/ecommerce/admin/orders/restore/"
 
 export default function EcommerceOrdersPage() {
   const t = useTranslations("ecommerceOrders")
   const tUi = useTranslations("ecommerceUi")
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const queryClient = useQueryClient()
+  // Cleaning / restoring orders is a store-admin action (the backend answers 403 otherwise).
+  const { isStoreAdmin } = useMyAccess()
+  // Cleaned (soft-deleted) orders view, deep-linked from Settings → E-commerce.
+  const cleaned = searchParams?.get("cleaned") === "1"
   // undefined until the first load finishes (table skeleton)
   const [orders, setOrders] = useState<OrderListItem[] | undefined>(undefined)
   const [loadError, setLoadError] = useState<unknown>(null)
@@ -33,6 +56,8 @@ export default function EcommerceOrdersPage() {
     new Set()
   )
   const [bulkActionLoading, setBulkActionLoading] = useState(false)
+  const [restoreAllOpen, setRestoreAllOpen] = useState(false)
+  const [restoring, setRestoring] = useState(false)
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -49,6 +74,21 @@ export default function EcommerceOrdersPage() {
               | "processing"
               | "refunded"
               | "shipped")
+      if (cleaned) {
+        // The generated list call has no `cleaned` parameter yet.
+        const { data } = await axiosInstance.get(ORDERS_URL, {
+          params: {
+            cleaned: true,
+            page,
+            page_size: pageSize,
+            search: searchQuery || undefined,
+            status: statusParam,
+          },
+        })
+        setOrders((data?.results || []) as OrderListItem[])
+        setTotalCount(data?.count || 0)
+        return
+      }
       const response = await ecommerceAdminOrdersList(
         undefined, // client
         undefined, // createdAfter
@@ -72,7 +112,7 @@ export default function EcommerceOrdersPage() {
     } finally {
       setLoading(false)
     }
-  }, [searchQuery, statusFilter, page, pageSize, t])
+  }, [searchQuery, statusFilter, page, pageSize, cleaned, t])
 
   useEffect(() => {
     fetchOrders()
@@ -89,6 +129,15 @@ export default function EcommerceOrdersPage() {
     setPage(1)
     setSelectedOrderIds(new Set())
   }, [])
+
+  const handleCleanedChange = useCallback(
+    (next: boolean) => {
+      setPage(1)
+      setSelectedOrderIds(new Set())
+      router.replace(next ? `${pathname}?cleaned=1` : pathname)
+    },
+    [router, pathname]
+  )
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage)
@@ -170,6 +219,36 @@ export default function EcommerceOrdersPage() {
     [selectedOrderIds, fetchOrders, t]
   )
 
+  /** Un-hides cleaned orders (`{ids}` or `{all: true}`), then reloads the list and the dashboard numbers. */
+  const restore = useCallback(
+    async (body: { ids: number[] } | { all: true }) => {
+      setRestoring(true)
+      setBulkActionLoading(true)
+      try {
+        const { data } = await axiosInstance.post(RESTORE_URL, body)
+        toast.success(t("cleaned.toast.restored", { count: Number(data?.restored ?? 0) }))
+        setSelectedOrderIds(new Set())
+        await Promise.all([fetchOrders(), queryClient.invalidateQueries({ queryKey: ["ecommerce-analytics"] })])
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, t("cleaned.toast.restoreFailed")))
+      } finally {
+        setRestoring(false)
+        setBulkActionLoading(false)
+      }
+    },
+    [fetchOrders, queryClient, t]
+  )
+
+  const handleRestoreOne = useCallback((orderId: number) => restore({ ids: [orderId] }), [restore])
+  const handleRestoreSelected = useCallback(() => {
+    if (selectedOrderIds.size === 0) return
+    return restore({ ids: Array.from(selectedOrderIds) })
+  }, [restore, selectedOrderIds])
+  const handleRestoreAll = useCallback(async () => {
+    setRestoreAllOpen(false)
+    await restore({ all: true })
+  }, [restore])
+
   const handleExportSelected = useCallback(() => {
     try {
       const selected = (orders ?? []).filter((o) => selectedOrderIds.has(o.id))
@@ -223,12 +302,38 @@ export default function EcommerceOrdersPage() {
     handleStatusFilterChange("all")
   }, [handleSearchChange, handleStatusFilterChange])
 
+  const canRestore = cleaned && isStoreAdmin
+
   return (
     <EcPage fill testId="ec-orders">
       <EcommerceHeaderBridge
         sub={orders ? t("ordersFound", { count: totalCount }) : null}
-        secondary={[{ label: t("exportCsv"), icon: Download, onClick: handleExportAllCSV, testId: "ec-orders-export" }]}
+        // Cleaned orders are excluded from the export; the action only makes sense on the active list.
+        secondary={cleaned ? [] : [{ label: t("exportCsv"), icon: Download, onClick: handleExportAllCSV, testId: "ec-orders-export" }]}
       />
+      {cleaned && (
+        <EcBanner
+          tone="warning"
+          icon={<Archive className="h-4 w-4" aria-hidden />}
+          className="mx-4 mt-3"
+          action={
+            canRestore ? (
+              <button
+                type="button"
+                className={rdButton.outlineSm}
+                disabled={restoring || !orders || orders.length === 0}
+                onClick={() => setRestoreAllOpen(true)}
+                data-testid="ec-orders-restore-all"
+              >
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                {t("cleaned.restoreAll")}
+              </button>
+            ) : undefined
+          }
+        >
+          {t("cleaned.banner")}
+        </EcBanner>
+      )}
       {selectedOrderIds.size > 0 ? (
         <OrdersBulkActionsBar
           selectedCount={selectedOrderIds.size}
@@ -237,6 +342,8 @@ export default function EcommerceOrdersPage() {
           onMarkDelivered={() => handleBulkStatusUpdate("delivered")}
           onExportSelected={handleExportSelected}
           onClear={() => setSelectedOrderIds(new Set())}
+          cleaned={cleaned}
+          onRestoreSelected={canRestore ? handleRestoreSelected : undefined}
           t={t}
           tUi={tUi}
         />
@@ -246,6 +353,9 @@ export default function EcommerceOrdersPage() {
           statusFilter={statusFilter}
           onSearchChange={handleSearchChange}
           onStatusFilterChange={handleStatusFilterChange}
+          showCleanedToggle={isStoreAdmin}
+          cleaned={cleaned}
+          onCleanedChange={handleCleanedChange}
           t={t}
           tUi={tUi}
         />
@@ -264,9 +374,26 @@ export default function EcommerceOrdersPage() {
         onSelectionChange={handleSelectionChange}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
+        cleaned={cleaned}
+        onRestore={canRestore ? handleRestoreOne : undefined}
         t={t}
         tUi={tUi}
       />
+
+      <AlertDialog open={restoreAllOpen} onOpenChange={setRestoreAllOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("cleaned.restoreAllTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("cleaned.restoreAllDescription")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cleaned.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRestoreAll} data-testid="ec-orders-restore-all-confirm">
+              {t("cleaned.restoreAll")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </EcPage>
   )
 }

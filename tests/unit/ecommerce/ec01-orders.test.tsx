@@ -1,12 +1,18 @@
 import React from "react"
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react"
-import { renderEc } from "./ec00-helpers"
+import { renderEcQuery } from "./ec00-helpers"
 import { nextSort, sortRows } from "@/app/(tenant)/ecommerce/orders/_components/sort-header"
 import { orderSortValue } from "@/app/(tenant)/ecommerce/orders/_components/orders-table-columns"
 
 const push = vi.fn()
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push }), usePathname: () => "/ecommerce/orders" }))
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push, replace: vi.fn() }),
+  usePathname: () => "/ecommerce/orders",
+  useSearchParams: () => new URLSearchParams(),
+}))
+// Not a store admin: no "Active | Cleaned" switch (EC-05 covers it).
+vi.mock("@/hooks/useMyAccess", () => ({ useMyAccess: () => ({ isStoreAdmin: false }) }))
 
 const list = vi.fn()
 vi.mock("@/api/generated", () => ({ ecommerceAdminOrdersList: (...args: unknown[]) => list(...args) }))
@@ -73,7 +79,7 @@ describe("EC-01 orders: sorting helpers", () => {
 
 describe("EC-01 orders page", () => {
   it("loads page 1 / 20 per page without filters (same API call as before) and renders the rows", async () => {
-    renderEc(<EcommerceOrdersPage />)
+    renderEcQuery(<EcommerceOrdersPage />)
     expect(screen.getByTestId("ec-table-skeleton")).toBeInTheDocument()
     await screen.findAllByTestId("ec-table-row")
     expect(lastListArgs()).toEqual([
@@ -97,7 +103,7 @@ describe("EC-01 orders page", () => {
   })
 
   it("status filter, debounced search, paging and page size go to the API", async () => {
-    renderEc(<EcommerceOrdersPage />)
+    renderEcQuery(<EcommerceOrdersPage />)
     await screen.findAllByTestId("ec-table-row")
 
     fireEvent.click(within(screen.getByTestId("ec-orders-status")).getByRole("radio", { name: "Shipped" }))
@@ -116,7 +122,7 @@ describe("EC-01 orders page", () => {
   })
 
   it("sorts the current page by a column header", async () => {
-    renderEc(<EcommerceOrdersPage />)
+    renderEcQuery(<EcommerceOrdersPage />)
     await screen.findAllByTestId("ec-table-row")
     fireEvent.click(screen.getByRole("button", { name: "Sort by Total" }))
     let ids = screen.getAllByTestId("ec-table-row").map((r) => r.textContent?.match(/#ORD-(\d{4})/)?.[1])
@@ -127,7 +133,7 @@ describe("EC-01 orders page", () => {
   })
 
   it("a row click opens the order; the checkbox does not", async () => {
-    renderEc(<EcommerceOrdersPage />)
+    renderEcQuery(<EcommerceOrdersPage />)
     const rows = await screen.findAllByTestId("ec-table-row")
     fireEvent.click(within(rows[1]).getByRole("checkbox"))
     expect(push).not.toHaveBeenCalled()
@@ -137,7 +143,7 @@ describe("EC-01 orders page", () => {
 
   it("bulk bar replaces the toolbar and posts the same bulk update", async () => {
     post.mockResolvedValue({ data: { updated: 1, skipped: [{ id: 2, error: "final" }] } })
-    renderEc(<EcommerceOrdersPage />)
+    renderEcQuery(<EcommerceOrdersPage />)
     const rows = await screen.findAllByTestId("ec-table-row")
     fireEvent.click(within(rows[0]).getByRole("checkbox"))
     fireEvent.click(within(rows[1]).getByRole("checkbox"))
@@ -156,7 +162,7 @@ describe("EC-01 orders page", () => {
   })
 
   it("select-all, export selected and clear selection", async () => {
-    renderEc(<EcommerceOrdersPage />)
+    renderEcQuery(<EcommerceOrdersPage />)
     await screen.findAllByTestId("ec-table-row")
     fireEvent.click(screen.getByRole("checkbox", { name: "Select all on this page" }))
     const bar = screen.getByTestId("ec-bulk-bar")
@@ -170,7 +176,7 @@ describe("EC-01 orders page", () => {
 
   it("Export CSV in the header downloads the full export", async () => {
     get.mockResolvedValue({ data: "a,b" })
-    renderEc(<EcommerceOrdersPage />)
+    renderEcQuery(<EcommerceOrdersPage />)
     await screen.findAllByTestId("ec-table-row")
     await act(async () => {
       fireEvent.click(screen.getByTestId("ec-orders-export"))
@@ -181,7 +187,7 @@ describe("EC-01 orders page", () => {
 
   it("load error shows the error state with retry (and the toast)", async () => {
     list.mockRejectedValueOnce(new Error("boom"))
-    renderEc(<EcommerceOrdersPage />, "ka")
+    renderEcQuery(<EcommerceOrdersPage />, "ka")
     expect(await screen.findByTestId("ec-error")).toBeInTheDocument()
     expect(toast.error).toHaveBeenCalledWith("შეკვეთების ჩატვირთვა ვერ მოხერხდა")
     fireEvent.click(screen.getByRole("button", { name: "ხელახლა ცდა" }))
@@ -190,7 +196,7 @@ describe("EC-01 orders page", () => {
 
   it("empty and filtered-empty states", async () => {
     list.mockResolvedValue({ count: 0, results: [] })
-    renderEc(<EcommerceOrdersPage />)
+    renderEcQuery(<EcommerceOrdersPage />)
     expect(await screen.findByTestId("ec-empty")).toHaveTextContent("No orders found")
     fireEvent.click(within(screen.getByTestId("ec-orders-status")).getByRole("radio", { name: "Refunded" }))
     await waitFor(() => expect(screen.getByTestId("ec-empty")).toHaveTextContent("Nothing matches these filters"))
