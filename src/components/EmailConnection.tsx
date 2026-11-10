@@ -88,6 +88,7 @@ function EmailAccountCard({
   isDisconnecting: boolean;
   isReactivating: boolean;
 }) {
+  const t = useTranslations('social.emailConnection');
   const [reactivatePassword, setReactivatePassword] = useState('');
   const autoDisabled = Boolean(connection.auto_disabled_at);
 
@@ -102,10 +103,10 @@ function EmailAccountCard({
   };
 
   const statusLabel = autoDisabled
-    ? 'Auto-disabled'
+    ? t('statusAutoDisabled')
     : connection.is_active
-      ? 'Active'
-      : 'Inactive';
+      ? t('statusActive')
+      : t('statusInactive');
   const statusClass = autoDisabled
     ? 'bg-amber-500 hover:bg-amber-600 text-white'
     : connection.is_active
@@ -134,22 +135,22 @@ function EmailAccountCard({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
         <div>
-          <span className="text-muted-foreground">IMAP:</span>
+          <span className="text-muted-foreground">{t('imap')}:</span>
           <span className="ml-2 break-all">{connection.imap_server}</span>
         </div>
         <div>
-          <span className="text-muted-foreground">SMTP:</span>
+          <span className="text-muted-foreground">{t('smtp')}:</span>
           <span className="ml-2 break-all">{connection.smtp_server}</span>
         </div>
         <div>
-          <span className="text-muted-foreground">Folder:</span>
+          <span className="text-muted-foreground">{t('folder')}:</span>
           <span className="ml-2">{connection.sync_folder}</span>
         </div>
         <div className="flex items-center gap-1">
           <Clock className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-          <span className="text-muted-foreground">Synced:</span>
+          <span className="text-muted-foreground">{t('synced')}:</span>
           <span className="ml-1">
-            {connection.last_sync_at ? formatDate(connection.last_sync_at) : 'Never'}
+            {connection.last_sync_at ? formatDate(connection.last_sync_at) : t('never')}
           </span>
         </div>
       </div>
@@ -159,10 +160,9 @@ function EmailAccountCard({
           <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <AlertDescription className="space-y-2">
             <div className="text-xs">
-              <span className="font-medium">Sync stopped automatically.</span>{' '}
-              {connection.last_sync_error || 'A non-transient error occurred.'}{' '}
-              Update credentials below (if needed) and click Reactivate. Sync will
-              stay off until the connection passes a live IMAP test.
+              <span className="font-medium">{t('autoDisabledTitle')}</span>{' '}
+              {connection.last_sync_error || t('autoDisabledFallback')}{' '}
+              {t('autoDisabledHint')}
             </div>
             <form
               onSubmit={(event) => {
@@ -173,7 +173,7 @@ function EmailAccountCard({
             >
               <Input
                 type="password"
-                placeholder="New password (optional — leave blank to retry with stored creds)"
+                placeholder={t('reactivatePasswordPlaceholder')}
                 value={reactivatePassword}
                 onChange={(event) => setReactivatePassword(event.target.value)}
                 className="text-xs h-8 flex-1 bg-background"
@@ -188,12 +188,12 @@ function EmailAccountCard({
                 {isReactivating ? (
                   <>
                     <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                    Testing…
+                    {t('testing')}
                   </>
                 ) : (
                   <>
                     <RefreshCw className="mr-2 h-3 w-3" />
-                    Reactivate
+                    {t('reactivate')}
                   </>
                 )}
               </Button>
@@ -216,24 +216,24 @@ function EmailAccountCard({
           size="sm"
         >
           <Pencil className="mr-2 h-3 w-3" />
-          Edit
+          {t('edit')}
         </Button>
         <Button
           onClick={onSync}
           disabled={isSyncing || autoDisabled}
           variant="outline"
           size="sm"
-          title={autoDisabled ? 'Reactivate the connection before syncing' : undefined}
+          title={autoDisabled ? t('reactivateBeforeSync') : undefined}
         >
           {isSyncing ? (
             <>
               <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
-              Syncing...
+              {t('syncing')}
             </>
           ) : (
             <>
               <RefreshCw className="mr-2 h-3 w-3" />
-              Sync
+              {t('sync')}
             </>
           )}
         </Button>
@@ -243,7 +243,7 @@ function EmailAccountCard({
           size="sm"
         >
           <FileSignature className="mr-2 h-3 w-3" />
-          Signature
+          {t('signature')}
           {hasEffectiveSignature(connection) && (
             <Check
               className="ml-1 h-3 w-3 text-green-500"
@@ -257,7 +257,7 @@ function EmailAccountCard({
           size="sm"
         >
           <Users className="mr-2 h-3 w-3" />
-          Access
+          {t('access')}
           {connection.assigned_users && connection.assigned_users.length > 0 && (
             <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
               {connection.assigned_users.length}
@@ -273,12 +273,12 @@ function EmailAccountCard({
           {isDisconnecting ? (
             <>
               <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
-              Removing...
+              {t('removing')}
             </>
           ) : (
             <>
               <Trash2 className="mr-2 h-3 w-3" />
-              Remove
+              {t('remove')}
             </>
           )}
         </Button>
@@ -289,6 +289,7 @@ function EmailAccountCard({
 
 export function EmailConnection() {
   const tSig = useTranslations('social.emailSignature');
+  const t = useTranslations('social.emailConnection');
   const [showConnectDialog, setShowConnectDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
@@ -340,7 +341,7 @@ export function EmailConnection() {
         connection_id: connectionId,
         ...(password ? { password } : {}),
       });
-      toast.success('Connection reactivated. Sync will resume on the next cycle.');
+      toast.success(t('reactivated'));
     } catch (error: unknown) {
       const message =
         (typeof error === 'object' &&
@@ -350,7 +351,7 @@ export function EmailConnection() {
             'string'
           ? (error as { response: { data: { error: string } } }).response.data.error
           : undefined) ||
-        'Reactivation failed — check credentials and try again.';
+        t('reactivateFailed');
       toast.error(message);
     } finally {
       setReactivatingConnectionId(null);
@@ -421,13 +422,13 @@ export function EmailConnection() {
 
   const handleConnect = async () => {
     if (!formData.email_address || !formData.password || !formData.imap_server || !formData.smtp_server) {
-      toast.error('Please fill in all required fields');
+      toast.error(t('requiredFields'));
       return;
     }
 
     try {
       await connectEmail.mutateAsync(formData);
-      toast.success('Email connected successfully!');
+      toast.success(t('connected'));
       setShowConnectDialog(false);
       setFormData({
         email_address: '',
@@ -446,23 +447,23 @@ export function EmailConnection() {
       });
     } catch (error: any) {
       console.error('Failed to connect email:', error);
-      const errorMessage = error.response?.data?.error || error.response?.data?.details || 'Failed to connect email';
+      const errorMessage = error.response?.data?.error || error.response?.data?.details || t('connectFailed');
       toast.error(errorMessage);
     }
   };
 
   const handleDisconnect = async (connectionId: number, emailAddress: string) => {
-    if (!confirm(`Are you sure you want to remove ${emailAddress}? All synced messages from this account will be deleted.`)) {
+    if (!confirm(t('confirmRemove', { email: emailAddress }))) {
       return;
     }
 
     setDisconnectingConnectionId(connectionId);
     try {
       await disconnectEmail.mutateAsync(connectionId);
-      toast.success(`Removed ${emailAddress}`);
+      toast.success(t('removed', { email: emailAddress }));
     } catch (error: any) {
       console.error('Failed to disconnect email:', error);
-      toast.error(error.response?.data?.error || 'Failed to disconnect email');
+      toast.error(error.response?.data?.error || t('removeFailed'));
     } finally {
       setDisconnectingConnectionId(null);
     }
@@ -472,10 +473,10 @@ export function EmailConnection() {
     setSyncingConnectionId(connectionId);
     try {
       const result = await syncEmail.mutateAsync(connectionId);
-      toast.success(`Synced ${result.new_messages || 0} new messages`);
+      toast.success(t('syncedCount', { count: result.new_messages || 0 }));
     } catch (error: any) {
       console.error('Failed to sync email:', error);
-      toast.error(error.response?.data?.error || 'Failed to sync email');
+      toast.error(error.response?.data?.error || t('syncFailed'));
     } finally {
       setSyncingConnectionId(null);
     }
@@ -484,10 +485,10 @@ export function EmailConnection() {
   const handleSyncAll = async () => {
     try {
       const result = await syncEmail.mutateAsync(undefined);
-      toast.success(`Synced ${result.new_messages || 0} new messages from all accounts`);
+      toast.success(t('syncedAllCount', { count: result.new_messages || 0 }));
     } catch (error: any) {
       console.error('Failed to sync emails:', error);
-      toast.error(error.response?.data?.error || 'Failed to sync emails');
+      toast.error(error.response?.data?.error || t('syncAllFailed'));
     }
   };
 
@@ -531,7 +532,7 @@ export function EmailConnection() {
   const handleSaveEdit = async () => {
     if (!editingConnection) return;
     if (!editFormData.imap_server || !editFormData.smtp_server) {
-      toast.error('IMAP and SMTP servers are required');
+      toast.error(t('serversRequired'));
       return;
     }
 
@@ -551,12 +552,12 @@ export function EmailConnection() {
         sync_folder: editFormData.sync_folder,
         sync_days_back: editFormData.sync_days_back,
       });
-      toast.success('Connection updated successfully');
+      toast.success(t('updated'));
       setShowEditDialog(false);
       setEditingConnection(null);
     } catch (error: any) {
       console.error('Failed to update email connection:', error);
-      const errorMessage = error.response?.data?.error || 'Failed to update connection';
+      const errorMessage = error.response?.data?.error || t('updateFailed');
       toast.error(errorMessage);
     }
   };
@@ -623,17 +624,17 @@ export function EmailConnection() {
                 <Mail className="h-6 w-6" />
               </div>
               <div>
-                <CardTitle className="text-xl">Email (IMAP/SMTP)</CardTitle>
+                <CardTitle className="text-xl">{t('title')}</CardTitle>
                 <CardDescription className="flex items-center gap-2 mt-1">
                   {hasConnections ? (
                     <>
                       <Check className="h-4 w-4 text-green-600" />
-                      <span>{connections.length} account{connections.length > 1 ? 's' : ''} connected</span>
+                      <span>{t('accountsConnected', { count: connections.length })}</span>
                     </>
                   ) : (
                     <>
                       <X className="h-4 w-4 text-muted-foreground" />
-                      <span>No accounts connected</span>
+                      <span>{t('noAccounts')}</span>
                     </>
                   )}
                 </CardDescription>
@@ -643,7 +644,7 @@ export function EmailConnection() {
               variant={hasConnections ? 'default' : 'secondary'}
               className={cn('h-8 self-start sm:self-auto', hasConnections && 'bg-red-600 hover:bg-red-700')}
             >
-              {hasConnections ? `${connections.length} Connected` : 'Not Connected'}
+              {hasConnections ? t('badgeConnected', { count: connections.length }) : t('badgeNotConnected')}
             </Badge>
           </div>
         </CardHeader>
@@ -657,7 +658,7 @@ export function EmailConnection() {
               className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Email Account
+              {t('addAccount')}
             </Button>
             {hasConnections && (
               <Button
@@ -669,26 +670,26 @@ export function EmailConnection() {
                 {syncEmail.isPending && syncingConnectionId === null ? (
                   <>
                     <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Syncing All...
+                    {t('syncingAll')}
                   </>
                 ) : (
                   <>
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Sync All
+                    {t('syncAll')}
                   </>
                 )}
               </Button>
             )}
             <Button onClick={() => refetch()} disabled={loading} variant="outline" className="w-full sm:w-auto">
               <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
-              Refresh
+              {t('refresh')}
             </Button>
           </div>
 
           {/* Connected accounts list */}
           {hasConnections && (
             <div className="space-y-3 pt-4 border-t">
-              <h4 className="font-semibold text-sm">Connected Accounts</h4>
+              <h4 className="font-semibold text-sm">{t('connectedAccounts')}</h4>
               {connections.map((connection) => (
                 <EmailAccountCard
                   key={connection.id}
@@ -712,16 +713,19 @@ export function EmailConnection() {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                <strong>Note:</strong> For Gmail accounts, you need to use an{' '}
-                <a
-                  href="https://support.google.com/accounts/answer/185833"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  App Password
-                </a>{' '}
-                instead of your regular password (requires 2-Factor Authentication).
+                {t.rich('gmailNote', {
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                  link: (chunks) => (
+                    <a
+                      href="https://support.google.com/accounts/answer/185833"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {chunks}
+                    </a>
+                  ),
+                })}
               </AlertDescription>
             </Alert>
           )}
@@ -734,17 +738,17 @@ export function EmailConnection() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              Add Email Account
+              {t('addTitle')}
             </DialogTitle>
             <DialogDescription>
-              Enter your email credentials to connect via IMAP/SMTP.
+              {t('addDescription')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             {/* Basic Info */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address *</Label>
+              <Label htmlFor="email">{t('emailAddress')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -755,22 +759,22 @@ export function EmailConnection() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="display_name">Display Name</Label>
+              <Label htmlFor="display_name">{t('displayName')}</Label>
               <Input
                 id="display_name"
-                placeholder="Your Name"
+                placeholder={t('displayNamePlaceholder')}
                 value={formData.display_name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, display_name: e.target.value }))}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password / App Password *</Label>
+              <Label htmlFor="password">{t('passwordRequired')}</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter password"
+                  placeholder={t('passwordPlaceholder')}
                   value={formData.password}
                   onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
                 />
@@ -780,6 +784,7 @@ export function EmailConnection() {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? t('hidePassword') : t('showPassword')}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -789,7 +794,7 @@ export function EmailConnection() {
             {/* Server Settings */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="imap_server">IMAP Server *</Label>
+                <Label htmlFor="imap_server">{t('imapServer')}</Label>
                 <Input
                   id="imap_server"
                   placeholder="imap.example.com"
@@ -798,7 +803,7 @@ export function EmailConnection() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="imap_port">IMAP Port</Label>
+                <Label htmlFor="imap_port">{t('imapPort')}</Label>
                 <Input
                   id="imap_port"
                   type="number"
@@ -810,7 +815,7 @@ export function EmailConnection() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="smtp_server">SMTP Server *</Label>
+                <Label htmlFor="smtp_server">{t('smtpServer')}</Label>
                 <Input
                   id="smtp_server"
                   placeholder="smtp.example.com"
@@ -819,7 +824,7 @@ export function EmailConnection() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="smtp_port">SMTP Port</Label>
+                <Label htmlFor="smtp_port">{t('smtpPort')}</Label>
                 <Input
                   id="smtp_port"
                   type="number"
@@ -835,24 +840,24 @@ export function EmailConnection() {
                 <Button variant="ghost" size="sm" className="w-full justify-between">
                   <span className="flex items-center gap-2">
                     <Settings2 className="h-4 w-4" />
-                    Advanced Settings
+                    {t('advanced')}
                   </span>
                   <ChevronDown className={cn('h-4 w-4 transition-transform', showAdvanced && 'rotate-180')} />
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-4 pt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="username">Username (if different from email)</Label>
+                  <Label htmlFor="username">{t('username')}</Label>
                   <Input
                     id="username"
-                    placeholder="Username"
+                    placeholder={t('usernamePlaceholder')}
                     value={formData.username}
                     onChange={(e) => setFormData((prev) => ({ ...prev, username: e.target.value }))}
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="imap_ssl">IMAP SSL</Label>
+                  <Label htmlFor="imap_ssl">{t('imapSsl')}</Label>
                   <Switch
                     id="imap_ssl"
                     checked={formData.imap_use_ssl}
@@ -861,7 +866,7 @@ export function EmailConnection() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="smtp_tls">SMTP TLS/STARTTLS</Label>
+                  <Label htmlFor="smtp_tls">{t('smtpTls')}</Label>
                   <Switch
                     id="smtp_tls"
                     checked={formData.smtp_use_tls}
@@ -872,7 +877,7 @@ export function EmailConnection() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="smtp_ssl">SMTP SSL (alternative to TLS)</Label>
+                  <Label htmlFor="smtp_ssl">{t('smtpSsl')}</Label>
                   <Switch
                     id="smtp_ssl"
                     checked={formData.smtp_use_ssl}
@@ -884,7 +889,7 @@ export function EmailConnection() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="sync_folder">Sync Folder</Label>
+                    <Label htmlFor="sync_folder">{t('syncFolder')}</Label>
                     <Input
                       id="sync_folder"
                       value={formData.sync_folder}
@@ -892,7 +897,7 @@ export function EmailConnection() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="sync_days">Sync Days Back</Label>
+                    <Label htmlFor="sync_days">{t('syncDaysBack')}</Label>
                     <Input
                       id="sync_days"
                       type="number"
@@ -909,7 +914,7 @@ export function EmailConnection() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowConnectDialog(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               onClick={handleConnect}
@@ -919,12 +924,12 @@ export function EmailConnection() {
               {connectEmail.isPending ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Connecting...
+                  {t('connecting')}
                 </>
               ) : (
                 <>
                   <Mail className="mr-2 h-4 w-4" />
-                  Connect
+                  {t('connect')}
                 </>
               )}
             </Button>
@@ -941,31 +946,31 @@ export function EmailConnection() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5" />
-              Edit Email Connection
+              {t('editTitle')}
             </DialogTitle>
             <DialogDescription>
-              Update settings for {editingConnection?.email_address}
+              {t('editDescription', { email: editingConnection?.email_address ?? '' })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit_display_name">Display Name</Label>
+              <Label htmlFor="edit_display_name">{t('displayName')}</Label>
               <Input
                 id="edit_display_name"
-                placeholder="Your Name"
+                placeholder={t('displayNamePlaceholder')}
                 value={editFormData.display_name}
                 onChange={(e) => setEditFormData((prev) => ({ ...prev, display_name: e.target.value }))}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit_password">Password / App Password</Label>
+              <Label htmlFor="edit_password">{t('password')}</Label>
               <div className="relative">
                 <Input
                   id="edit_password"
                   type={showEditPassword ? 'text' : 'password'}
-                  placeholder="Leave blank to keep current"
+                  placeholder={t('passwordKeepPlaceholder')}
                   value={editFormData.password}
                   onChange={(e) => setEditFormData((prev) => ({ ...prev, password: e.target.value }))}
                 />
@@ -975,6 +980,7 @@ export function EmailConnection() {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                   onClick={() => setShowEditPassword(!showEditPassword)}
+                  aria-label={showEditPassword ? t('hidePassword') : t('showPassword')}
                 >
                   {showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -983,7 +989,7 @@ export function EmailConnection() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit_imap_server">IMAP Server *</Label>
+                <Label htmlFor="edit_imap_server">{t('imapServer')}</Label>
                 <Input
                   id="edit_imap_server"
                   placeholder="imap.example.com"
@@ -992,7 +998,7 @@ export function EmailConnection() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit_imap_port">IMAP Port</Label>
+                <Label htmlFor="edit_imap_port">{t('imapPort')}</Label>
                 <Input
                   id="edit_imap_port"
                   type="number"
@@ -1004,7 +1010,7 @@ export function EmailConnection() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit_smtp_server">SMTP Server *</Label>
+                <Label htmlFor="edit_smtp_server">{t('smtpServer')}</Label>
                 <Input
                   id="edit_smtp_server"
                   placeholder="smtp.example.com"
@@ -1013,7 +1019,7 @@ export function EmailConnection() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit_smtp_port">SMTP Port</Label>
+                <Label htmlFor="edit_smtp_port">{t('smtpPort')}</Label>
                 <Input
                   id="edit_smtp_port"
                   type="number"
@@ -1029,24 +1035,24 @@ export function EmailConnection() {
                 <Button variant="ghost" size="sm" className="w-full justify-between">
                   <span className="flex items-center gap-2">
                     <Settings2 className="h-4 w-4" />
-                    Advanced Settings
+                    {t('advanced')}
                   </span>
                   <ChevronDown className={cn('h-4 w-4 transition-transform', showEditAdvanced && 'rotate-180')} />
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-4 pt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit_username">Username (if different from email)</Label>
+                  <Label htmlFor="edit_username">{t('username')}</Label>
                   <Input
                     id="edit_username"
-                    placeholder="Username"
+                    placeholder={t('usernamePlaceholder')}
                     value={editFormData.username}
                     onChange={(e) => setEditFormData((prev) => ({ ...prev, username: e.target.value }))}
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="edit_imap_ssl">IMAP SSL</Label>
+                  <Label htmlFor="edit_imap_ssl">{t('imapSsl')}</Label>
                   <Switch
                     id="edit_imap_ssl"
                     checked={editFormData.imap_use_ssl}
@@ -1055,7 +1061,7 @@ export function EmailConnection() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="edit_smtp_tls">SMTP TLS/STARTTLS</Label>
+                  <Label htmlFor="edit_smtp_tls">{t('smtpTls')}</Label>
                   <Switch
                     id="edit_smtp_tls"
                     checked={editFormData.smtp_use_tls}
@@ -1066,7 +1072,7 @@ export function EmailConnection() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="edit_smtp_ssl">SMTP SSL (alternative to TLS)</Label>
+                  <Label htmlFor="edit_smtp_ssl">{t('smtpSsl')}</Label>
                   <Switch
                     id="edit_smtp_ssl"
                     checked={editFormData.smtp_use_ssl}
@@ -1078,7 +1084,7 @@ export function EmailConnection() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit_sync_folder">Sync Folder</Label>
+                    <Label htmlFor="edit_sync_folder">{t('syncFolder')}</Label>
                     <Input
                       id="edit_sync_folder"
                       value={editFormData.sync_folder}
@@ -1086,7 +1092,7 @@ export function EmailConnection() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit_sync_days">Sync Days Back</Label>
+                    <Label htmlFor="edit_sync_days">{t('syncDaysBack')}</Label>
                     <Input
                       id="edit_sync_days"
                       type="number"
@@ -1103,7 +1109,7 @@ export function EmailConnection() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               onClick={handleSaveEdit}
@@ -1113,10 +1119,10 @@ export function EmailConnection() {
               {updateEmailConnection.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  {t('saving')}
                 </>
               ) : (
-                'Save Changes'
+                t('saveChanges')
               )}
             </Button>
           </DialogFooter>
