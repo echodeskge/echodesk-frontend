@@ -11,6 +11,9 @@
           "logoRemoveFailed": "Failed to remove logo",
           "ticketSaved": "Ticket settings saved successfully",
           "ticketSaveFailed": "Failed to save ticket settings"
+        },
+        "sections": {
+          "branding": "Branding"
         }
       },
       "appearance": {
@@ -36,7 +39,27 @@
         "previewOutline": "Outline",
         "previewDestructive": "Destructive",
         "previewCardTitle": "Card Preview",
-        "previewCardText": "This is how cards will look with the current theme settings."
+        "previewCardText": "This is how cards will look with the current theme settings.",
+        "sections": {
+          "display": "Display"
+        },
+        "resetHelp": "Restores the default colours, corner radius and sidebar order for all users.",
+        "resetTitle": "Reset appearance"
+      },
+      "ui": {
+        "errorTitle": "Couldn't load these settings",
+        "errorHint": "Check your connection and try again.",
+        "noAccessTitle": "No access",
+        "noAccessHint": "You don't have permission to view these settings. Ask an administrator.",
+        "retry": "Try again",
+        "loading": "Loading…",
+        "saveBar": {
+          "unsaved": "You have unsaved changes",
+          "discard": "Discard",
+          "save": "Save changes",
+          "saving": "Saving…",
+          "saved": "All changes saved"
+        }
       }
     },
     "notificationPreferences": {
@@ -126,6 +149,9 @@
           "logoRemoveFailed": "ლოგოს წაშლა ვერ მოხერხდა",
           "ticketSaved": "ტიკეტების პარამეტრები შენახულია",
           "ticketSaveFailed": "ტიკეტების პარამეტრების შენახვა ვერ მოხერხდა"
+        },
+        "sections": {
+          "branding": "ბრენდინგი"
         }
       },
       "appearance": {
@@ -151,7 +177,27 @@
         "previewOutline": "კონტურიანი",
         "previewDestructive": "საშიში",
         "previewCardTitle": "ბარათის ნიმუში",
-        "previewCardText": "ასე გამოჩნდება ბარათები თემის მიმდინარე პარამეტრებით."
+        "previewCardText": "ასე გამოჩნდება ბარათები თემის მიმდინარე პარამეტრებით.",
+        "sections": {
+          "display": "ჩვენება"
+        },
+        "resetHelp": "აბრუნებს ნაგულისხმევ ფერებს, კუთხეების მომრგვალებას და მენიუს თანმიმდევრობას ყველა მომხმარებლისთვის.",
+        "resetTitle": "გარეგნობის გადაყენება"
+      },
+      "ui": {
+        "errorTitle": "პარამეტრების ჩატვირთვა ვერ მოხერხდა",
+        "errorHint": "შეამოწმეთ კავშირი და სცადეთ ხელახლა.",
+        "noAccessTitle": "წვდომა არ გაქვთ",
+        "noAccessHint": "ამ პარამეტრების ნახვის უფლება არ გაქვთ. მიმართეთ ადმინისტრატორს.",
+        "retry": "ხელახლა ცდა",
+        "loading": "იტვირთება…",
+        "saveBar": {
+          "unsaved": "შენახვის გარეშე ცვლილებები გაქვთ",
+          "discard": "გაუქმება",
+          "save": "ცვლილებების შენახვა",
+          "saving": "ინახება…",
+          "saved": "ყველა ცვლილება შენახულია"
+        }
       }
     },
     "notificationPreferences": {

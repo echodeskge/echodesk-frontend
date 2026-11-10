@@ -3,15 +3,20 @@
 import { useState, useRef, useEffect, useTransition } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/spinner";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GeneralSettingsSkeleton } from "@/components/GeneralSettingsSkeleton";
-import { Upload, Image as ImageIcon, X, Languages } from "lucide-react";
+import { Upload, Image as ImageIcon, X, Settings, Loader2 } from "lucide-react";
+import {
+  ActionButton,
+  ChoiceControl,
+  FieldRow,
+  SettingsFormPage,
+  SettingsSection,
+  SettingsToggle,
+  StickySaveBar,
+  settingsInputClass,
+} from "@/components/redesign/settings";
+import { cn } from "@/lib/utils";
+import { useSettingsSaveBarLabels } from "../_lib/settings-ui-labels";
 import { toast } from "sonner";
 import { useTenantSettings, useUpdateTenantSettings, useUploadTenantLogo, useRemoveTenantLogo } from "@/hooks/api";
 import { locales, localeNames, type Locale } from "@/lib/i18n";
@@ -43,6 +48,7 @@ export default function GeneralSettingsPage() {
   const uploadLogo = useUploadTenantLogo();
   const removeLogo = useRemoveTenantLogo();
 
+  const saveBarLabels = useSettingsSaveBarLabels();
   const saving = updateSettings.isPending;
   const uploading = uploadLogo.isPending;
 
@@ -141,196 +147,134 @@ export default function GeneralSettingsPage() {
     });
   };
 
+  // The ticket settings keep their explicit save (now in the sticky save bar).
+  // Dirty = differs from the last loaded values, compared the way the save
+  // sends them; Discard puts the loaded values back.
+  const loadedMinUsers = settingsData?.min_users_per_ticket || 0;
+  const loadedOnlySuperadmin = settingsData?.only_superadmin_can_delete_tickets || false;
+  const ticketDirty =
+    !!settingsData &&
+    ((formSettings.min_users_per_ticket || 0) !== loadedMinUsers ||
+      (formSettings.only_superadmin_can_delete_tickets || false) !== loadedOnlySuperadmin);
+  const handleDiscardTicketSettings = () => {
+    if (settingsData) setFormSettings(settingsData);
+  };
+
   if (loading) {
     return <GeneralSettingsSkeleton />;
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('title')}</CardTitle>
-          <CardDescription>{t('description')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Logo Upload Section */}
-          <div className="space-y-4">
-            <div>
-              <Label>{t('logoLabel')}</Label>
-              <p className="text-sm text-muted-foreground mt-1">
-                {t('logoDescription')}
-              </p>
+    <SettingsFormPage icon={Settings} title={t('title')} description={t('description')} testId="settings-general">
+      {/* Branding: logo upload / remove save instantly, as before. */}
+      <SettingsSection title={t('sections.branding')} testId="general-branding">
+        <FieldRow label={t('logoLabel')} help={t('logoDescription')}>
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed bg-muted text-muted-foreground"
+              data-testid="general-logo-preview"
+            >
+              {logoPreview ? (
+                <img src={logoPreview} alt={t('logoLabel')} className="max-h-full max-w-full object-contain" />
+              ) : (
+                <ImageIcon className="h-6 w-6" aria-hidden />
+              )}
             </div>
-
-            <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-6">
-              {/* Logo Preview */}
-              <div className="flex-shrink-0">
-                {logoPreview ? (
-                  <div className="relative group">
-                    <div className="w-32 h-32 border-2 border-dashed rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                      <img
-                        src={logoPreview}
-                        alt={t('logoLabel')}
-                        className="max-w-full max-h-full object-contain"
-                      />
-                    </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={handleRemoveLogo}
-                      disabled={uploading}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="w-32 h-32 border-2 border-dashed rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
-                    <ImageIcon className="h-12 w-12" />
-                  </div>
-                )}
-              </div>
-
-              {/* Upload Button */}
-              <div className="flex-1 space-y-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileSelect}
-                  disabled={uploading}
-                />
-                <Button
-                  variant="outline"
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileSelect}
+                disabled={uploading}
+                data-testid="general-logo-input"
+              />
+              <div className="flex flex-wrap gap-1.5">
+                <ActionButton
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
+                  testId="general-logo-upload"
                 >
                   {uploading ? (
-                    <>
-                      <Spinner className="mr-2 h-4 w-4" />
-                      {t('uploading')}
-                    </>
+                    <Loader2 className="h-[13px] w-[13px] animate-spin" aria-hidden />
                   ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      {logoPreview ? t('changeLogo') : t('uploadLogo')}
-                    </>
+                    <Upload className="h-[13px] w-[13px]" aria-hidden />
                   )}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  {t('logoRequirements')}
-                </p>
+                  {uploading ? t('uploading') : logoPreview ? t('changeLogo') : t('uploadLogo')}
+                </ActionButton>
+                {logoPreview && (
+                  <ActionButton
+                    tone="danger"
+                    icon={X}
+                    onClick={handleRemoveLogo}
+                    disabled={uploading}
+                    testId="general-logo-remove"
+                  >
+                    {tCommon('remove')}
+                  </ActionButton>
+                )}
               </div>
+              <span className="text-[11px] leading-4 text-muted-foreground">{t('logoRequirements')}</span>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </FieldRow>
+      </SettingsSection>
 
-      {/* Language Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Languages className="h-5 w-5" />
-            {t('languageTitle') || 'Language'}
-          </CardTitle>
-          <CardDescription>
-            {t('languageDescription') || 'Choose your preferred display language'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <Label>{t('languageSelect') || 'Display language'}</Label>
-              <p className="text-sm text-muted-foreground">
-                {t('languageSelectDescription') || 'This will change the language across the entire application'}
-              </p>
-            </div>
-            <Select value={currentLocale} onValueChange={(v) => handleLocaleChange(v as Locale)} disabled={isLocaleChanging}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {locales.map((loc) => (
-                  <SelectItem key={loc} value={loc}>
-                    {localeNames[loc]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Language: applies instantly (cookie + refresh), as before. */}
+      <SettingsSection title={t('languageTitle')} hint={t('languageDescription')} testId="general-language">
+        <FieldRow label={t('languageSelect')} help={t('languageSelectDescription')} align="center">
+          <ChoiceControl<Locale>
+            value={currentLocale}
+            onChange={(v) => handleLocaleChange(v)}
+            options={locales.map((loc) => ({ value: loc, label: localeNames[loc], disabled: isLocaleChanging }))}
+            ariaLabel={t('languageSelect')}
+            testId="general-locale"
+          />
+        </FieldRow>
+      </SettingsSection>
 
-      {/* Ticket Management Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('ticketSettingsTitle')}</CardTitle>
-          <CardDescription>{t('ticketSettingsDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Minimum Users Per Ticket */}
-          <div className="space-y-2">
-            <Label htmlFor="min_users_per_ticket">{t('minUsersLabel')}</Label>
-            <p className="text-sm text-muted-foreground">
-              {t('minUsersDescription')}
-            </p>
-            <Input
-              id="min_users_per_ticket"
-              type="number"
-              min="0"
-              value={formSettings.min_users_per_ticket || 0}
-              onChange={(e) => setFormSettings(prev => ({
-                ...prev,
-                min_users_per_ticket: parseInt(e.target.value) || 0
-              }))}
-              className="max-w-xs"
-            />
-          </div>
+      {/* Ticket settings: explicit save through the sticky save bar. */}
+      <SettingsSection title={t('ticketSettingsTitle')} hint={t('ticketSettingsDescription')} testId="general-tickets">
+        <FieldRow label={t('minUsersLabel')} help={t('minUsersDescription')} htmlFor="min_users_per_ticket">
+          <input
+            id="min_users_per_ticket"
+            type="number"
+            min="0"
+            value={formSettings.min_users_per_ticket || 0}
+            onChange={(e) => setFormSettings(prev => ({
+              ...prev,
+              min_users_per_ticket: parseInt(e.target.value) || 0
+            }))}
+            className={cn(settingsInputClass, "w-full tabular-nums sm:w-[120px]")}
+          />
+        </FieldRow>
+        <FieldRow
+          label={t('onlySuperadminDeleteLabel')}
+          help={t('onlySuperadminDeleteDescription')}
+          htmlFor="only_superadmin_can_delete_tickets"
+          align="center"
+        >
+          <SettingsToggle
+            id="only_superadmin_can_delete_tickets"
+            // Only staff or superusers may change this; others resend it unchanged.
+            disabled={!isStaffOrSuperuser}
+            checked={formSettings.only_superadmin_can_delete_tickets || false}
+            onCheckedChange={(checked) => setFormSettings(prev => ({
+              ...prev,
+              only_superadmin_can_delete_tickets: checked === true
+            }))}
+          />
+        </FieldRow>
+      </SettingsSection>
 
-          {/* Only Superadmin Can Delete Tickets */}
-          <div className="flex items-start space-x-3">
-            <Checkbox
-              id="only_superadmin_can_delete_tickets"
-              // Only staff or superusers may change this; others resend it unchanged.
-              disabled={!isStaffOrSuperuser}
-              checked={formSettings.only_superadmin_can_delete_tickets || false}
-              onCheckedChange={(checked) => setFormSettings(prev => ({
-                ...prev,
-                only_superadmin_can_delete_tickets: checked === true
-              }))}
-            />
-            <div className="space-y-1 leading-none">
-              <Label
-                htmlFor="only_superadmin_can_delete_tickets"
-                className="cursor-pointer font-medium"
-              >
-                {t('onlySuperadminDeleteLabel')}
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {t('onlySuperadminDeleteDescription')}
-              </p>
-            </div>
-          </div>
-
-          {/* Save Button */}
-          <div className="flex justify-end pt-4">
-            <Button
-              onClick={handleSaveTicketSettings}
-              disabled={saving}
-            >
-              {saving ? (
-                <>
-                  <Spinner className="mr-2 h-4 w-4" />
-                  {tCommon('saving')}
-                </>
-              ) : (
-                tCommon('save')
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+      <StickySaveBar
+        dirty={ticketDirty}
+        saving={saving}
+        onSave={handleSaveTicketSettings}
+        onDiscard={handleDiscardTicketSettings}
+        labels={saveBarLabels}
+      />
+    </SettingsFormPage>
   );
 }
