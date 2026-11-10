@@ -13,16 +13,20 @@ import {
   useDeleteTenantGroup
 } from '@/hooks/api';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Search, Users, XCircle } from "lucide-react";
+import type { Column } from "@/components/redesign/data-table";
+import { EmptyBlock } from "@/components/redesign/states";
+import { TonePill } from "@/components/redesign/pill";
+import { rdButton } from "@/components/redesign/buttons";
+import { ToolbarSearch } from "@/components/redesign/toolbar";
+import { SettingsListPage, SettingsNote, AvatarCell } from "@/components/redesign/settings";
+import { settingsDialogFormClass, settingsDialogSectionTitle } from "@/components/user-management/dialog-ui";
+import { cn } from "@/lib/utils";
+import { Pencil, Plus, Trash2, Users, UsersRound } from "lucide-react";
 
 interface Feature {
   id: number;
@@ -168,30 +172,20 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-[650px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-[17px]">
             {mode === "create" ? t("createNewGroup") : t("editGroup")}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-[13px]">
             {mode === "create"
               ? t("ui.createDescription")
               : t("ui.editDescription", { name: group?.name ?? "" })}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {errors.submit && (
-            <Alert variant="destructive">
-              <XCircle className="h-4 w-4" />
-              <AlertDescription>{errors.submit}</AlertDescription>
-            </Alert>
-          )}
+        <form onSubmit={handleSubmit} className={cn("space-y-5", settingsDialogFormClass)}>
+          {errors.submit && <SettingsNote tone="danger">{errors.submit}</SettingsNote>}
 
-          {errors.fetch && (
-            <Alert variant="destructive">
-              <XCircle className="h-4 w-4" />
-              <AlertDescription>{errors.fetch}</AlertDescription>
-            </Alert>
-          )}
+          {errors.fetch && <SettingsNote tone="danger">{errors.fetch}</SettingsNote>}
 
           <div className="space-y-2">
             <Label htmlFor="name">{t("groupName")} *</Label>
@@ -218,11 +212,11 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
             />
           </div>
 
-          <div className="space-y-4 pt-4 border-t">
-            <Label className="text-base">{t("ui.features")}</Label>
-            <p className="text-sm text-muted-foreground">
-              {t("ui.featuresHint")}
-            </p>
+          <div className="space-y-3 border-t pt-4">
+            <div className="flex flex-col gap-0.5">
+              <h3 className={settingsDialogSectionTitle}>{t("ui.features")}</h3>
+              <p className="text-xs text-muted-foreground">{t("ui.featuresHint")}</p>
+            </div>
 
             {loadingFeatures ? (
               <div className="flex items-center justify-center py-8">
@@ -230,17 +224,13 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
                 <span className="text-sm text-muted-foreground">{t("ui.loadingFeatures")}</span>
               </div>
             ) : availableFeatures.length === 0 ? (
-              <Alert>
-                <AlertDescription>
-                  {t("ui.noFeatures")}
-                </AlertDescription>
-              </Alert>
+              <SettingsNote tone="neutral">{t("ui.noFeatures")}</SettingsNote>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-3">
                 {availableFeatures.map((category) => (
-                  <Card key={category.category} className="bg-muted/30">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center space-x-3">
+                  <section key={category.category} className="overflow-hidden rounded-[10px] border">
+                    <div className="border-b bg-muted/35 px-4 py-2.5">
+                      <div className="flex items-center gap-3">
                         <Checkbox
                           id={category.category}
                           checked={isCategoryChecked(category)}
@@ -250,16 +240,16 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
                         <div className="flex-1">
                           <Label
                             htmlFor={category.category}
-                            className="text-sm font-semibold cursor-pointer"
+                            className="cursor-pointer font-semibold"
                           >
                             {category.category_display}
                           </Label>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
+                    </div>
+                    <div className="space-y-2.5 px-4 py-3">
                       {category.features.map((feature) => (
-                        <div key={feature.id} className="flex items-start space-x-3 pl-6">
+                        <div key={feature.id} className="flex items-start gap-3 ps-6">
                           <Checkbox
                             id={`feature-${feature.id}`}
                             checked={isFeatureChecked(feature.id)}
@@ -269,7 +259,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
                           <div className="flex-1 space-y-1">
                             <Label
                               htmlFor={`feature-${feature.id}`}
-                              className="text-sm cursor-pointer font-normal"
+                              className="cursor-pointer font-normal"
                             >
                               {feature.icon && <span className="mr-2">{feature.icon}</span>}
                               {feature.name}
@@ -282,26 +272,26 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
                           </div>
                         </div>
                       ))}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </section>
                 ))}
               </div>
             )}
           </div>
 
-          <DialogFooter>
-            <Button
+          <DialogFooter className="gap-2 border-t pt-4">
+            <button
               type="button"
-              variant="outline"
+              className={rdButton.outline}
               onClick={onClose}
               disabled={isSubmitting}
             >
               {tCommon("cancel")}
-            </Button>
-            <Button type="submit" disabled={isSubmitting || loadingFeatures}>
-              {isSubmitting && <Spinner className="mr-2 h-4 w-4" />}
+            </button>
+            <button type="submit" className={rdButton.primary} disabled={isSubmitting || loadingFeatures}>
+              {isSubmitting && <Spinner className="h-3.5 w-3.5" />}
               {isSubmitting ? t("saving") : mode === "create" ? t("createGroup") : t("updateGroup")}
-            </Button>
+            </button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -352,129 +342,147 @@ const TenantGroupManagement: React.FC = () => {
     (group.description && group.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex items-center space-x-2">
-          <Spinner className="h-8 w-8" />
-          <span className="text-muted-foreground">{tCommon("loading")}</span>
-        </div>
-      </div>
-    );
-  }
+  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(locale === "ka" ? "ka-GE" : "en-US");
+
+  const columns: Column<TenantGroup>[] = [
+    {
+      id: "group",
+      header: t("ui.columns.group"),
+      width: "minmax(0,1.3fr)",
+      mobile: "title",
+      cell: (group) => (
+        <span className="flex min-w-0 flex-col gap-1">
+          <AvatarCell name={group.name} sub={group.description || undefined} shape="square" icon={UsersRound} />
+          {(group.is_booking_staff || group.is_active === false) && (
+            <span className="flex flex-wrap gap-1 ps-9">
+              {group.is_booking_staff && <TonePill tone="info">{t("ui.bookingStaff")}</TonePill>}
+              {group.is_active === false && <TonePill tone="neutral">{t("ui.inactive")}</TonePill>}
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
+      id: "members",
+      header: t("ui.columns.members"),
+      width: "110px",
+      mobile: "end",
+      cell: (group) => (
+        <TonePill tone="neutral" title={t("ui.membersCount", { count: group.member_count })}>
+          <Users className="h-3 w-3" aria-hidden />
+          {group.member_count}
+        </TonePill>
+      ),
+    },
+    {
+      id: "features",
+      header: t("ui.columns.features"),
+      width: "minmax(0,1.7fr)",
+      mobile: "meta",
+      cell: (group) =>
+        group.features && group.features.length > 0 ? (
+          <span className="flex min-w-0 flex-wrap items-center gap-1 py-1">
+            <span className="me-1 whitespace-nowrap text-xs text-muted-foreground">
+              {t("ui.featureCount", { count: group.features.length })}
+            </span>
+            {group.features.slice(0, 5).map((feature) => (
+              <TonePill key={feature.id} tone="neutral">
+                {feature.icon && <span aria-hidden>{feature.icon}</span>}
+                <span className="truncate">{feature.name}</span>
+              </TonePill>
+            ))}
+            {group.features.length > 5 && (
+              <TonePill tone="neutral">{t("ui.moreFeatures", { count: group.features.length - 5 })}</TonePill>
+            )}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        ),
+    },
+    {
+      id: "created",
+      header: t("ui.columns.created"),
+      width: "104px",
+      mobile: "meta",
+      muted: true,
+      cell: (group) => (
+        <span className="whitespace-nowrap">
+          <span className="@3xl:hidden">{t("created")} </span>
+          {fmtDate(group.created_at)}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">{t("management.actions")}</span>,
+      width: "64px",
+      align: "end",
+      mobile: "actions",
+      cell: (group) => (
+        <span className="flex items-center gap-0.5">
+          <button
+            type="button"
+            className={rdButton.ghostIconSm}
+            onClick={() => setShowForm({ mode: 'edit', group })}
+            title={tCommon("edit")}
+            aria-label={tCommon("edit")}
+          >
+            <Pencil className="h-3.5 w-3.5" aria-hidden />
+          </button>
+          <button
+            type="button"
+            className={cn(rdButton.ghostIconSm, "text-destructive hover:bg-destructive/10 hover:text-destructive")}
+            onClick={() => handleDeleteGroup(group)}
+            title={tCommon("delete")}
+            aria-label={tCommon("delete")}
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden />
+          </button>
+        </span>
+      ),
+    },
+  ];
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">{t("groupManagement")}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t("ui.subtitle")}
-          </p>
-        </div>
-        <Button onClick={() => setShowForm({ mode: 'create' })}>
-          <Plus className="h-4 w-4 mr-2" />
-          {t("createNewGroup")}
-        </Button>
-      </div>
-
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder={t("searchGroups")}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9"
+    <SettingsListPage
+      icon={UsersRound}
+      title={t("groupManagement")}
+      description={t("ui.subtitle")}
+      newAction={{ label: t("createNewGroup"), icon: Plus, onClick: () => setShowForm({ mode: 'create' }), testId: "groups-new" }}
+      columns={columns}
+      rows={loading ? undefined : filteredGroups}
+      rowKey={(group) => group.id}
+      onRowClick={(group) => setShowForm({ mode: 'edit', group })}
+      loading={loading}
+      renderError={() => null}
+      empty={
+        <EmptyBlock
+          icon={UsersRound}
+          title={searchTerm ? t("noGroupsMatch") : t("noGroupsFound")}
+          testId="groups-empty"
         />
-      </div>
+      }
+      countLabel={t("ui.countLine", { count: filteredGroups.length })}
+      ariaLabel={t("groupManagement")}
+      idPrefix="groups"
+      testId="settings-groups"
+      before={
+        <>
+          {/* Search */}
+          <ToolbarSearch
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder={t("searchGroups")}
+            clearLabel={t("ui.clearSearch")}
+            className="max-w-none sm:max-w-[320px]"
+            testId="groups-search"
+          />
 
-      {/* Error Alert */}
-      {error && (
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Groups List */}
-      <Card>
-        <CardContent className="p-0">
-          {filteredGroups.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {searchTerm ? t("noGroupsMatch") : t("noGroupsFound")}
-            </div>
-          ) : (
-            <div className="divide-y">
-              {filteredGroups.map((group) => (
-                <div
-                  key={group.id}
-                  className="p-4 flex flex-col sm:flex-row items-start sm:justify-between gap-3 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-base">{group.name}</h3>
-                      <Badge variant="secondary" className="text-xs">
-                        <Users className="h-3 w-3 mr-1" />
-                        {group.member_count}
-                      </Badge>
-                      {group.features && group.features.length > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          {t("ui.featureCount", { count: group.features.length })}
-                        </Badge>
-                      )}
-                    </div>
-                    {group.description && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {group.description}
-                      </p>
-                    )}
-                    {group.features && group.features.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {group.features.slice(0, 5).map((feature) => (
-                          <Badge key={feature.id} variant="secondary" className="text-xs">
-                            {feature.icon && <span className="mr-1">{feature.icon}</span>}
-                            {feature.name}
-                          </Badge>
-                        ))}
-                        {group.features.length > 5 && (
-                          <Badge variant="secondary" className="text-xs">
-                            {t("ui.moreFeatures", { count: group.features.length - 5 })}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {t("created")} {new Date(group.created_at).toLocaleDateString(locale === "ka" ? "ka-GE" : "en-US")}
-                    </p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2 sm:ml-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowForm({ mode: 'edit', group })}
-                    >
-                      <Edit className="h-3 w-3 mr-1" />
-                      {tCommon("edit")}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteGroup(group)}
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      {tCommon("delete")}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
+          {/* Error Alert */}
+          {error && <SettingsNote tone="danger">{error}</SettingsNote>}
+        </>
+      }
+    >
       {/* Form Dialog */}
       <TenantGroupForm
         mode={showForm?.mode || 'create'}
@@ -483,7 +491,7 @@ const TenantGroupManagement: React.FC = () => {
         onSubmit={showForm?.mode === 'create' ? handleCreateGroup : handleUpdateGroup}
         onClose={() => setShowForm(null)}
       />
-    </div>
+    </SettingsListPage>
   );
 };
 

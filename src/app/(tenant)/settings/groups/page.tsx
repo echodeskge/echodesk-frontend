@@ -2,10 +2,7 @@
 
 import TenantGroupManagement from "@/components/TenantGroupManagement";
 
+// Design LIST PAGE: TenantGroupManagement renders the settings page itself.
 export default function GroupsPage() {
-  return (
-    <div className="container mx-auto py-6">
-      <TenantGroupManagement />
-    </div>
-  );
+  return <TenantGroupManagement />;
 }
