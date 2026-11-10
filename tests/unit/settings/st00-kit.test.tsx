@@ -165,6 +165,17 @@ describe("field controls", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Careful")
     expect(screen.getByRole("status")).toHaveTextContent("Info")
   })
+
+  it("note action wraps under the text on phones", () => {
+    render(
+      <SettingsNote tone="warning" action={<button type="button">Enable</button>}>
+        Permissions needed
+      </SettingsNote>
+    )
+    const note = screen.getByRole("alert")
+    expect(note).toHaveClass("flex-wrap", "sm:flex-nowrap")
+    expect(screen.getByRole("button", { name: "Enable" }).parentElement).toHaveClass("max-sm:basis-full", "shrink-0")
+  })
 })
 
 describe("sticky save bar", () => {

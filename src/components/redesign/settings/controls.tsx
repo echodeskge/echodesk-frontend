@@ -265,7 +265,7 @@ export function SettingsNote({
     <div
       role={tone === "danger" || tone === "warning" ? "alert" : "status"}
       className={cn(
-        "flex w-full min-w-0 items-start gap-2 rounded-md border px-2.5 py-2 text-xs leading-[17px]",
+        "flex w-full min-w-0 flex-wrap items-start gap-2 rounded-md border px-2.5 py-2 text-xs leading-[17px] sm:flex-nowrap",
         TONE_CLASS[tone],
         className
       )}
@@ -274,7 +274,8 @@ export function SettingsNote({
     >
       <Icon className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
       <div className="min-w-0 flex-1 [text-wrap:pretty]">{children}</div>
-      {action}
+      {/* Phones: the action goes under the text (aligned with it) instead of squeezing it. */}
+      {action ? <div className="shrink-0 max-sm:basis-full max-sm:ps-[22px]">{action}</div> : null}
     </div>
   )
 }
