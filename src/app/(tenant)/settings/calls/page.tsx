@@ -1045,19 +1045,21 @@ export default function CallSettingsPage() {
 
                   <SettingsSection title={ts("afterHoursAction")} testId="hours-after">
                     <FieldRow label={ts("afterHoursAction")} align="center">
-                      <ChoiceControl<'announcement' | 'voicemail' | 'forward'>
+                      <Select
                         value={pbxSettings.after_hours_action}
-                        onChange={(value) =>
+                        onValueChange={(value: 'announcement' | 'voicemail' | 'forward') =>
                           setPbxSettings((prev) => ({ ...prev, after_hours_action: value }))
                         }
-                        ariaLabel={ts("afterHoursAction")}
-                        testId="hours-after-action"
-                        options={[
-                          { value: "announcement", label: ts("playAnnouncement") },
-                          { value: "voicemail", label: ts("voicemail") },
-                          { value: "forward", label: ts("forwardCall") },
-                        ]}
-                      />
+                      >
+                        <SelectTrigger className={cn(settingsFieldWidth, "h-[34px] text-[13px]")} data-testid="hours-after-action">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="announcement">{ts("playAnnouncement")}</SelectItem>
+                          <SelectItem value="voicemail">{ts("voicemail")}</SelectItem>
+                          <SelectItem value="forward">{ts("forwardCall")}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FieldRow>
                     {pbxSettings.after_hours_action === 'forward' && (
                       <FieldRow label={ts("forwardNumber")} htmlFor="wh-forward" align="center">

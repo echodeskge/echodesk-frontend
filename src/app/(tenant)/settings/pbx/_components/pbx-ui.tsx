@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { LucideIcon } from "lucide-react";
@@ -26,8 +26,21 @@ export interface PbxTab {
 
 /** Link tabs styled as the design's 28px segment (scrolls sideways on phones). */
 export function PbxTabs({ tabs, ariaLabel }: { tabs: PbxTab[]; ariaLabel: string }) {
+  const navRef = useRef<HTMLElement>(null);
+  const activeId = tabs.find((tab) => tab.active)?.id;
+  // Phones: keep the active tab in view inside the scrolling segment.
+  useEffect(() => {
+    const nav = navRef.current;
+    const el = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!nav || !el) return;
+    const left = el.offsetLeft - nav.offsetLeft;
+    if (left < nav.scrollLeft || left + el.offsetWidth > nav.scrollLeft + nav.clientWidth) {
+      nav.scrollLeft = left - 8;
+    }
+  }, [activeId]);
   return (
     <nav
+      ref={navRef}
       aria-label={ariaLabel}
       data-testid="pbx-tabs"
       className="flex h-[30px] max-w-full shrink-0 gap-0.5 self-start overflow-x-auto rounded-[7px] bg-muted p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
