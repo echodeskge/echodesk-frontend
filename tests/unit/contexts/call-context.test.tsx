@@ -79,8 +79,10 @@ const mockUseUserProfile = vi.mocked(useUserProfile);
 
 function createWrapper() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: { children: React.ReactNode }) =>
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
     React.createElement(QueryClientProvider, { client }, React.createElement(CallProvider, null, children));
+  Wrapper.displayName = "CallTestWrapper";
+  return Wrapper;
 }
 
 function setAuth(user: Record<string, unknown> | null, profile: Record<string, unknown> | null) {

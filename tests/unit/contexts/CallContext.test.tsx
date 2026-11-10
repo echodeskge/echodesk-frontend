@@ -141,8 +141,10 @@ let queryClient: QueryClient;
 
 function createWrapper() {
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: { children: React.ReactNode }) =>
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, React.createElement(CallProvider, null, children));
+  Wrapper.displayName = "CallTestWrapper";
+  return Wrapper;
 }
 
 function setUser(id = 1) {
