@@ -8,6 +8,7 @@ import { callInitials, sanitizeDial } from "../call-format";
 import { useSoftphoneData, type RecentContact } from "../useSoftphoneData";
 import { DIAL_KEYS, dialKeyTestId } from "./dial-keys";
 import { InCallView } from "./in-call-view";
+import { useAgentName } from "./use-transfer-agents";
 import { useCallActions, useCallState } from "@/contexts/CallContext";
 
 interface DialPadViewProps {
@@ -198,7 +199,9 @@ export function SoftphonePanel() {
   const { recents, matchedName } = useSoftphoneData(dialNumber, callEndedCounter, idle);
 
   const notice = answeredElsewhereNotice && (!activeCall || activeCall.id === answeredElsewhereNotice.callId) ? answeredElsewhereNotice : null;
-  if (notice) return <AnsweredElsewhere />;
+  // The event carries the answering user's id; the name comes from the agents list.
+  const agent = useAgentName(notice?.handledBy);
+  if (notice) return <AnsweredElsewhere agent={agent} />;
   if (activeCall) return <InCallView call={activeCall} />;
 
   return (

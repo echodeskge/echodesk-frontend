@@ -5,7 +5,7 @@
  * DTMF pad, the consultation bar, Speaker / Add call availability.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
 
@@ -14,13 +14,22 @@ import type { CallActionsValue, CallStateValue } from "@/contexts/call-types";
 const h = vi.hoisted(() => ({
   state: null as unknown as CallStateValue,
   actions: null as unknown as CallActionsValue,
+  phoneAssignmentsList: vi.fn(),
+  extensionsStatusRetrieve: vi.fn(),
 }));
 
 vi.mock("@/contexts/CallContext", () => ({
   useCallState: () => h.state,
   useCallActions: () => h.actions,
 }));
-vi.mock("@/api/axios", () => ({ default: { get: vi.fn().mockResolvedValue({ data: { results: [] } }) } }));
+vi.mock("@/api/axios", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  default: { get: vi.fn().mockResolvedValue({ data: { results: [] } }) },
+}));
+vi.mock("@/api/generated/api", () => ({
+  phoneAssignmentsList: h.phoneAssignmentsList,
+  extensionsStatusRetrieve: h.extensionsStatusRetrieve,
+}));
 vi.mock("@/components/calls/rail/transfer-panel", () => ({
   TransferPanel: ({ onDone }: { onDone: () => void }) => (
     <div data-testid="call-rail-transfer-panel">
@@ -31,6 +40,7 @@ vi.mock("@/components/calls/rail/transfer-panel", () => ({
 
 import { DialPadView, SoftphonePanel } from "@/components/calls/rail/softphone-panel";
 import { callBadge } from "@/components/calls/rail/in-call-view";
+import { TRANSFER_AGENTS_QUERY_KEY } from "@/components/calls/rail/use-transfer-agents";
 import { recentNamedContacts } from "@/components/calls/useSoftphoneData";
 import { kaMessages, makeActions, makeActiveCall, makeState, railKa, renderWithProviders } from "./rail-test-utils";
 
@@ -45,6 +55,8 @@ function StatefulPad({ matchedName }: { matchedName?: string | null }) {
 beforeEach(() => {
   h.state = makeState();
   h.actions = makeActions();
+  h.phoneAssignmentsList.mockReset().mockResolvedValue({ count: 0, results: [] });
+  h.extensionsStatusRetrieve.mockReset().mockResolvedValue({ extensions: [] });
 });
 afterEach(() => vi.useRealTimers());
 
@@ -360,6 +372,55 @@ describe("consultation (attended transfer)", () => {
     expect(h.actions.cancelTransfer).toHaveBeenCalledTimes(1);
     expect(h.actions.completeTransfer).toHaveBeenCalledTimes(1);
     expect(h.actions.mergeConference).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("answered elsewhere", () => {
+  const assignments = {
+    count: 2,
+    results: [
+      { id: 1, user: 1, user_name: "Me", extension: "100", phone_number: "" },
+      { id: 2, user: 2, user_name: "Ana Lomidze", extension: "102", phone_number: "" },
+    ],
+  };
+  const notice = (handledBy: number | null) => ({ callId: "c1", number: "+995555123456", handledBy, time: new Date() });
+
+  it("names the agent from the phone assignments (handled_by -> user_name)", async () => {
+    h.phoneAssignmentsList.mockResolvedValue(assignments);
+    h.state = makeState({ activeCall: null, answeredElsewhereNotice: notice(2) });
+    renderWithProviders(<SoftphonePanel />);
+    expect(await screen.findByText("Answered by Ana Lomidze")).toBeInTheDocument();
+    expect(h.phoneAssignmentsList).toHaveBeenCalledWith(true);
+  });
+
+  it("reuses the transfer panel's cache without a request", () => {
+    const { queryClient } = renderWithProviders(<div />);
+    queryClient.setQueryData(TRANSFER_AGENTS_QUERY_KEY, { assignments: assignments.results, onlineExtensions: [] });
+    h.state = makeState({ activeCall: null, answeredElsewhereNotice: notice(2) });
+    renderWithProviders(<SoftphonePanel />, { queryClient });
+    expect(screen.getByTestId("call-rail-answered-elsewhere")).toHaveTextContent("Answered by Ana Lomidze");
+    expect(h.phoneAssignmentsList).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the generic line when the event carried no agent or the agent is unknown", async () => {
+    h.phoneAssignmentsList.mockResolvedValue(assignments);
+    h.state = makeState({ activeCall: null, answeredElsewhereNotice: notice(null) });
+    const first = renderWithProviders(<SoftphonePanel />);
+    expect(screen.getByTestId("call-rail-answered-elsewhere")).toHaveTextContent("Answered by another agent");
+    expect(h.phoneAssignmentsList).not.toHaveBeenCalled();
+    first.unmount();
+
+    h.state = makeState({ activeCall: null, answeredElsewhereNotice: notice(9) });
+    renderWithProviders(<SoftphonePanel />);
+    await waitFor(() => expect(h.phoneAssignmentsList).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId("call-rail-answered-elsewhere")).toHaveTextContent("Answered by another agent");
+  });
+
+  it("names the agent in Georgian", async () => {
+    h.phoneAssignmentsList.mockResolvedValue(assignments);
+    h.state = makeState({ activeCall: null, answeredElsewhereNotice: notice(2) });
+    renderWithProviders(<SoftphonePanel />, { locale: "ka", messages: kaMessages });
+    expect(await screen.findByText(railKa.answeredBy.replace("{agent}", "Ana Lomidze"))).toBeInTheDocument();
   });
 });
 

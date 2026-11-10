@@ -17,10 +17,30 @@ export interface TransferAgent {
 }
 
 export const TRANSFER_AGENTS_REFRESH_MS = 15_000;
+export const TRANSFER_AGENTS_QUERY_KEY = ["calls", "transfer-agents"] as const;
 
 interface RawAgents {
   assignments: UserPhoneAssignment[];
   onlineExtensions: string[];
+}
+
+/**
+ * `GET /api/phone-assignments/?is_active=true` + `GET /api/extensions/status/`
+ * (the status call is optional: a failure just marks everyone offline).
+ */
+async function fetchTransferAgents(): Promise<RawAgents> {
+  const [assignments, status] = await Promise.all([
+    phoneAssignmentsList(true),
+    extensionsStatusRetrieve().catch((): ExtensionStatusResponse => ({ extensions: [] })),
+  ]);
+  // Older backends answered with a bare array instead of a page.
+  const list = Array.isArray(assignments)
+    ? (assignments as UserPhoneAssignment[])
+    : ((assignments as PaginatedUserPhoneAssignmentList).results ?? []);
+  return {
+    assignments: list,
+    onlineExtensions: (status.extensions ?? []).filter((e) => e.status === "online").map((e) => e.extension),
+  };
 }
 
 /** Agents with an active phone assignment plus their live online state. */
@@ -39,10 +59,8 @@ export function buildTransferAgents(raw: RawAgents, ownUserId: number | undefine
 }
 
 /**
- * `GET /api/phone-assignments/?is_active=true` + `GET /api/extensions/status/`
- * (the status call is optional: a failure just marks everyone offline).
- * Fresh for 15 s and refetched every 15 s while the transfer panel is open,
- * so the online dots can't go stale (U6).
+ * The agents of the transfer panel. Fresh for 15 s and refetched every 15 s
+ * while the panel is open, so the online dots can't go stale (U6).
  */
 export function useTransferAgents(open: boolean) {
   const t = useTranslations("calls.rail");
@@ -55,24 +73,31 @@ export function useTransferAgents(open: boolean) {
   );
 
   return useQuery({
-    queryKey: ["calls", "transfer-agents"],
-    queryFn: async (): Promise<RawAgents> => {
-      const [assignments, status] = await Promise.all([
-        phoneAssignmentsList(true),
-        extensionsStatusRetrieve().catch((): ExtensionStatusResponse => ({ extensions: [] })),
-      ]);
-      // Older backends answered with a bare array instead of a page.
-      const list = Array.isArray(assignments)
-        ? (assignments as UserPhoneAssignment[])
-        : ((assignments as PaginatedUserPhoneAssignmentList).results ?? []);
-      return {
-        assignments: list,
-        onlineExtensions: (status.extensions ?? []).filter((e) => e.status === "online").map((e) => e.extension),
-      };
-    },
+    queryKey: TRANSFER_AGENTS_QUERY_KEY,
+    queryFn: fetchTransferAgents,
     select,
     enabled: open,
     staleTime: TRANSFER_AGENTS_REFRESH_MS,
     refetchInterval: open ? TRANSFER_AGENTS_REFRESH_MS : false,
   });
+}
+
+/**
+ * Display name of the agent whose phone assignment belongs to `userId`
+ * ("Answered by {agent}"), read from the same cache the transfer panel
+ * fills; fetched once when the cache is cold. `undefined` when unknown.
+ */
+export function useAgentName(userId: number | null | undefined): string | undefined {
+  const select = useCallback(
+    (raw: RawAgents) => raw.assignments.find((a) => a.user === userId)?.user_name || undefined,
+    [userId]
+  );
+  const { data } = useQuery({
+    queryKey: TRANSFER_AGENTS_QUERY_KEY,
+    queryFn: fetchTransferAgents,
+    select,
+    enabled: userId !== null && userId !== undefined,
+    staleTime: TRANSFER_AGENTS_REFRESH_MS,
+  });
+  return data;
 }
