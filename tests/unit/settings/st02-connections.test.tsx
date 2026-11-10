@@ -68,6 +68,14 @@ describe("Settings > Social connections (ST-02)", () => {
     expect(screen.queryByTestId("wa-mock")).toBeNull()
   })
 
+  it("renders Connect Facebook Pages as the official Facebook Login button", () => {
+    renderSt(<SocialIntegrations />)
+    const btn = screen.getByTestId("facebook-connect")
+    expect(btn.className).toContain("bg-[#1877F2]")
+    expect(btn.className).toContain("text-white")
+    expect(btn.querySelector('[data-testid="facebook-logo"]')).not.toBeNull()
+  })
+
   it("keeps the Facebook Login button visible when connected and calls the same handlers", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true)
     renderSt(<SocialIntegrations />)

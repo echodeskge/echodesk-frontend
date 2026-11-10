@@ -369,8 +369,10 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                    pages without disconnecting existing ones. */
                 {
                   label: loading || connectFacebook.isPending ? t("connecting") : isConnected ? t("connectMorePages") : t("connectFacebookPages"),
-                  icon: loading || connectFacebook.isPending ? RefreshCw : Facebook,
-                  variant: "primary",
+                  // Official Facebook Login button look (Meta brand rules):
+                  // the logo is drawn by the "facebook" variant itself.
+                  icon: loading || connectFacebook.isPending ? RefreshCw : undefined,
+                  variant: "facebook",
                   onClick: handleConnectFacebook,
                   disabled: loading || connectFacebook.isPending,
                   testId: "facebook-connect",

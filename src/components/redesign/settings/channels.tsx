@@ -94,7 +94,8 @@ export interface ChannelAction {
   onClick?: () => void
   href?: string
   icon?: LucideIcon
-  variant?: "primary" | "outline" | "danger"
+  /** "facebook" = Meta's official Facebook Login button (brand blue, white "f" logo). */
+  variant?: "primary" | "outline" | "danger" | "facebook"
   disabled?: boolean
   testId?: string
 }
@@ -103,7 +104,26 @@ const ACTION_CLASS = {
   primary: "border-primary bg-primary text-primary-foreground",
   outline: "border-border bg-background text-foreground",
   danger: "border-destructive/40 bg-background text-destructive",
+  // Facebook brand guidelines: #1877F2 background, white label and logo.
+  facebook:
+    "h-10 gap-2.5 rounded-[6px] border-[#1877F2] bg-[#1877F2] px-4 text-[14px] font-semibold text-white hover:bg-[#166FE5] hover:opacity-100 dark:border-[#1877F2]",
 } as const
+
+/** The official Facebook "f" logo (white circle, brand-blue f), as Meta ships it. */
+export function FacebookLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 1024 1024" className={className} aria-hidden focusable="false" data-testid="facebook-logo">
+      <path
+        fill="#fff"
+        d="M1024 512C1024 229.23 794.77 0 512 0S0 229.23 0 512c0 255.55 187.23 467.37 432 505.78V660H302V512h130V399.2C432 270.88 508.44 200 625.39 200 681.41 200 740 210 740 210v126h-64.56c-63.6 0-83.44 39.47-83.44 79.96V512h142l-22.7 148H592v357.78C836.77 979.37 1024 767.55 1024 512Z"
+      />
+      <path
+        fill="#1877F2"
+        d="M711.3 660 734 512H592v-96.04c0-40.49 19.84-79.96 83.44-79.96H740V210s-58.59-10-114.61-10C508.44 200 432 270.88 432 399.2V512H302v148h130v357.78a517.4 517.4 0 0 0 160 0V660Z"
+      />
+    </svg>
+  )
+}
 
 /** 32px channel action (Connect, Add account, Disconnect). */
 export function ChannelActionButton({ action }: { action: ChannelAction }) {
@@ -112,9 +132,14 @@ export function ChannelActionButton({ action }: { action: ChannelAction }) {
     "inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-3 text-[13px] font-medium transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
     ACTION_CLASS[action.variant ?? "outline"]
   )
+  const isFacebook = action.variant === "facebook"
   const content = (
     <>
-      {Icon && <Icon className="h-3.5 w-3.5" aria-hidden />}
+      {Icon ? (
+        <Icon className={cn(isFacebook ? "h-5 w-5" : "h-3.5 w-3.5", isFacebook && Icon === RefreshCw && "animate-spin")} aria-hidden />
+      ) : (
+        isFacebook && <FacebookLogo className="h-5 w-5 shrink-0" />
+      )}
       {action.label}
     </>
   )
