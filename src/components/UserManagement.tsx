@@ -324,7 +324,7 @@ export default function UserManagement() {
       <div className="grid grid-cols-3 gap-2.5" data-testid="users-stats">
         {stats.map((c) => (
           <div key={c.key} className="flex min-w-0 flex-col gap-0.5 rounded-[10px] border px-3.5 py-3" data-testid={`users-stat-${c.key}`}>
-            <span className="truncate text-[11px] text-muted-foreground" title={c.label}>
+            <span className="line-clamp-2 break-words text-[11px] leading-[14px] text-muted-foreground" title={c.label}>
               {c.label}
             </span>
             <span className="text-xl font-semibold leading-6 tabular-nums tracking-[-.02em]">{c.value}</span>

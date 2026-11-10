@@ -23,7 +23,7 @@ import { EmptyBlock } from "@/components/redesign/states";
 import { TonePill } from "@/components/redesign/pill";
 import { rdButton } from "@/components/redesign/buttons";
 import { ToolbarSearch } from "@/components/redesign/toolbar";
-import { SettingsListPage, SettingsNote, AvatarCell } from "@/components/redesign/settings";
+import { SettingsListPage, SettingsNote } from "@/components/redesign/settings";
 import { settingsDialogFormClass, settingsDialogSectionTitle } from "@/components/user-management/dialog-ui";
 import { cn } from "@/lib/utils";
 import { Pencil, Plus, Trash2, Users, UsersRound } from "lucide-react";
@@ -348,30 +348,47 @@ const TenantGroupManagement: React.FC = () => {
     {
       id: "group",
       header: t("ui.columns.group"),
-      width: "minmax(0,1.3fr)",
+      width: "minmax(0,1.4fr)",
       mobile: "title",
       cell: (group) => (
-        <span className="flex min-w-0 flex-col gap-1">
-          <AvatarCell name={group.name} sub={group.description || undefined} shape="square" icon={UsersRound} />
-          {(group.is_booking_staff || group.is_active === false) && (
-            <span className="flex flex-wrap gap-1 ps-9">
-              {group.is_booking_staff && <TonePill tone="info">{t("ui.bookingStaff")}</TonePill>}
-              {group.is_active === false && <TonePill tone="neutral">{t("ui.inactive")}</TonePill>}
-            </span>
-          )}
+        <span className="flex min-w-0 items-start gap-2 py-1">
+          <span
+            aria-hidden
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-primary/10 text-primary"
+          >
+            <UsersRound className="h-3.5 w-3.5" />
+          </span>
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="truncate font-medium">{group.name}</span>
+            {/* The full description, as before (it wraps instead of being cut). */}
+            {group.description && (
+              <span className="whitespace-normal break-words text-[11px] leading-[15px] text-muted-foreground">
+                {group.description}
+              </span>
+            )}
+            {(group.is_booking_staff || group.is_active === false) && (
+              <span className="mt-0.5 flex flex-wrap gap-1">
+                {group.is_booking_staff && <TonePill tone="info">{t("ui.bookingStaff")}</TonePill>}
+                {group.is_active === false && <TonePill tone="neutral">{t("ui.inactive")}</TonePill>}
+              </span>
+            )}
+          </span>
         </span>
       ),
     },
     {
       id: "members",
       header: t("ui.columns.members"),
-      width: "110px",
+      width: "84px",
       mobile: "end",
       cell: (group) => (
-        <TonePill tone="neutral" title={t("ui.membersCount", { count: group.member_count })}>
-          <Users className="h-3 w-3" aria-hidden />
+        <span
+          className="inline-flex items-center gap-1 whitespace-nowrap text-xs tabular-nums text-muted-foreground"
+          title={t("ui.membersCount", { count: group.member_count })}
+        >
+          <Users className="h-3.5 w-3.5" aria-hidden />
           {group.member_count}
-        </TonePill>
+        </span>
       ),
     },
     {
@@ -379,6 +396,8 @@ const TenantGroupManagement: React.FC = () => {
       header: t("ui.columns.features"),
       width: "minmax(0,1.7fr)",
       mobile: "meta",
+      // Phones: the chips wrap inside line 2 instead of running past the card edge.
+      className: "max-w-full shrink",
       cell: (group) =>
         group.features && group.features.length > 0 ? (
           <span className="flex min-w-0 flex-wrap items-center gap-1 py-1">
@@ -387,8 +406,7 @@ const TenantGroupManagement: React.FC = () => {
             </span>
             {group.features.slice(0, 5).map((feature) => (
               <TonePill key={feature.id} tone="neutral">
-                {feature.icon && <span aria-hidden>{feature.icon}</span>}
-                <span className="truncate">{feature.name}</span>
+                {feature.icon ? `${feature.icon} ${feature.name}` : feature.name}
               </TonePill>
             ))}
             {group.features.length > 5 && (

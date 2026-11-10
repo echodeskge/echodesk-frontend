@@ -126,7 +126,7 @@ export default function UserTable({
     {
       id: "name",
       header: t("ui.table.name"),
-      width: "minmax(0,1.6fr)",
+      width: "minmax(0,1.4fr)",
       mobile: "title",
       cell: (user) => {
         const status = displayStatus(user).toLowerCase();
@@ -155,18 +155,21 @@ export default function UserTable({
     {
       id: "role",
       header: t("role"),
-      width: "110px",
+      width: "120px",
       mobile: "meta",
       cell: (user) => (
-        <span className="inline-flex h-6 items-center whitespace-nowrap rounded-full border px-2 text-xs text-foreground">
-          {roleLabel(user.role?.toString())}
+        <span
+          className="inline-flex h-6 max-w-full items-center rounded-full border px-2 text-xs text-foreground"
+          title={roleLabel(user.role?.toString())}
+        >
+          <span className="truncate">{roleLabel(user.role?.toString())}</span>
         </span>
       ),
     },
     {
       id: "status",
       header: t("ui.table.status"),
-      width: "110px",
+      width: "100px",
       mobile: "end",
       cell: (user) => {
         const status = displayStatus(user);
@@ -182,14 +185,16 @@ export default function UserTable({
     {
       id: "groups",
       header: t("ui.table.groups"),
-      width: "minmax(0,1.3fr)",
+      width: "minmax(0,1.6fr)",
       mobile: "meta",
+      // Phones: the pills wrap inside line 2 instead of running past the card edge.
+      className: "max-w-full shrink",
       cell: (user) =>
         user.tenant_groups && user.tenant_groups.length > 0 ? (
           <span className="flex min-w-0 flex-wrap gap-1">
             {user.tenant_groups.map((group) => (
-              <TonePill key={group.id} tone="neutral">
-                <span className="truncate">{group.name}</span>
+              <TonePill key={group.id} tone="neutral" className="capitalize">
+                {group.name}
               </TonePill>
             ))}
           </span>
@@ -222,7 +227,7 @@ export default function UserTable({
     {
       id: "actions",
       header: <span className="sr-only">{t("ui.table.actions")}</span>,
-      width: "152px",
+      width: "148px",
       align: "end",
       mobile: "actions",
       cell: (user) => (
