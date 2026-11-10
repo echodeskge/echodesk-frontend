@@ -1,0 +1,120 @@
+{
+  "en": {
+    "ecommerceSettings": {
+      "orders": {
+        "title": "Orders",
+        "hint": "Hide test or old orders without deleting them",
+        "countsLabel": "Order list",
+        "countsHelp": "Cleaned orders are hidden from staff, statistics, exports and customers. They can be restored at any time.",
+        "counts": "{visible, plural, one {# order} other {# orders}} · {cleaned} cleaned",
+        "countsFailed": "Couldn't load the order counts",
+        "viewCleaned": "View cleaned orders",
+        "clean": {
+          "label": "Clean order list",
+          "help": "Hides the orders you pick from every list and report. Nothing is deleted.",
+          "action": "Clean…"
+        },
+        "dialog": {
+          "title": "Clean order list",
+          "description": "Choose which orders to hide. They stay in the database and can be restored from the cleaned list.",
+          "statuses": "Statuses",
+          "allStatuses": "No status selected: all statuses are included.",
+          "createdBefore": "Created before",
+          "anyDate": "Leave empty to include orders from any date.",
+          "count": "{count, plural, =0 {No orders match these filters} one {# order will be hidden} other {# orders will be hidden}}",
+          "counting": "Counting matching orders…",
+          "countFailed": "Couldn't count the matching orders",
+          "cancel": "Cancel",
+          "confirm": "Hide orders"
+        },
+        "toast": {
+          "cleaned": "{count, plural, one {# order hidden} other {# orders hidden}}",
+          "cleanFailed": "Couldn't clean the order list"
+        }
+      }
+    },
+    "ecommerceOrders": {
+      "cleaned": {
+        "viewLabel": "Active or cleaned orders",
+        "active": "Active",
+        "cleaned": "Cleaned",
+        "pill": "Cleaned",
+        "banner": "These orders are hidden from staff, statistics and customers.",
+        "restore": "Restore",
+        "restoreSelected": "Restore selected",
+        "restoreAll": "Restore all",
+        "restoreAllTitle": "Restore all cleaned orders?",
+        "restoreAllDescription": "Every cleaned order will show again in the order list, statistics, exports and to its customer.",
+        "cancel": "Cancel",
+        "noCleaned": "No cleaned orders",
+        "noCleanedHint": "Orders hidden from Settings → E-commerce appear here.",
+        "detailBanner": "This order is cleaned (hidden from staff, statistics and customers) by {name} on {date}.",
+        "detailBannerNoName": "This order is cleaned (hidden from staff, statistics and customers) since {date}.",
+        "toast": {
+          "restored": "{count, plural, one {# order restored} other {# orders restored}}",
+          "restoredOne": "Order restored",
+          "restoreFailed": "Couldn't restore the orders"
+        }
+      }
+    }
+  },
+  "ka": {
+    "ecommerceSettings": {
+      "orders": {
+        "title": "შეკვეთები",
+        "hint": "სატესტო ან ძველი შეკვეთების დამალვა წაშლის გარეშე",
+        "countsLabel": "შეკვეთების სია",
+        "countsHelp": "გასუფთავებული შეკვეთები დამალულია თანამშრომლებისთვის, სტატისტიკიდან, ექსპორტიდან და მომხმარებლებისთვის. მათი აღდგენა ნებისმიერ დროს შეიძლება.",
+        "counts": "{visible} შეკვეთა · {cleaned} გასუფთავებული",
+        "countsFailed": "შეკვეთების რაოდენობა ვერ ჩაიტვირთა",
+        "viewCleaned": "გასუფთავებული შეკვეთების ნახვა",
+        "clean": {
+          "label": "შეკვეთების სიის გასუფთავება",
+          "help": "არჩეულ შეკვეთებს მალავს ყველა სიიდან და ანგარიშიდან. არაფერი იშლება.",
+          "action": "გასუფთავება…"
+        },
+        "dialog": {
+          "title": "შეკვეთების სიის გასუფთავება",
+          "description": "აირჩიეთ, რომელი შეკვეთები დაიმალოს. ისინი ბაზაში რჩება და გასუფთავებული შეკვეთების სიიდან აღდგება.",
+          "statuses": "სტატუსები",
+          "allStatuses": "სტატუსი არ არის არჩეული: ყველა სტატუსი იგულისხმება.",
+          "createdBefore": "შექმნილია შემდეგ თარიღამდე",
+          "anyDate": "დატოვეთ ცარიელი, რომ ნებისმიერი თარიღის შეკვეთები ჩაითვალოს.",
+          "count": "{count, plural, =0 {ამ ფილტრებს არცერთი შეკვეთა არ შეესაბამება} other {დაიმალება # შეკვეთა}}",
+          "counting": "შესაბამისი შეკვეთები ითვლება…",
+          "countFailed": "შესაბამისი შეკვეთების დათვლა ვერ მოხერხდა",
+          "cancel": "გაუქმება",
+          "confirm": "შეკვეთების დამალვა"
+        },
+        "toast": {
+          "cleaned": "დაიმალა {count} შეკვეთა",
+          "cleanFailed": "შეკვეთების სიის გასუფთავება ვერ მოხერხდა"
+        }
+      }
+    },
+    "ecommerceOrders": {
+      "cleaned": {
+        "viewLabel": "აქტიური ან გასუფთავებული შეკვეთები",
+        "active": "აქტიური",
+        "cleaned": "გასუფთავებული",
+        "pill": "გასუფთავებული",
+        "banner": "ეს შეკვეთები დამალულია თანამშრომლებისთვის, სტატისტიკიდან და მომხმარებლებისთვის.",
+        "restore": "აღდგენა",
+        "restoreSelected": "არჩეულის აღდგენა",
+        "restoreAll": "ყველას აღდგენა",
+        "restoreAllTitle": "აღდგეს ყველა გასუფთავებული შეკვეთა?",
+        "restoreAllDescription": "ყველა გასუფთავებული შეკვეთა კვლავ გამოჩნდება შეკვეთების სიაში, სტატისტიკაში, ექსპორტში და მომხმარებლისთვის.",
+        "cancel": "გაუქმება",
+        "noCleaned": "გასუფთავებული შეკვეთები არ არის",
+        "noCleanedHint": "პარამეტრები → ელკომერციიდან დამალული შეკვეთები აქ გამოჩნდება.",
+        "detailBanner": "ეს შეკვეთა გასუფთავებულია (დამალულია თანამშრომლებისთვის, სტატისტიკიდან და მომხმარებლებისთვის) — {name}, {date}.",
+        "detailBannerNoName": "ეს შეკვეთა გასუფთავებულია (დამალულია თანამშრომლებისთვის, სტატისტიკიდან და მომხმარებლებისთვის) {date}-დან.",
+        "toast": {
+          "restored": "აღდგა {count} შეკვეთა",
+          "restoredOne": "შეკვეთა აღდგა",
+          "restoreFailed": "შეკვეთების აღდგენა ვერ მოხერხდა"
+        }
+      }
+    }
+  }
+}
