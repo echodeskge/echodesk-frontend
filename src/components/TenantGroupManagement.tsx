@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { TenantGroup } from '../api/generated/interfaces';
 import axios from '@/api/axios';
+import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/utils';
 import {
   useTenantGroups,
   useCreateTenantGroup,
@@ -155,7 +157,8 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
     try {
       await onSubmit(formData);
     } catch (err: any) {
-      setErrors({ submit: err.message || t("ui.errors.save") });
+      // The backend reason (e.g. a duplicate name), not axios' "Request failed with status code 400".
+      setErrors({ submit: getApiErrorMessage(err, t("ui.errors.save")) });
     } finally {
       setIsSubmitting(false);
     }
@@ -335,7 +338,12 @@ const TenantGroupManagement: React.FC = () => {
 
   const handleDeleteGroup = async (group: TenantGroup) => {
     if (window.confirm(`${t("areYouSureDelete")} "${group.name}"?`)) {
-      await deleteGroupMutation.mutateAsync(group.id.toString());
+      try {
+        await deleteGroupMutation.mutateAsync(group.id.toString());
+      } catch (err) {
+        // Was an unhandled rejection: a refused delete showed nothing.
+        toast.error(getApiErrorMessage(err, t("ui.errors.delete")));
+      }
     }
   };
 
