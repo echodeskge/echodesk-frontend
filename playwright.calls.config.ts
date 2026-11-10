@@ -17,9 +17,21 @@
  *
  * Ports come from CALLS_WEB_PORT / CALLS_API_PORT (defaults 3190 / 8020).
  */
+import os from "node:os";
+import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 const WEB_PORT = process.env.CALLS_WEB_PORT || "3190";
+
+/**
+ * Traces, screenshots and videos go OUTSIDE the worktree by default: `next dev`
+ * recompiles (and pushes an HMR/RSC refresh to every open page) whenever a
+ * file under the project changes, and Playwright streams trace chunks to the
+ * output dir for the whole run. Keeping `test-results/` inside the worktree
+ * turned the dev server into a ~4 recompiles/s loop that starved the other
+ * agents' pages. Override with E2E_OUTPUT_DIR.
+ */
+const OUTPUT_DIR = process.env.E2E_OUTPUT_DIR || path.join(os.tmpdir(), "echodesk-e2e-calls");
 
 const launchOptions = {
   args: [
@@ -41,7 +53,7 @@ export default defineConfig({
   // single wait bounded (ring detection <= 15 s) and the whole test under 2 min.
   timeout: 120_000,
   expect: { timeout: 10_000 },
-  outputDir: process.env.E2E_OUTPUT_DIR || "test-results/e2e-calls",
+  outputDir: OUTPUT_DIR,
   use: {
     baseURL: process.env.E2E_WEB_URL || `http://localhost:${WEB_PORT}`,
     permissions: ["microphone"],
