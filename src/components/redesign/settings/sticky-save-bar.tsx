@@ -85,8 +85,9 @@ export function StickySaveBar({
   const bar = (
     <div
       className={cn(
-        // max-md:pe-16 keeps Save clear of the floating dialpad / team-chat buttons on phones.
-        "flex min-h-[52px] shrink-0 flex-wrap items-center gap-2 border-t bg-background px-4 py-2.5 shadow-[0_-4px_12px_rgb(0_0_0/0.04)] max-md:pe-16",
+        // pe-16 keeps Save clear of the floating dialpad / team-chat buttons,
+        // which sit at the bottom-right corner on every width.
+        "flex min-h-[52px] shrink-0 flex-wrap items-center gap-2 border-t bg-background px-4 py-2.5 shadow-[0_-4px_12px_rgb(0_0_0/0.04)] pe-16",
         !slot && "sticky bottom-0 z-10"
       )}
       data-testid={testId}
