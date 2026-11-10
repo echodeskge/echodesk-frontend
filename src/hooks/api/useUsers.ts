@@ -4,22 +4,54 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tansta
 import { usersList, usersCreate, usersUpdate, usersPartialUpdate, usersDestroy } from '@/api/generated/api';
 import type { PaginatedUserList, UserCreateRequest, UserUpdateRequest, PatchedUserUpdateRequest, UserCreate, UserUpdate } from '@/api/generated/interfaces';
 import { authService } from '@/services/auth';
+import axios from '@/api/axios';
+
+/** Server-side filters of the user list (UserViewSet filterset: role, status, is_active, is_staff). */
+export interface UserListFilters {
+  role?: 'admin' | 'agent' | 'manager' | 'viewer';
+  status?: 'active' | 'inactive' | 'pending' | 'suspended';
+  isActive?: boolean | null;
+  isStaff?: boolean | null;
+}
+
+/** Query params for the filters that are set (null / undefined / "" are left out). */
+export function userFilterParams(filters?: UserListFilters): Record<string, string | boolean> {
+  const out: Record<string, string | boolean> = {};
+  if (!filters) return out;
+  if (filters.role) out.role = filters.role;
+  if (filters.status) out.status = filters.status;
+  if (typeof filters.isActive === 'boolean') out.is_active = filters.isActive;
+  if (typeof filters.isStaff === 'boolean') out.is_staff = filters.isStaff;
+  return out;
+}
 
 // Query keys
 export const userKeys = {
   all: ['users'] as const,
   lists: () => [...userKeys.all, 'list'] as const,
-  list: (page?: number, search?: string) => [...userKeys.lists(), { page, search }] as const,
+  list: (page?: number, search?: string, filters?: Record<string, string | boolean>) =>
+    filters && Object.keys(filters).length > 0
+      ? ([...userKeys.lists(), { page, search, ...filters }] as const)
+      : ([...userKeys.lists(), { page, search }] as const),
   detail: (id: number) => [...userKeys.all, 'detail', id] as const,
 };
 
 // Queries
-export function useUsers(options?: { page?: number; search?: string; enabled?: boolean }) {
-  const { page, search, enabled } = options || {};
+export function useUsers(options?: { page?: number; search?: string; enabled?: boolean; filters?: UserListFilters }) {
+  const { page, search, enabled, filters } = options || {};
+  const filterParams = userFilterParams(filters);
 
   return useQuery<PaginatedUserList>({
-    queryKey: userKeys.list(page, search),
+    queryKey: userKeys.list(page, search, filterParams),
     queryFn: async () => {
+      if (Object.keys(filterParams).length > 0) {
+        // The generated usersList drops `false` booleans (is_active=false), so
+        // filtered lists go through axios with explicit params.
+        const response = await axios.get<PaginatedUserList>('/api/users/', {
+          params: { page, search: search || undefined, ...filterParams },
+        });
+        return response.data;
+      }
       return await usersList(
         undefined, // department
         undefined, // group

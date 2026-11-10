@@ -11,7 +11,7 @@ import {
 import { usersPartialUpdate, usersSendNewPasswordCreate, usersSetStaffCreate, bookingsAdminStaffCreate, usersBulkActionCreate } from "@/api/generated/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, userKeys } from "@/hooks/api/useUsers";
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, userKeys, type UserListFilters } from "@/hooks/api/useUsers";
 import { getApiErrorMessage } from "@/lib/utils";
 import {
   formatBulkBlocked,
@@ -93,9 +93,17 @@ export default function UserManagement() {
   });
 
   // Use React Query hook for users
+  // role / status / account / staff go to the API (department is a free-text
+  // input while the API filters by department id, so it is not sent).
   const { data: usersData, isLoading: loading, error: queryError } = useUsers({
     page: currentPage,
     search: filters.search || undefined,
+    filters: {
+      role: (filters.role || undefined) as UserListFilters["role"],
+      status: (filters.status || undefined) as UserListFilters["status"],
+      isActive: filters.isActive,
+      isStaff: filters.isStaff,
+    },
   });
 
   const users = usersData?.results || [];
