@@ -19,7 +19,7 @@ interface FeatureGateProps {
  * FeatureGate component - Conditionally renders children based on subscription features
  *
  * Usage:
- * <FeatureGate feature="sip_calling">
+ * <FeatureGate feature="ip_calling">
  *   <CallButton />
  * </FeatureGate>
  */
