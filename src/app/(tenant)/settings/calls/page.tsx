@@ -537,8 +537,6 @@ export default function CallSettingsPage() {
   const saveConfig = async () => {
     try {
       setSaving(true);
-      const { password, turn_password, ...apiConfig } = configForm;
-
       if (editingConfig) {
         await sipConfigurationsUpdate(editingConfig.id, configForm as any);
         toast({
@@ -546,8 +544,10 @@ export default function CallSettingsPage() {
           description: "SIP configuration updated successfully",
         });
       } else {
+        // The form asks for the trunk password on create (it is required
+        // there), so send it: dropping it left new configs without one.
         const createData = {
-          ...apiConfig,
+          ...configForm,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           id: 0,
