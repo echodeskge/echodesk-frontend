@@ -277,12 +277,12 @@ export default function TemplateForm({
       {/* Components */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
               <CardTitle>{t("form.messageComponents")}</CardTitle>
               <CardDescription>{t("form.messageComponentsDescription")}</CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {!hasComponent("HEADER") && (
                 <Button
                   type="button"
@@ -488,7 +488,7 @@ export default function TemplateForm({
       </Card>
 
       {/* Form Actions */}
-      <div className="flex gap-2 justify-end">
+      <div className="flex flex-wrap gap-2 justify-end">
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel}>
             {tCommon("cancel")}

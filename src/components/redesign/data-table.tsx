@@ -53,6 +53,12 @@ export interface DataTableProps<T> {
    * `flush`: no border, for inside a `SectionCard`.
    */
   variant?: "fill" | "card" | "flush"
+  /**
+   * `compact` (default): 32px header, 40px rows (tickets list).
+   * `comfortable`: design settings LIST PAGE — 36px header, rows of at least
+   * 48px (6px 14px padding) that may grow for two-line cells.
+   */
+  density?: "compact" | "comfortable"
   /** 36px footer line under the rows (count, paging). */
   footer?: ReactNode
   skeletonRows?: number
@@ -109,6 +115,7 @@ export function DataTable<T>({
   onRetry,
   empty,
   variant = "fill",
+  density = "compact",
   footer,
   skeletonRows = 6,
   ariaLabel,
@@ -124,12 +131,14 @@ export function DataTable<T>({
   const showError = !!error && !loading
   const showSkeleton = !showError && (loading || rows === undefined)
   const list = rows ?? []
+  const comfy = density === "comfortable"
 
   const header = (
     <div
       role="row"
       className={cn(
-        "sticky top-0 z-[1] hidden h-8 items-center border-b px-4 text-[11px] font-medium uppercase tracking-[.03em] text-muted-foreground",
+        "sticky top-0 z-[1] hidden items-center border-b text-[11px] font-medium uppercase tracking-[.03em] text-muted-foreground",
+        comfy ? "h-9 px-3.5" : "h-8 px-4",
         grid,
         variant === "card" ? "bg-muted/40 backdrop-blur-sm" : "bg-background"
       )}
@@ -224,7 +233,8 @@ export function DataTable<T>({
           onKeyDown={clickable ? onKeyDown : undefined}
           data-testid={rowTestId}
           className={cn(
-            "flex min-h-[52px] flex-col justify-center gap-1 border-b px-4 py-2 text-[13px] @3xl:h-10 @3xl:min-h-0 @3xl:items-center @3xl:py-0",
+            "flex min-h-[52px] flex-col justify-center gap-1 border-b py-2 text-[13px] @3xl:items-center",
+            comfy ? "px-3.5 @3xl:min-h-12 @3xl:py-1.5" : "px-4 @3xl:h-10 @3xl:min-h-0 @3xl:py-0",
             grid,
             clickable && "cursor-pointer outline-none hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
             selected && "bg-muted/50",
