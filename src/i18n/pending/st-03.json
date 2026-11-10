@@ -17,7 +17,8 @@
         "testError": "Connection test failed",
         "defaultSuffix": "(Default)",
         "hourRange": "{day} {from}:00 – {to}:00"
-      }
+      },
+      "fileTooLarge": "This file is larger than 10 MB. Choose a smaller one."
     },
     "calls": {
       "settings": {
@@ -43,7 +44,8 @@
         "testError": "კავშირის შემოწმება ვერ მოხერხდა",
         "defaultSuffix": "(ნაგულისხმევი)",
         "hourRange": "{day} {from}:00 – {to}:00"
-      }
+      },
+      "fileTooLarge": "ფაილი 10 მბ-ზე დიდია. აირჩიეთ უფრო პატარა."
     },
     "calls": {
       "settings": {

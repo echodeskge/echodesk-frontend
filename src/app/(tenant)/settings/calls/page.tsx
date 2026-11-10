@@ -306,6 +306,7 @@ function SoundCard({
 }) {
   const ts = useTranslations("callsSettings");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [tooLarge, setTooLarge] = useState(false);
 
   const fileName = soundUrl ? soundUrl.split('/').pop() || 'custom sound' : null;
 
@@ -313,8 +314,13 @@ function SoundCard({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      return; // 10MB limit
+      // 10MB limit: say so (it used to ignore the file silently) and let the
+      // same file be picked again.
+      setTooLarge(true);
+      e.target.value = '';
+      return;
     }
+    setTooLarge(false);
     onUpload(file);
     // Reset the input so the same file can be re-selected
     e.target.value = '';
@@ -379,6 +385,9 @@ function SoundCard({
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-2">{ts("soundRequirements")}</p>
+        {tooLarge && (
+          <p role="alert" className="text-xs text-destructive mt-1">{ts("fileTooLarge")}</p>
+        )}
       </CardContent>
     </Card>
   );
