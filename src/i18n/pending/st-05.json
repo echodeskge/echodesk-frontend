@@ -26,6 +26,10 @@
             "signature": "Signature (image upload)"
           }
         }
+      },
+      "itemListsPage": {
+        "public": "Public",
+        "publicLabel": "Public (visible to ecommerce clients)"
       }
     }
   },
@@ -56,6 +60,10 @@
             "signature": "ხელმოწერა (სურათის ატვირთვა)"
           }
         }
+      },
+      "itemListsPage": {
+        "public": "საჯარო",
+        "publicLabel": "საჯარო (ხილულია ონლაინ მაღაზიის კლიენტებისთვის)"
       }
     }
   }

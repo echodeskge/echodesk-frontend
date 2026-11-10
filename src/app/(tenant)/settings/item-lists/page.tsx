@@ -212,7 +212,7 @@ export default function ItemListsPage() {
                         <Badge variant="secondary">{t('inactive')}</Badge>
                       )}
                       {list.is_public && (
-                        <Badge variant="outline" className="text-green-600 border-green-600">Public</Badge>
+                        <Badge variant="outline" className="text-green-600 border-green-600">{t('public')}</Badge>
                       )}
                     </div>
                     {list.description && (
@@ -362,7 +362,7 @@ export default function ItemListsPage() {
                   setFormData({ ...formData, is_public: e.target.checked })
                 }
               />
-              <Label htmlFor="is_public">Public (visible to ecommerce clients)</Label>
+              <Label htmlFor="is_public">{t('publicLabel')}</Label>
             </div>
 
             {/* Custom Fields Section */}
