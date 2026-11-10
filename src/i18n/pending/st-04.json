@@ -16,6 +16,27 @@
           "none": "No groups available"
         }
       }
+    },
+    "groups": {
+      "ui": {
+        "subtitle": "Manage groups and their features",
+        "createDescription": "Create a new group and attach features",
+        "editDescription": "Edit the group \"{name}\" and manage its features",
+        "namePlaceholder": "Enter the group name",
+        "descriptionPlaceholder": "Enter the group description",
+        "features": "Features",
+        "featuresHint": "Choose the features from your subscription that members of this group can use",
+        "loadingFeatures": "Loading features...",
+        "noFeatures": "No features available in your subscription",
+        "featureCount": "{count, plural, one {# feature} other {# features}}",
+        "moreFeatures": "+{count} more",
+        "errors": {
+          "load": "Failed to load groups",
+          "loadFeatures": "Failed to load available features",
+          "save": "Failed to save group",
+          "delete": "Failed to delete group"
+        }
+      }
     }
   },
   "ka": {
@@ -33,6 +54,27 @@
           "search": "ჯგუფების ძიება...",
           "noMatch": "ჯგუფები ვერ მოიძებნა",
           "none": "ჯგუფები არ არის"
+        }
+      }
+    },
+    "groups": {
+      "ui": {
+        "subtitle": "მართეთ ჯგუფები და მათი ფუნქციები",
+        "createDescription": "შექმენით ახალი ჯგუფი და მიამაგრეთ ფუნქციები",
+        "editDescription": "ჯგუფის „{name}“ რედაქტირება და ფუნქციების მართვა",
+        "namePlaceholder": "შეიყვანეთ ჯგუფის სახელი",
+        "descriptionPlaceholder": "შეიყვანეთ ჯგუფის აღწერა",
+        "features": "ფუნქციები",
+        "featuresHint": "აირჩიეთ ფუნქციები თქვენი გამოწერიდან, რომლებიც ხელმისაწვდომი იქნება ამ ჯგუფის წევრებისთვის",
+        "loadingFeatures": "ფუნქციების ჩატვირთვა...",
+        "noFeatures": "თქვენს გამოწერაში ხელმისაწვდომი ფუნქციები არ მოიძებნა",
+        "featureCount": "{count} ფუნქცია",
+        "moreFeatures": "+{count} მეტი",
+        "errors": {
+          "load": "ჯგუფების ჩატვირთვა ვერ მოხერხდა",
+          "loadFeatures": "ხელმისაწვდომი ფუნქციების ჩატვირთვა ვერ მოხერხდა",
+          "save": "ჯგუფის შენახვა ვერ მოხერხდა",
+          "delete": "ჯგუფის წაშლა ვერ მოხერხდა"
         }
       }
     }

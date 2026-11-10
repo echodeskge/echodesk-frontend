@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { TenantGroup } from '../api/generated/interfaces';
 import axios from '@/api/axios';
 import {
@@ -82,7 +82,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
         setAvailableFeatures(response.data.categories);
       } catch (err) {
         console.error('Failed to fetch available features:', err);
-        setErrors({ fetch: 'Failed to load available features' });
+        setErrors({ fetch: t("ui.errors.loadFeatures") });
       } finally {
         setLoadingFeatures(false);
       }
@@ -155,7 +155,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
     try {
       await onSubmit(formData);
     } catch (err: any) {
-      setErrors({ submit: err.message || "Failed to save group" });
+      setErrors({ submit: err.message || t("ui.errors.save") });
     } finally {
       setIsSubmitting(false);
     }
@@ -170,8 +170,8 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
           </DialogTitle>
           <DialogDescription>
             {mode === "create"
-              ? "შექმენით ახალი ჯგუფი და მიამაგრეთ ფუნქციები"
-              : `რედაქტირება ჯგუფი "${group?.name}" და ფუნქციების მართვა`}
+              ? t("ui.createDescription")
+              : t("ui.editDescription", { name: group?.name ?? "" })}
           </DialogDescription>
         </DialogHeader>
 
@@ -199,7 +199,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               required
               disabled={isSubmitting}
-              placeholder="შეიყვანეთ ჯგუფის სახელი"
+              placeholder={t("ui.namePlaceholder")}
             />
           </div>
 
@@ -210,26 +210,26 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               disabled={isSubmitting}
-              placeholder="შეიყვანეთ ჯგუფის აღწერა"
+              placeholder={t("ui.descriptionPlaceholder")}
               rows={3}
             />
           </div>
 
           <div className="space-y-4 pt-4 border-t">
-            <Label className="text-base">ფუნქციები</Label>
+            <Label className="text-base">{t("ui.features")}</Label>
             <p className="text-sm text-muted-foreground">
-              აირჩიეთ ფუნქციები თქვენი გამოწერიდან, რომლებიც ხელმისაწვდომი იქნება ამ ჯგუფის წევრებისთვის
+              {t("ui.featuresHint")}
             </p>
 
             {loadingFeatures ? (
               <div className="flex items-center justify-center py-8">
                 <Spinner className="h-6 w-6 mr-2" />
-                <span className="text-sm text-muted-foreground">ფუნქციების ჩატვირთვა...</span>
+                <span className="text-sm text-muted-foreground">{t("ui.loadingFeatures")}</span>
               </div>
             ) : availableFeatures.length === 0 ? (
               <Alert>
                 <AlertDescription>
-                  თქვენს გამოწერაში ხელმისაწვდომი ფუნქციები არ მოიძებნა
+                  {t("ui.noFeatures")}
                 </AlertDescription>
               </Alert>
             ) : (
@@ -308,6 +308,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
 
 const TenantGroupManagement: React.FC = () => {
   const t = useTranslations("groups");
+  const locale = useLocale();
   const tCommon = useTranslations("common");
   const [showForm, setShowForm] = useState<{ mode: 'create' | 'edit'; group?: TenantGroup } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -319,7 +320,7 @@ const TenantGroupManagement: React.FC = () => {
   const deleteGroupMutation = useDeleteTenantGroup();
 
   const groups = groupsData?.results || [];
-  const error = queryError ? "Failed to load groups" : null;
+  const error = queryError ? t("ui.errors.load") : null;
 
   const handleCreateGroup = async (data: TenantGroupFormData) => {
     await createGroup.mutateAsync(data as any);
@@ -361,7 +362,7 @@ const TenantGroupManagement: React.FC = () => {
         <div>
           <h1 className="text-2xl font-semibold">{t("groupManagement")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            მართეთ ჯგუფები და მათი ფუნქციები
+            {t("ui.subtitle")}
           </p>
         </div>
         <Button onClick={() => setShowForm({ mode: 'create' })}>
@@ -413,7 +414,7 @@ const TenantGroupManagement: React.FC = () => {
                       </Badge>
                       {group.features && group.features.length > 0 && (
                         <Badge variant="outline" className="text-xs">
-                          {group.features.length} ფუნქცია
+                          {t("ui.featureCount", { count: group.features.length })}
                         </Badge>
                       )}
                     </div>
@@ -432,13 +433,13 @@ const TenantGroupManagement: React.FC = () => {
                         ))}
                         {group.features.length > 5 && (
                           <Badge variant="secondary" className="text-xs">
-                            +{group.features.length - 5} მეტი
+                            {t("ui.moreFeatures", { count: group.features.length - 5 })}
                           </Badge>
                         )}
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground mt-2">
-                      {t("created")} {new Date(group.created_at).toLocaleDateString()}
+                      {t("created")} {new Date(group.created_at).toLocaleDateString(locale === "ka" ? "ka-GE" : "en-US")}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2 sm:ml-4">
