@@ -3,13 +3,10 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { formatShortDate } from "@/app/(tenant)/tickets/_lib/format";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -34,15 +31,23 @@ import {
   Plus,
   Trash2,
   Edit2,
-  Globe,
-  Shield,
   ShieldCheck,
   AlertTriangle,
   MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMyAccess } from "@/hooks/useMyAccess";
-import { getApiErrorMessage } from "@/lib/utils";
+import { cn, getApiErrorMessage } from "@/lib/utils";
+import { DataTable, type Column } from "@/components/redesign/data-table";
+import { TonePill } from "@/components/redesign/pill";
+import { rdButton } from "@/components/redesign/buttons";
+import {
+  ActionButton,
+  FieldRow,
+  SettingsNote,
+  SettingsSection,
+  SettingsToggle,
+} from "@/components/redesign/settings";
 import {
   useIPWhitelist,
   useCurrentIP,
@@ -173,197 +178,188 @@ export function IPWhitelistTab() {
     setIsDeleteDialogOpen(true);
   };
 
+  const columns: Column<IPWhitelistEntry>[] = [
+    {
+      id: "ip",
+      header: t('whitelist.columns.ip'),
+      width: "minmax(0,1.2fr)",
+      mobile: "title",
+      numeric: true,
+      cell: (entry) => (
+        <span className="truncate text-[13px]">
+          {entry.ip_address}
+          {entry.cidr_notation && `/${entry.cidr_notation}`}
+        </span>
+      ),
+    },
+    {
+      id: "description",
+      header: t('whitelist.columns.description'),
+      width: "minmax(0,1.3fr)",
+      mobile: "meta",
+      cell: (entry) => entry.description ? <span className="truncate">{entry.description}</span> : <span className="text-muted-foreground">-</span>,
+    },
+    {
+      id: "status",
+      header: t('whitelist.columns.status'),
+      width: "100px",
+      mobile: "end",
+      cell: (entry) => (
+        <TonePill tone={entry.is_active ? "success" : "neutral"} dot>
+          {entry.is_active ? t('whitelist.active') : t('whitelist.inactive')}
+        </TonePill>
+      ),
+    },
+    {
+      id: "createdBy",
+      header: t('whitelist.columns.createdBy'),
+      width: "minmax(0,1.2fr)",
+      mobile: "meta",
+      cell: (entry) => entry.created_by_email ? <span className="truncate">{entry.created_by_email}</span> : <span className="text-muted-foreground">-</span>,
+    },
+    {
+      id: "createdAt",
+      header: t('whitelist.columns.createdAt'),
+      width: "110px",
+      mobile: "meta",
+      muted: true,
+      cell: (entry) => formatShortDate(entry.created_at, locale, { year: "always" }),
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">{t('whitelist.columns.actions')}</span>,
+      width: "72px",
+      align: "end",
+      mobile: "actions",
+      cell: (entry) => (
+        <span className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            className={rdButton.ghostIconSm}
+            onClick={() => handleEdit(entry)}
+            aria-label={`${tCommon('edit')} ${entry.ip_address}`}
+            title={tCommon('edit')}
+          >
+            <Edit2 className="h-3.5 w-3.5" aria-hidden />
+          </button>
+          <button
+            type="button"
+            className={cn(rdButton.ghostIconSm, "text-destructive hover:text-destructive")}
+            onClick={() => openDeleteDialog(entry)}
+            aria-label={`${tCommon('delete')} ${entry.ip_address}`}
+            title={tCommon('delete')}
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden />
+          </button>
+        </span>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Settings Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            {t('whitelist.settingsTitle')}
-          </CardTitle>
-          <CardDescription>{t('whitelist.settingsDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {isLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          ) : (
-            <>
-              {/* Enable/Disable Whitelist */}
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="space-y-0.5">
-                  <Label className="text-base">{t('whitelist.enableLabel')}</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {t('whitelist.enableDescription')}
-                  </p>
-                </div>
-                <Switch
-                  checked={whitelistData?.ip_whitelist_enabled || false}
-                  onCheckedChange={handleToggleWhitelist}
-                  disabled={toggleMutation.isPending}
-                />
-              </div>
+    <div className="flex flex-col gap-5">
+      {/* Settings (toggles save instantly) */}
+      <SettingsSection title={t('whitelist.settingsTitle')} hint={t('whitelist.settingsDescription')} testId="whitelist-settings">
+        {isLoading ? (
+          <div className="flex flex-col gap-3 px-4 py-3.5">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : (
+          <>
+            {/* Enable/Disable Whitelist */}
+            <FieldRow label={t('whitelist.enableLabel')} help={t('whitelist.enableDescription')} htmlFor="whitelist-enabled" align="center">
+              <SettingsToggle
+                id="whitelist-enabled"
+                checked={whitelistData?.ip_whitelist_enabled || false}
+                onCheckedChange={handleToggleWhitelist}
+                disabled={toggleMutation.isPending}
+              />
+            </FieldRow>
 
-              {/* Superadmin Bypass */}
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="space-y-0.5">
-                  <Label className="text-base flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4" />
-                    {t('whitelist.bypassLabel')}
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    {t('whitelist.bypassDescription')}
-                  </p>
-                </div>
-                <Switch
-                  checked={whitelistData?.superadmin_bypass_whitelist || false}
-                  onCheckedChange={handleToggleBypass}
-                  disabled={toggleMutation.isPending || !isSuperuser}
-                />
-              </div>
+            {/* Superadmin Bypass */}
+            <FieldRow
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+                  {t('whitelist.bypassLabel')}
+                </span>
+              }
+              help={t('whitelist.bypassDescription')}
+              htmlFor="whitelist-bypass"
+              align="center"
+            >
+              <SettingsToggle
+                id="whitelist-bypass"
+                checked={whitelistData?.superadmin_bypass_whitelist || false}
+                onCheckedChange={handleToggleBypass}
+                disabled={toggleMutation.isPending || !isSuperuser}
+              />
+            </FieldRow>
 
-              {/* Warning when enabled with no entries */}
-              {whitelistData?.ip_whitelist_enabled && (!whitelistData.entries || whitelistData.entries.length === 0) && (
-                <div className="flex items-center gap-2 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-yellow-800 dark:text-yellow-200">
-                  <AlertTriangle className="h-5 w-5" />
-                  <p className="text-sm">{t('whitelist.noEntriesWarning')}</p>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+            {/* Warning when enabled with no entries */}
+            {whitelistData?.ip_whitelist_enabled && (!whitelistData.entries || whitelistData.entries.length === 0) && (
+              <div className="px-4 py-3.5">
+                <SettingsNote tone="warning" icon={AlertTriangle} testId="whitelist-no-entries">
+                  {t('whitelist.noEntriesWarning')}
+                </SettingsNote>
+              </div>
+            )}
+          </>
+        )}
+      </SettingsSection>
 
       {/* Current IP Info */}
       {currentIPData && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              {t('whitelist.yourCurrentIP')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <code className="text-lg font-mono bg-muted px-2 py-1 rounded">
-                  {currentIPData.ip_address}
-                </code>
-                {currentIPData.city && currentIPData.country && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {currentIPData.city}, {currentIPData.country}
-                  </p>
-                )}
-              </div>
-              <Button onClick={handleAddCurrentIP} variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                {t('whitelist.addCurrentIP')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <SettingsSection title={t('whitelist.yourCurrentIP')} testId="whitelist-current-ip">
+          <FieldRow
+            label={
+              <span className="inline-flex items-center gap-1.5 font-mono text-[13px]">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                {currentIPData.ip_address}
+              </span>
+            }
+            help={currentIPData.city && currentIPData.country ? `${currentIPData.city}, ${currentIPData.country}` : undefined}
+            align="center"
+          >
+            <ActionButton icon={Plus} onClick={handleAddCurrentIP} testId="whitelist-add-current">
+              {t('whitelist.addCurrentIP')}
+            </ActionButton>
+          </FieldRow>
+        </SettingsSection>
       )}
 
       {/* IP Whitelist Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                {t('whitelist.entriesTitle')}
-              </CardTitle>
-              <CardDescription>{t('whitelist.entriesDescription')}</CardDescription>
-            </div>
-            <Button onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
-              <Plus className="h-4 w-4 mr-2" />
-              {t('whitelist.addEntry')}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('whitelist.columns.ip')}</TableHead>
-                  <TableHead>{t('whitelist.columns.description')}</TableHead>
-                  <TableHead>{t('whitelist.columns.status')}</TableHead>
-                  <TableHead>{t('whitelist.columns.createdBy')}</TableHead>
-                  <TableHead>{t('whitelist.columns.createdAt')}</TableHead>
-                  <TableHead className="text-right">{t('whitelist.columns.actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><Skeleton className="h-6 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-6 w-28" /></TableCell>
-                      <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                    </TableRow>
-                  ))
-                ) : whitelistData?.entries?.length ? (
-                  whitelistData.entries.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell>
-                        <code className="bg-muted px-1.5 py-0.5 rounded text-sm">
-                          {entry.ip_address}
-                          {entry.cidr_notation && `/${entry.cidr_notation}`}
-                        </code>
-                      </TableCell>
-                      <TableCell>
-                        {entry.description || <span className="text-muted-foreground">-</span>}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={entry.is_active ? "default" : "secondary"}>
-                          {entry.is_active ? t('whitelist.active') : t('whitelist.inactive')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {entry.created_by_email || <span className="text-muted-foreground">-</span>}
-                      </TableCell>
-                      <TableCell>
-                        {formatShortDate(entry.created_at, locale, { year: "always" })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(entry)}
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openDeleteDialog(entry)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      {t('whitelist.noEntries')}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      <SettingsSection
+        title={t('whitelist.entriesTitle')}
+        hint={t('whitelist.entriesDescription')}
+        actions={
+          <button
+            type="button"
+            className={rdButton.primarySm}
+            onClick={() => { resetForm(); setIsAddDialogOpen(true); }}
+            data-testid="whitelist-add"
+          >
+            <Plus className="h-3.5 w-3.5" aria-hidden />
+            {t('whitelist.addEntry')}
+          </button>
+        }
+        testId="whitelist-entries"
+      >
+        <DataTable<IPWhitelistEntry>
+          variant="flush"
+          density="comfortable"
+          columns={columns}
+          rows={isLoading ? undefined : whitelistData?.entries ?? []}
+          loading={isLoading}
+          rowKey={(entry) => entry.id}
+          ariaLabel={t('whitelist.entriesTitle')}
+          idPrefix="whitelist"
+          skeletonRows={3}
+          empty={<p className="py-8 text-center text-[13px] text-muted-foreground">{t('whitelist.noEntries')}</p>}
+          renderError={() => null}
+        />
+      </SettingsSection>
 
       {/* Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
