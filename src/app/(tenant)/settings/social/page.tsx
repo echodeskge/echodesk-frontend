@@ -114,6 +114,15 @@ const INITIAL_FORM: SocialSettingsForm = {
   },
 };
 
+/**
+ * A stored sound that is not in the picker list (the backend default for the
+ * widget is the placeholder "default") showed an empty select and played no
+ * file; such a value falls back to the page's default for that channel.
+ */
+function knownSound(value: string | undefined | null, fallback: string): string {
+  return value && NOTIFICATION_SOUNDS.some((s) => s.value === value) ? value : fallback;
+}
+
 function fromSettings(settings: SocialSettings): SocialSettingsForm {
   return {
     chatAssignmentEnabled: settings.chat_assignment_enabled ?? false,
@@ -128,13 +137,13 @@ function fromSettings(settings: SocialSettings): SocialSettingsForm {
     ratingRequestMessageEn: settings.rating_request_message_template_en || DEFAULT_RATING_MESSAGE_EN,
     postReviewRedirectUrl: settings.post_review_redirect_url || '',
     // Notification sounds
-    soundFacebook: settings.notification_sound_facebook || 'mixkit-bubble-pop-up-alert-notification-2357.wav',
-    soundInstagram: settings.notification_sound_instagram || 'mixkit-magic-notification-ring-2344.wav',
-    soundWhatsapp: settings.notification_sound_whatsapp || 'mixkit-positive-notification-951.wav',
-    soundEmail: settings.notification_sound_email || 'mixkit-bell-notification-933.wav',
-    soundWidget: settings.notification_sound_widget || 'mixkit-bubble-pop-up-alert-notification-2357.wav',
-    soundTeamChat: settings.notification_sound_team_chat || 'mixkit-happy-bells-notification-937.wav',
-    soundSystem: settings.notification_sound_system || 'mixkit-confirmation-tone-2867.wav',
+    soundFacebook: knownSound(settings.notification_sound_facebook, 'mixkit-bubble-pop-up-alert-notification-2357.wav'),
+    soundInstagram: knownSound(settings.notification_sound_instagram, 'mixkit-magic-notification-ring-2344.wav'),
+    soundWhatsapp: knownSound(settings.notification_sound_whatsapp, 'mixkit-positive-notification-951.wav'),
+    soundEmail: knownSound(settings.notification_sound_email, 'mixkit-bell-notification-933.wav'),
+    soundWidget: knownSound(settings.notification_sound_widget, 'mixkit-bubble-pop-up-alert-notification-2357.wav'),
+    soundTeamChat: knownSound(settings.notification_sound_team_chat, 'mixkit-happy-bells-notification-937.wav'),
+    soundSystem: knownSound(settings.notification_sound_system, 'mixkit-confirmation-tone-2867.wav'),
     // Auto-reply settings
     timezone: settings.timezone || 'UTC',
     awayHoursEnabled: settings.away_hours_enabled ?? false,
