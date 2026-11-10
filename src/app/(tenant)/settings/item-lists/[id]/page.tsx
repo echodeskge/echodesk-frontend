@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/utils";
+import { useMyAccess } from "@/hooks/useMyAccess";
 import {
   itemListsRetrieve,
   listItemsCreate,
@@ -65,6 +66,8 @@ interface CustomField {
 export default function ItemListDetailPage() {
   const t = useTranslations("settings.itemListsPage.detailPage");
   const tCommon = useTranslations("common");
+  // Writes need staff or manage_settings (the API refuses them otherwise); others get a read-only list.
+  const { canManageSettings } = useMyAccess();
   const params = useParams();
   const router = useRouter();
   const listId = parseInt(params.id as string);
@@ -278,10 +281,12 @@ export default function ItemListDetailPage() {
               )}
             </div>
           </div>
-          <Button onClick={handleCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t("addItem")}
-          </Button>
+          {canManageSettings && (
+            <Button onClick={handleCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t("addItem")}
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {rootItems.length === 0 ? (
@@ -301,7 +306,7 @@ export default function ItemListDetailPage() {
                       )
                     )}
                     <TableHead>{t("status")}</TableHead>
-                    <TableHead className="text-right">{t("actions")}</TableHead>
+                    {canManageSettings && <TableHead className="text-right">{t("actions")}</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -371,7 +376,7 @@ export default function ItemListDetailPage() {
                           <Badge variant="secondary">{t("inactive")}</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
+                      {canManageSettings && <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button
                             variant="ghost"
@@ -388,7 +393,7 @@ export default function ItemListDetailPage() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                      </TableCell>
+                      </TableCell>}
                     </TableRow>
                   ))}
                 </TableBody>
