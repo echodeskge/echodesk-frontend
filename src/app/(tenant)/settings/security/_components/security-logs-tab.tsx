@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { format } from "date-fns";
+import { formatShortDate } from "@/app/(tenant)/tickets/_lib/format";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ const DEVICE_ICONS: Record<DeviceType, React.ReactNode> = {
 
 export function SecurityLogsTab() {
   const t = useTranslations('settings.security');
+  const locale = useLocale();
   const [filters, setFilters] = useState<SecurityLogFilters>({
     page: 1,
     page_size: 20,
@@ -232,7 +234,7 @@ export function SecurityLogsTab() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {format(new Date(log.created_at), "MMM d, yyyy")}
+                          {formatShortDate(log.created_at, locale, { year: "always" })}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {format(new Date(log.created_at), "HH:mm:ss")}
@@ -269,7 +271,7 @@ export function SecurityLogsTab() {
                         </Badge>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(log.created_at), "MMM d, HH:mm")}
+                        {formatShortDate(log.created_at, locale, { year: "never" })}, {format(new Date(log.created_at), "HH:mm")}
                       </span>
                     </div>
                     <div className="text-sm font-medium">{log.user_email || log.attempted_email || "-"}</div>

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
-import { format } from "date-fns";
+import { useLocale, useTranslations } from "next-intl";
+import { formatShortDate } from "@/app/(tenant)/tickets/_lib/format";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,7 @@ import type { IPWhitelistEntry, IPWhitelistCreateRequest } from "@/types/securit
 export function IPWhitelistTab() {
   const t = useTranslations('settings.security');
   const tCommon = useTranslations('common');
+  const locale = useLocale();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -329,7 +330,7 @@ export function IPWhitelistTab() {
                         {entry.created_by_email || <span className="text-muted-foreground">-</span>}
                       </TableCell>
                       <TableCell>
-                        {format(new Date(entry.created_at), "MMM d, yyyy")}
+                        {formatShortDate(entry.created_at, locale, { year: "always" })}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
