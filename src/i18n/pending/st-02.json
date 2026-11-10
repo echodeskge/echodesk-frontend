@@ -85,6 +85,21 @@
         "autoReply": {
           "welcomePlaceholder": "Hello '{{customer_name}}'! Welcome to our {platform} support. How can we help you today?",
           "awayPlaceholder": "Hi '{{customer_name}}'! Thanks for reaching out. We're currently away but will respond as soon as we're back. Our business hours are Monday-Friday, 9 AM - 6 PM."
+        },
+        "saveBar": {
+          "unsaved": "You have unsaved changes",
+          "discard": "Discard",
+          "saved": "All changes saved"
+        },
+        "notificationSounds": {
+          "play": "Play the {channel} sound"
+        },
+        "aiCompanion": {
+          "showKey": "Show the key",
+          "hideKey": "Hide the key"
+        },
+        "emailSync": {
+          "refresh": "Refresh"
         }
       }
     },
@@ -191,6 +206,21 @@
         "autoReply": {
           "welcomePlaceholder": "გამარჯობა '{{customer_name}}'! კეთილი იყოს თქვენი მობრძანება ჩვენს {platform} მხარდაჭერაში. რით შეგვიძლია დაგეხმაროთ?",
           "awayPlaceholder": "გამარჯობა '{{customer_name}}'! გმადლობთ, რომ დაგვიკავშირდით. ახლა არ ვართ ხელმისაწვდომი, მაგრამ დაბრუნებისთანავე გიპასუხებთ. სამუშაო საათები: ორშაბათი-პარასკევი, 09:00-18:00."
+        },
+        "saveBar": {
+          "unsaved": "გაქვთ შეუნახავი ცვლილებები",
+          "discard": "გაუქმება",
+          "saved": "ყველა ცვლილება შენახულია"
+        },
+        "notificationSounds": {
+          "play": "ხმის მოსმენა: {channel}"
+        },
+        "aiCompanion": {
+          "showKey": "გასაღების ჩვენება",
+          "hideKey": "გასაღების დამალვა"
+        },
+        "emailSync": {
+          "refresh": "განახლება"
         }
       }
     },

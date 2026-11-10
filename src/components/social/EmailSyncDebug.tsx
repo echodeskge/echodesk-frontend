@@ -2,23 +2,25 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { rdButton } from "@/components/redesign/buttons";
 import {
-  Mail,
+  ActionButton,
+  FactsGrid,
+  FieldRow,
+  SettingsNote,
+  SettingsSection,
+  settingsInputClass,
+} from "@/components/redesign/settings";
+import { cn } from "@/lib/utils";
+import {
   Loader2,
   RefreshCw,
   FolderOpen,
   FolderX,
-  Database,
   Clock,
   AlertCircle,
   CheckCircle2,
-  Settings,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -36,7 +38,7 @@ import {
 
 function FolderCard({ folder, isSkipped, t }: { folder: EmailSyncFolderDebug; isSkipped?: boolean; t: ReturnType<typeof useTranslations> }) {
   return (
-    <div className="flex items-start justify-between p-3 rounded-lg border bg-card">
+    <div className="flex items-start justify-between rounded-lg border bg-card px-3 py-2.5 text-[13px]">
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           {isSkipped ? (
@@ -44,7 +46,7 @@ function FolderCard({ folder, isSkipped, t }: { folder: EmailSyncFolderDebug; is
           ) : (
             <FolderOpen className="h-4 w-4 text-blue-500" />
           )}
-          <span className="font-medium">{folder.name}</span>
+          <span className="font-medium [overflow-wrap:anywhere]">{folder.name}</span>
           {isSkipped && (
             <Badge variant="secondary" className="text-xs">
               {t("settingsPage.emailSync.skipped")}
@@ -52,7 +54,7 @@ function FolderCard({ folder, isSkipped, t }: { folder: EmailSyncFolderDebug; is
           )}
         </div>
         {!isSkipped && (
-          <div className="text-sm text-muted-foreground space-y-0.5">
+          <div className="space-y-0.5 text-xs text-muted-foreground">
             {folder.total_messages_on_server !== undefined && (
               <p>{t("settingsPage.emailSync.serverMessages", { count: folder.total_messages_on_server })}</p>
             )}
@@ -70,10 +72,10 @@ function FolderCard({ folder, isSkipped, t }: { folder: EmailSyncFolderDebug; is
           </div>
         )}
         {folder.skip_reason && (
-          <p className="text-sm text-muted-foreground">{folder.skip_reason}</p>
+          <p className="text-xs text-muted-foreground">{folder.skip_reason}</p>
         )}
         {folder.error && (
-          <p className="text-sm text-destructive">{folder.error}</p>
+          <p className="text-xs text-destructive">{folder.error}</p>
         )}
       </div>
     </div>
@@ -144,188 +146,135 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            {t("settingsPage.emailSync.title")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </CardContent>
-      </Card>
+      <SettingsSection title={t("settingsPage.emailSync.title")} testId="email-sync-debug">
+        <div className="flex items-center justify-center py-8" role="status">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
+        </div>
+      </SettingsSection>
     );
   }
 
   if (!debugInfo) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            {t("settingsPage.emailSync.title")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">{t("settingsPage.email.noConnections")}</p>
-        </CardContent>
-      </Card>
+      <SettingsSection title={t("settingsPage.emailSync.title")} testId="email-sync-debug">
+        <p className="px-4 py-6 text-[13px] text-muted-foreground">{t("settingsPage.email.noConnections")}</p>
+      </SettingsSection>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              {t("settingsPage.emailSync.title")}
-            </CardTitle>
-            <CardDescription>
-              {t("settingsPage.emailSync.description")}
-            </CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
+    <>
+      <SettingsSection
+        title={t("settingsPage.emailSync.title")}
+        hint={t("settingsPage.emailSync.description")}
+        testId="email-sync-debug"
+        actions={
+          <>
+            <button
+              type="button"
+              className={rdButton.outlineSm}
               onClick={handleRefresh}
               disabled={isRefetching}
+              aria-label={t("settingsPage.emailSync.refresh")}
+              title={t("settingsPage.emailSync.refresh")}
             >
-              {isRefetching ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              size="sm"
+              <RefreshCw className={isRefetching ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} aria-hidden />
+            </button>
+            <button
+              type="button"
+              className={rdButton.primarySm}
               onClick={handleSync}
               disabled={syncMutation.isPending}
             >
               {syncMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
               ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden />
               )}
               {t("settingsPage.emailSync.syncNow")}
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
+            </button>
+          </>
+        }
+      >
         {/* Connection Info */}
-        <div className="space-y-3">
-          <h4 className="font-medium flex items-center gap-2">
-            <Database className="h-4 w-4" />
-            {t("settingsPage.emailSync.connection")}
-          </h4>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">{t("settingsPage.emailSync.emailLabel")}:</span>
-              <span className="ml-2 font-medium">{debugInfo.connection.email}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">{t("settingsPage.emailSync.server")}:</span>
-              <span className="ml-2 font-medium">{debugInfo.connection.imap_server}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">{t("settingsPage.emailSync.syncRange")}:</span>
-              <Badge variant="outline">{debugInfo.connection.sync_days_back_meaning}</Badge>
-            </div>
-            <div>
-              <span className="text-muted-foreground">{t("settingsPage.emailSync.lastSync")}:</span>
-              <span className="ml-2">
-                {debugInfo.connection.last_sync_at
-                  ? new Date(debugInfo.connection.last_sync_at).toLocaleString()
-                  : t("settingsPage.emailSync.never")}
-              </span>
-            </div>
+        <FactsGrid
+          items={[
+            { k: t("settingsPage.emailSync.emailLabel"), v: <span className="[overflow-wrap:anywhere]">{debugInfo.connection.email}</span> },
+            { k: t("settingsPage.emailSync.server"), v: <span className="[overflow-wrap:anywhere]">{debugInfo.connection.imap_server}</span> },
+            {
+              k: t("settingsPage.emailSync.syncRange"),
+              v: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                  {debugInfo.connection.sync_days_back_meaning}
+                </span>
+              ),
+            },
+            {
+              k: t("settingsPage.emailSync.lastSync"),
+              v: debugInfo.connection.last_sync_at
+                ? new Date(debugInfo.connection.last_sync_at).toLocaleString()
+                : t("settingsPage.emailSync.never"),
+            },
+          ]}
+        />
+        {debugInfo.connection.last_sync_error && (
+          <div className="border-b px-4 py-3">
+            <SettingsNote tone="danger" icon={AlertCircle}>
+              {debugInfo.connection.last_sync_error}
+            </SettingsNote>
           </div>
-          {debugInfo.connection.last_sync_error && (
-            <div className="flex items-start gap-2 p-2 rounded bg-destructive/10 text-destructive text-sm">
-              <AlertCircle className="h-4 w-4 mt-0.5" />
-              <span>{debugInfo.connection.last_sync_error}</span>
-            </div>
-          )}
-        </div>
-
-        <Separator />
+        )}
 
         {/* Update Sync Days */}
-        <div className="space-y-3">
-          <h4 className="font-medium flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            {t("settingsPage.emailSync.syncSettings")}
-          </h4>
-          <div className="flex items-end gap-3">
-            <div className="space-y-2 flex-1">
-              <Label htmlFor="sync-days">{t("settingsPage.emailSync.daysToSync")}</Label>
-              <Input
-                id="sync-days"
-                type="number"
-                min="0"
-                placeholder={String(debugInfo.connection.sync_days_back)}
-                value={syncDaysBack}
-                onChange={(e) => setSyncDaysBack(e.target.value)}
-              />
-            </div>
-            <Button
+        <FieldRow
+          label={t("settingsPage.emailSync.daysToSync")}
+          help={t("settingsPage.emailSync.syncHint", { current: debugInfo.connection.sync_days_back_meaning })}
+          htmlFor="sync-days"
+        >
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <input
+              id="sync-days"
+              type="number"
+              min="0"
+              placeholder={String(debugInfo.connection.sync_days_back)}
+              value={syncDaysBack}
+              onChange={(e) => setSyncDaysBack(e.target.value)}
+              className={cn(settingsInputClass, "w-full font-mono tabular-nums sm:w-28")}
+            />
+            <ActionButton
               onClick={handleUpdateSyncDays}
               disabled={!syncDaysBack || updateSettings.isPending}
+              icon={updateSettings.isPending ? Loader2 : undefined}
             >
-              {updateSettings.isPending && (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              )}
               {t("settingsPage.emailSync.update")}
-            </Button>
+            </ActionButton>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {t("settingsPage.emailSync.syncHint", { current: debugInfo.connection.sync_days_back_meaning })}
-          </p>
-        </div>
+        </FieldRow>
+      </SettingsSection>
 
-        <Separator />
-
-        {/* Summary */}
-        <div className="space-y-3">
-          <h4 className="font-medium">{t("settingsPage.emailSync.summary")}</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-3 rounded-lg bg-muted">
-              <div className="text-2xl font-bold">{debugInfo.summary.total_folders_on_server}</div>
-              <div className="text-xs text-muted-foreground">{t("settingsPage.emailSync.totalFolders")}</div>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-muted">
-              <div className="text-2xl font-bold text-blue-600">{debugInfo.summary.folders_being_synced}</div>
-              <div className="text-xs text-muted-foreground">{t("settingsPage.emailSync.syncing")}</div>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-muted">
-              <div className="text-2xl font-bold text-orange-600">{debugInfo.summary.folders_skipped}</div>
-              <div className="text-xs text-muted-foreground">{t("settingsPage.emailSync.skipped")}</div>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-muted">
-              <div className="text-2xl font-bold text-green-600">{debugInfo.summary.total_messages_in_db}</div>
-              <div className="text-xs text-muted-foreground">{t("settingsPage.emailSync.inDatabase")}</div>
-            </div>
-          </div>
-        </div>
-
-        <Separator />
+      {/* Summary */}
+      <SettingsSection title={t("settingsPage.emailSync.summary")} testId="email-sync-summary">
+        <FactsGrid
+          items={[
+            { k: t("settingsPage.emailSync.totalFolders"), v: <span className="text-lg tabular-nums">{debugInfo.summary.total_folders_on_server}</span> },
+            { k: t("settingsPage.emailSync.syncing"), v: <span className="text-lg tabular-nums text-blue-600 dark:text-blue-400">{debugInfo.summary.folders_being_synced}</span> },
+            { k: t("settingsPage.emailSync.skipped"), v: <span className="text-lg tabular-nums text-orange-600 dark:text-orange-400">{debugInfo.summary.folders_skipped}</span> },
+            { k: t("settingsPage.emailSync.inDatabase"), v: <span className="text-lg tabular-nums text-green-600 dark:text-green-400">{debugInfo.summary.total_messages_in_db}</span> },
+          ]}
+        />
 
         {/* Folders */}
-        <Accordion type="multiple" className="w-full">
+        <Accordion type="multiple" className="w-full px-4" data-testid="email-sync-folders">
           <AccordionItem value="synced-folders">
-            <AccordionTrigger>
+            <AccordionTrigger className="text-[13px]">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <CheckCircle2 className="h-4 w-4 text-green-500" aria-hidden />
                 {t("settingsPage.emailSync.syncedFolders", { count: debugInfo.folders.length })}
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="space-y-2 pt-2">
+              <div className="space-y-2 pt-1">
                 {debugInfo.folders.map((folder) => (
                   <FolderCard key={folder.name} folder={folder} t={t} />
                 ))}
@@ -333,15 +282,15 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="skipped-folders">
-            <AccordionTrigger>
+          <AccordionItem value="skipped-folders" className="border-b-0">
+            <AccordionTrigger className="text-[13px]">
               <div className="flex items-center gap-2">
-                <FolderX className="h-4 w-4 text-muted-foreground" />
+                <FolderX className="h-4 w-4 text-muted-foreground" aria-hidden />
                 {t("settingsPage.emailSync.skippedFolders", { count: debugInfo.skipped_folders.length })}
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="space-y-2 pt-2">
+              <div className="space-y-2 pt-1">
                 {debugInfo.skipped_folders.map((folder) => (
                   <FolderCard key={folder.name} folder={folder} isSkipped t={t} />
                 ))}
@@ -349,25 +298,19 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
+      </SettingsSection>
 
-        {/* Errors */}
-        {debugInfo.errors.length > 0 && (
-          <>
-            <Separator />
-            <div className="space-y-2">
-              <h4 className="font-medium text-destructive flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                {t("settingsPage.emailSync.errors")}
-              </h4>
-              <ul className="space-y-1 text-sm text-destructive">
-                {debugInfo.errors.map((error, i) => (
-                  <li key={i}>{error}</li>
-                ))}
-              </ul>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+      {/* Errors */}
+      {debugInfo.errors.length > 0 && (
+        <SettingsNote tone="danger" icon={AlertCircle} testId="email-sync-errors">
+          <p className="font-semibold">{t("settingsPage.emailSync.errors")}</p>
+          <ul className="mt-1 space-y-0.5">
+            {debugInfo.errors.map((error, i) => (
+              <li key={i}>{error}</li>
+            ))}
+          </ul>
+        </SettingsNote>
+      )}
+    </>
   );
 }
