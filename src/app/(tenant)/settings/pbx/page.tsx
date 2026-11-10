@@ -11,6 +11,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDuration } from "@/lib/formatDuration";
+import { answerRateOf, formatRate } from "./_lib/stats";
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 type Range = "today" | "week" | "month";
 
@@ -32,8 +35,6 @@ type OverviewShape = {
     total_talk_seconds?: number;
   }>;
 };
-
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function PbxOverviewPage() {
   const t = useTranslations("pbxSettings.overview");
@@ -71,7 +72,7 @@ export default function PbxOverviewPage() {
         <StatCard label={t("missed")} value={overview.missed_calls ?? 0} loading={isLoading} />
         <StatCard
           label={t("answerRate")}
-          value={formatRate(overview.answer_rate)}
+          value={formatRate(answerRateOf(overview))}
           loading={isLoading}
         />
         <StatCard label={t("inboundCalls")} value={overview.inbound_calls ?? 0} loading={isLoading} />
@@ -160,10 +161,6 @@ function StatCard({
   );
 }
 
-function formatRate(r: number | undefined): string {
-  if (r == null || isNaN(r)) return "—";
-  return `${Math.round(r * 100)}%`;
-}
 
 function extractCount(data: unknown): number {
   if (!data) return 0;

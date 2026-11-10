@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDuration } from "@/lib/formatDuration";
+import { answerRateOf, formatRate } from "../_lib/stats";
 
 type UserStatsRow = {
   user_id?: number;
@@ -100,9 +101,7 @@ export default function PbxStatisticsPage() {
               {tOverview("answerRate")}
             </div>
             <div className="mt-2 text-2xl font-semibold">
-              {overview.answer_rate == null
-                ? "—"
-                : `${Math.round(overview.answer_rate * 100)}%`}
+              {formatRate(answerRateOf(overview))}
             </div>
           </CardContent>
         </Card>
