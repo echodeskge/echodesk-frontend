@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
+import { lastMonthRange, thisMonthRange } from "./_lib/date-range";
 import { useRatingStatistics, useUserChatSessions, RatingUserStats, ChatSession } from "@/hooks/api/useSocial";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -96,12 +97,9 @@ export default function RatingStatisticsPage() {
   const t = useTranslations("ratingStatistics");
   const isSuperAdmin = user?.is_staff === true;
 
-  // Default date range: this month
-  const today = new Date();
-  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-  const [startDate, setStartDate] = useState(firstOfMonth.toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
+  // Default date range: this month (local calendar days)
+  const [startDate, setStartDate] = useState(() => thisMonthRange().start);
+  const [endDate, setEndDate] = useState(() => thisMonthRange().end);
   const [sortBy, setSortBy] = useState<SortField>('average_rating');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -353,10 +351,9 @@ export default function RatingStatisticsPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const today = new Date();
-                  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-                  setStartDate(firstOfMonth.toISOString().split('T')[0]);
-                  setEndDate(today.toISOString().split('T')[0]);
+                  const range = thisMonthRange();
+                  setStartDate(range.start);
+                  setEndDate(range.end);
                 }}
               >
                 {t("thisMonth")}
@@ -365,11 +362,9 @@ export default function RatingStatisticsPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const today = new Date();
-                  const firstOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                  const lastOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-                  setStartDate(firstOfLastMonth.toISOString().split('T')[0]);
-                  setEndDate(lastOfLastMonth.toISOString().split('T')[0]);
+                  const range = lastMonthRange();
+                  setStartDate(range.start);
+                  setEndDate(range.end);
                 }}
               >
                 {t("lastMonth")}
