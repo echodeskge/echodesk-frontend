@@ -42,6 +42,11 @@ vi.mock("next/link", () => ({
 }));
 vi.mock("@/hooks/useMyAccess", () => ({ useMyAccess: () => mockAccess() }));
 vi.mock("@/hooks/useUserProfile", () => ({ useUserProfile: () => ({ data: mockProfile() }) }));
+const clickToCall = vi.hoisted(() => ({ enabled: false, call: vi.fn() }));
+vi.mock("@/hooks/useClickToCall", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/useClickToCall")>()),
+  useClickToCall: () => ({ enabled: clickToCall.enabled, call: clickToCall.call }),
+}));
 vi.mock("@/hooks/api/useSocialClients", () => ({
   useSocialClients: (filters: unknown) => mockUseSocialClients(filters),
   useSocialClient: (id: number, opts?: { enabled?: boolean }) => ({
@@ -203,6 +208,22 @@ describe("ClientsScreen", () => {
     expect(within(rail).getByText("Call").closest("a")).toHaveAttribute("href", "tel:+995555000111");
     fireEvent.click(within(rail).getByText("Open chat"));
     expect(mockPush).toHaveBeenCalledWith("/social/messages/wa_waba1_995555000111");
+  });
+
+  it("Call opens the softphone rail with the number when the softphone is registered", () => {
+    clickToCall.enabled = true;
+    try {
+      renderScreen();
+      fireEvent.click(screen.getAllByTestId("client-row")[0]);
+      const rail = screen.getByTestId("client-detail-rail");
+      const call = within(rail).getByTestId("client-rail-call");
+      expect(call.tagName).toBe("BUTTON");
+      expect(call).not.toHaveAttribute("href");
+      fireEvent.click(call);
+      expect(clickToCall.call).toHaveBeenCalledWith("+995555000111");
+    } finally {
+      clickToCall.enabled = false;
+    }
   });
 
   it("creates a ticket from the client's conversation", () => {

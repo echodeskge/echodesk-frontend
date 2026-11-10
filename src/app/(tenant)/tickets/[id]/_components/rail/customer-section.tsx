@@ -7,7 +7,8 @@
  * Identity (36px initials avatar, name, "email · phone"), then link rows:
  * - one per chat-capable social account → `/social/messages/{chat_id}`,
  *   with the platform name as meta (from `useSocialClient`);
- * - email → `mailto:`, phone → `tel:`;
+ * - email → `mailto:`, phone → click-to-call (rail prefill) when the
+ *   softphone is registered, else `tel:`;
  * - "Open client" → `/social/clients?client={id}` (the Clients deep link).
  * No Calls row: there is no phone-filtered calls route (plan §12).
  */
@@ -15,7 +16,9 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ChevronRight, Mail, MessageSquare, Phone, UserRound, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 import { useSocialClient } from "@/hooks/api/useSocialClients";
+import { telHref, useClickToCall } from "@/hooks/useClickToCall";
 import { CLIENT_PLATFORM_BRAND, clientInitials, isClientPlatform } from "@/app/(tenant)/social/clients/_components/clients-utils";
 import type { TicketCustomer, ViewerPermissions } from "../../../_lib/types";
 import { chatTargets, type ClientAccountLike } from "./chat-links";
@@ -41,6 +44,7 @@ export function CustomerSection({ customer, perms }: { customer: TicketCustomer 
   const t = useTranslations("ticketsScreen.customer");
   const visible = !!customer && perms.can_view_customer;
   const { data: client } = useSocialClient(customer?.id ?? 0, { enabled: visible });
+  const clickToCall = useClickToCall();
 
   if (!visible || !customer) return null;
 
@@ -93,11 +97,22 @@ export function CustomerSection({ customer, perms }: { customer: TicketCustomer 
             <LinkBody icon={Mail} label={email} meta={t("email")} />
           </a>
         )}
-        {phone && (
-          <a href={`tel:${phone.replace(/\s+/g, "")}`} className={ROW} data-slot="customer-link" data-kind="phone">
-            <LinkBody icon={Phone} label={phone} meta={t("phone")} />
-          </a>
-        )}
+        {phone &&
+          (clickToCall.enabled ? (
+            <button
+              type="button"
+              onClick={() => clickToCall.call(phone)}
+              className={cn(ROW, "w-full")}
+              data-slot="customer-link"
+              data-kind="phone"
+            >
+              <LinkBody icon={Phone} label={phone} meta={t("phone")} />
+            </button>
+          ) : (
+            <a href={telHref(phone)} className={ROW} data-slot="customer-link" data-kind="phone">
+              <LinkBody icon={Phone} label={phone} meta={t("phone")} />
+            </a>
+          ))}
         <Link
           href={`/social/clients?client=${customer.id}`}
           className={ROW}

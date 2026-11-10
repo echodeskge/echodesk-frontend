@@ -1,9 +1,14 @@
 /** FE-12 customer section (E23, DC36) and the chat-id helper. */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 
 const clientDetail = vi.hoisted(() => ({ value: null as unknown, enabled: [] as boolean[] }));
+const clickToCall = vi.hoisted(() => ({ enabled: false, call: vi.fn() }));
+vi.mock("@/hooks/useClickToCall", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/hooks/useClickToCall")>();
+  return { ...actual, useClickToCall: () => ({ enabled: clickToCall.enabled, call: clickToCall.call }) };
+});
 vi.mock("@/hooks/api/useSocialClients", () => ({
   useSocialClient: (_id: number, opts?: { enabled?: boolean }) => {
     clientDetail.enabled.push(opts?.enabled ?? true);
@@ -40,6 +45,8 @@ const links = () => Array.from(document.querySelectorAll<HTMLAnchorElement>('[da
 beforeEach(() => {
   clientDetail.value = DETAIL;
   clientDetail.enabled = [];
+  clickToCall.enabled = false;
+  clickToCall.call.mockClear();
 });
 
 describe("CustomerSection", () => {
@@ -85,6 +92,19 @@ describe("CustomerSection", () => {
       expect(a.className).toContain("h-[30px]");
       expect(a.className).toContain("text-xs");
     }
+  });
+
+  it("phone row: click-to-call button when the softphone is registered, tel: link otherwise", () => {
+    clickToCall.enabled = true;
+    renderRail(<CustomerSection customer={CUSTOMER} perms={PERMS_ALL} />);
+    const phone = document.querySelector<HTMLElement>('[data-slot="customer-link"][data-kind="phone"]')!;
+    expect(phone.tagName).toBe("BUTTON");
+    expect(phone).toHaveTextContent("+995 599 12 34 56");
+    fireEvent.click(phone);
+    expect(clickToCall.call).toHaveBeenCalledWith("+995 599 12 34 56");
+    // Same row order and styling as the link version.
+    expect(links().map((a) => a.dataset.kind)).toEqual(["chat", "chat", "email", "phone", "client"]);
+    expect(phone.className).toContain("h-[30px]");
   });
 
   it("ka: translated labels; brand names stay", () => {
