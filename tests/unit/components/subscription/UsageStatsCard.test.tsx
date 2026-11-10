@@ -105,3 +105,25 @@ describe("UsageStatsCard", () => {
     expect(screen.getByText("2 / 10")).toHaveClass("text-green-600");
   });
 });
+
+describe("UsageStatsCard bar colour", () => {
+  it("colours the filled part of the bar, not the track, when near or over the limit", () => {
+    const { container } = render(
+      <UsageStatsCard
+        subscription={{
+          has_subscription: true,
+          limits: { max_users: 10, max_whatsapp_messages: 10000, max_storage_gb: 100 },
+          usage: { current_users: 12, whatsapp_messages_used: 10, storage_used_gb: 1 },
+          usage_limits: {
+            users: check(12, 10, false, 120),
+            whatsapp: check(10, 10000, true, 0),
+            storage: check(1, 100, true, 1),
+          },
+        }}
+      />
+    );
+    const bars = container.querySelectorAll('[role="progressbar"]');
+    expect(bars[0].className).toContain("[&>div]:bg-red-500");
+    expect(bars[0].className).not.toMatch(/(^|\s)bg-red-500/);
+  });
+});

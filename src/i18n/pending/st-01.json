@@ -1,0 +1,300 @@
+{
+  "en": {
+    "settings": {
+      "general": {
+        "toasts": {
+          "invalidImage": "Please select an image file",
+          "tooLarge": "File size must be less than 2MB",
+          "logoUploaded": "Logo uploaded successfully",
+          "logoUploadFailed": "Failed to upload logo",
+          "logoRemoved": "Logo removed successfully",
+          "logoRemoveFailed": "Failed to remove logo",
+          "ticketSaved": "Ticket settings saved successfully",
+          "ticketSaveFailed": "Failed to save ticket settings"
+        },
+        "sections": {
+          "branding": "Branding"
+        }
+      },
+      "appearance": {
+        "radius": {
+          "sharp": "Sharp",
+          "subtle": "Subtle",
+          "default": "Default",
+          "rounded": "Rounded",
+          "pill": "Pill"
+        },
+        "presets": {
+          "zinc": "Zinc",
+          "slate": "Slate",
+          "blue": "Blue",
+          "green": "Green",
+          "orange": "Orange",
+          "rose": "Rose",
+          "violet": "Violet",
+          "red": "Red"
+        },
+        "previewPrimary": "Primary Button",
+        "previewSecondary": "Secondary",
+        "previewOutline": "Outline",
+        "previewDestructive": "Destructive",
+        "previewCardTitle": "Card Preview",
+        "previewCardText": "This is how cards will look with the current theme settings.",
+        "sections": {
+          "display": "Display"
+        },
+        "resetHelp": "Restores the default colours, corner radius and sidebar order for all users.",
+        "resetTitle": "Reset appearance"
+      },
+      "ui": {
+        "errorTitle": "Couldn't load these settings",
+        "errorHint": "Check your connection and try again.",
+        "noAccessTitle": "No access",
+        "noAccessHint": "You don't have permission to view these settings. Ask an administrator.",
+        "retry": "Try again",
+        "loading": "Loading…",
+        "saveBar": {
+          "unsaved": "You have unsaved changes",
+          "discard": "Discard",
+          "save": "Save changes",
+          "saving": "Saving…",
+          "saved": "All changes saved"
+        }
+      }
+    },
+    "notificationPreferences": {
+      "types": {
+        "tickets": {
+          "assigned": "Assigned",
+          "commented": "Commented",
+          "mentioned": "Mentioned",
+          "status_changed": "Status Changed"
+        },
+        "messages": {
+          "new_message": "New Message",
+          "message_assigned": "Message Assigned",
+          "team_chat": "Team Chat",
+          "social_admin": "Auto-posts & Templates"
+        },
+        "invoices": {
+          "created": "Created",
+          "paid": "Paid",
+          "overdue": "Overdue"
+        },
+        "leave": {
+          "submitted": "Submitted",
+          "approved": "Approved",
+          "rejected": "Rejected",
+          "progress": "Partially Approved",
+          "awaiting_approval": "Awaiting My Approval",
+          "cancelled": "Cancelled"
+        },
+        "bookings": {
+          "confirmed": "Confirmed",
+          "cancelled": "Cancelled",
+          "reminder": "Reminder",
+          "assigned": "Assigned to Me"
+        },
+        "calls": {
+          "missed": "Missed",
+          "voicemail": "Voicemail"
+        }
+      },
+      "push": "Push",
+      "settings": {
+        "pushNotifications": "Push Notifications",
+        "pushEnabled": "Push notifications are enabled",
+        "pushAvailable": "Push notifications are available",
+        "pushBlocked": "Push notifications are blocked",
+        "pushRequiresPermission": "Push notifications require permission",
+        "pushDefaultDesc": "Click the toggle to enable push notifications",
+        "testPush": "Send Test Push Notification",
+        "testPushFailed": "Could not send the test notification. Turn push notifications off and on again, then retry."
+      }
+    },
+    "subscription": {
+      "featureManagement": {
+        "title": "Feature Management",
+        "loading": "Loading available features...",
+        "loadFailed": "Unable to load features",
+        "agents": "{count, plural, one {# Agent} other {# Agents}}",
+        "description": "Add or remove features from your subscription. Prices shown are monthly costs for your current agent count.",
+        "active": "Active",
+        "pricePerAgent": "{price} GEL / agent / month",
+        "total": "Total: {price} GEL / month",
+        "add": "Add",
+        "remove": "Remove",
+        "dialog": {
+          "addTitle": "Add Feature",
+          "removeTitle": "Remove Feature",
+          "addIntro": "You are about to add <b>{name}</b> to your subscription.",
+          "costBreakdown": "Cost Breakdown:",
+          "monthlyCost": "Monthly cost: {price} GEL",
+          "proratedNow": "Prorated cost will be charged immediately based on remaining days in your billing cycle",
+          "cardCharged": "Your saved card will be charged for the prorated amount",
+          "removeIntro": "You are about to remove <b>{name}</b> from your subscription.",
+          "note": "Note:",
+          "costReduced": "Your monthly cost will be reduced by {price} GEL",
+          "nextCycle": "The reduction will take effect on your next billing cycle",
+          "loseAccess": "You will lose access to this feature immediately"
+        },
+        "toasts": {
+          "redirecting": "Redirecting to payment...",
+          "charged": "Charged {amount} GEL for prorated cost",
+          "reduced": "Monthly cost reduced by {amount} GEL",
+          "addFailed": "Failed to add feature",
+          "removeFailed": "Failed to remove feature"
+        }
+      }
+    }
+  },
+  "ka": {
+    "settings": {
+      "general": {
+        "toasts": {
+          "invalidImage": "აირჩიეთ სურათის ფაილი",
+          "tooLarge": "ფაილის ზომა 2 მბ-ზე ნაკლები უნდა იყოს",
+          "logoUploaded": "ლოგო აიტვირთა",
+          "logoUploadFailed": "ლოგოს ატვირთვა ვერ მოხერხდა",
+          "logoRemoved": "ლოგო წაიშალა",
+          "logoRemoveFailed": "ლოგოს წაშლა ვერ მოხერხდა",
+          "ticketSaved": "ტიკეტების პარამეტრები შენახულია",
+          "ticketSaveFailed": "ტიკეტების პარამეტრების შენახვა ვერ მოხერხდა"
+        },
+        "sections": {
+          "branding": "ბრენდინგი"
+        }
+      },
+      "appearance": {
+        "radius": {
+          "sharp": "მკვეთრი",
+          "subtle": "მსუბუქი",
+          "default": "ნაგულისხმევი",
+          "rounded": "მომრგვალებული",
+          "pill": "კაფსულა"
+        },
+        "presets": {
+          "zinc": "თუთია",
+          "slate": "ფიქალი",
+          "blue": "ლურჯი",
+          "green": "მწვანე",
+          "orange": "ნარინჯისფერი",
+          "rose": "ვარდისფერი",
+          "violet": "იისფერი",
+          "red": "წითელი"
+        },
+        "previewPrimary": "ძირითადი ღილაკი",
+        "previewSecondary": "მეორადი",
+        "previewOutline": "კონტურიანი",
+        "previewDestructive": "საშიში",
+        "previewCardTitle": "ბარათის ნიმუში",
+        "previewCardText": "ასე გამოჩნდება ბარათები თემის მიმდინარე პარამეტრებით.",
+        "sections": {
+          "display": "ჩვენება"
+        },
+        "resetHelp": "აბრუნებს ნაგულისხმევ ფერებს, კუთხეების მომრგვალებას და მენიუს თანმიმდევრობას ყველა მომხმარებლისთვის.",
+        "resetTitle": "გარეგნობის გადაყენება"
+      },
+      "ui": {
+        "errorTitle": "პარამეტრების ჩატვირთვა ვერ მოხერხდა",
+        "errorHint": "შეამოწმეთ კავშირი და სცადეთ ხელახლა.",
+        "noAccessTitle": "წვდომა არ გაქვთ",
+        "noAccessHint": "ამ პარამეტრების ნახვის უფლება არ გაქვთ. მიმართეთ ადმინისტრატორს.",
+        "retry": "ხელახლა ცდა",
+        "loading": "იტვირთება…",
+        "saveBar": {
+          "unsaved": "შეუნახავი ცვლილებები",
+          "discard": "გაუქმება",
+          "save": "შენახვა",
+          "saving": "ინახება…",
+          "saved": "ყველა ცვლილება შენახულია"
+        }
+      }
+    },
+    "notificationPreferences": {
+      "push": "პუში",
+      "settings": {
+        "pushNotifications": "პუშ-შეტყობინებები",
+        "pushEnabled": "პუშ-შეტყობინებები ჩართულია",
+        "pushAvailable": "პუშ-შეტყობინებები ხელმისაწვდომია",
+        "pushBlocked": "პუშ-შეტყობინებები დაბლოკილია",
+        "pushRequiresPermission": "პუშ-შეტყობინებებს ნებართვა სჭირდება",
+        "pushDefaultDesc": "დააჭირეთ გადამრთველს პუშ-შეტყობინებების ჩასართავად",
+        "testPush": "სატესტო პუშ-შეტყობინების გაგზავნა",
+        "testPushFailed": "სატესტო შეტყობინება ვერ გაიგზავნა. გამორთეთ და თავიდან ჩართეთ პუშ-შეტყობინებები და სცადეთ ხელახლა."
+      },
+      "types": {
+        "tickets": {
+          "assigned": "მინიჭებული",
+          "commented": "კომენტარი",
+          "mentioned": "მოხსენიება",
+          "status_changed": "სტატუსის ცვლილება"
+        },
+        "messages": {
+          "new_message": "ახალი შეტყობინება",
+          "message_assigned": "მინიჭებული შეტყობინება",
+          "team_chat": "გუნდის ჩატი",
+          "social_admin": "ავტოპოსტები და შაბლონები"
+        },
+        "invoices": {
+          "created": "შექმნილი",
+          "paid": "გადახდილი",
+          "overdue": "ვადაგადაცილებული"
+        },
+        "leave": {
+          "submitted": "გაგზავნილი",
+          "approved": "დამტკიცებული",
+          "rejected": "უარყოფილი",
+          "progress": "ნაწილობრივ დამტკიცებული",
+          "awaiting_approval": "ელოდება ჩემს დამტკიცებას",
+          "cancelled": "გაუქმებული"
+        },
+        "bookings": {
+          "confirmed": "დადასტურებული",
+          "cancelled": "გაუქმებული",
+          "reminder": "შეხსენება",
+          "assigned": "მე მომენიჭა"
+        },
+        "calls": {
+          "missed": "გამოტოვებული",
+          "voicemail": "ხმოვანი ფოსტა"
+        }
+      }
+    },
+    "subscription": {
+      "featureManagement": {
+        "title": "ფუნქციების მართვა",
+        "loading": "ხელმისაწვდომი ფუნქციები იტვირთება...",
+        "loadFailed": "ფუნქციების ჩატვირთვა ვერ მოხერხდა",
+        "agents": "{count} ოპერატორი",
+        "description": "დაამატეთ ან მოხსენით ფუნქციები გამოწერიდან. ფასები ნაჩვენებია თვეში, ოპერატორების მიმდინარე რაოდენობისთვის.",
+        "active": "აქტიური",
+        "pricePerAgent": "{price} ლარი / ოპერატორი / თვე",
+        "total": "სულ: {price} ლარი / თვე",
+        "add": "დამატება",
+        "remove": "მოხსნა",
+        "dialog": {
+          "addTitle": "ფუნქციის დამატება",
+          "removeTitle": "ფუნქციის მოხსნა",
+          "addIntro": "გამოწერას დაემატება <b>{name}</b>.",
+          "costBreakdown": "ღირებულება:",
+          "monthlyCost": "თვიური ღირებულება: {price} ლარი",
+          "proratedNow": "ბილინგის ციკლის დარჩენილი დღეების პროპორციული თანხა ჩამოგეჭრებათ დაუყოვნებლივ",
+          "cardCharged": "შენახული ბარათიდან ჩამოიჭრება პროპორციული თანხა",
+          "removeIntro": "გამოწერიდან მოიხსნება <b>{name}</b>.",
+          "note": "შენიშვნა:",
+          "costReduced": "თვიური ღირებულება შემცირდება {price} ლარით",
+          "nextCycle": "შემცირება ამოქმედდება შემდეგი ბილინგის ციკლიდან",
+          "loseAccess": "ამ ფუნქციაზე წვდომას დაუყოვნებლივ დაკარგავთ"
+        },
+        "toasts": {
+          "redirecting": "გადამისამართება გადახდის გვერდზე...",
+          "charged": "პროპორციული ღირებულება — {amount} ლარი ჩამოიჭრა",
+          "reduced": "თვიური ღირებულება შემცირდა {amount} ლარით",
+          "addFailed": "ფუნქციის დამატება ვერ მოხერხდა",
+          "removeFailed": "ფუნქციის მოხსნა ვერ მოხერხდა"
+        }
+      }
+    }
+  }
+}

@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
+import { SettingsSection, SettingsToggle } from '@/components/redesign/settings'
 import { Bell, MessageCircle, Receipt, CalendarDays, Calendar, Phone } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import axiosInstance from '@/api/axios'
@@ -194,7 +193,7 @@ interface CategoryMeta {
   key: keyof NotificationPreferences
   labelKey: string
   icon: React.ElementType
-  subTypes: { key: string; label: string }[]
+  subTypes: { key: string }[]
 }
 
 const CATEGORIES: CategoryMeta[] = [
@@ -203,10 +202,10 @@ const CATEGORIES: CategoryMeta[] = [
     labelKey: 'tickets',
     icon: Bell,
     subTypes: [
-      { key: 'assigned', label: 'Assigned' },
-      { key: 'commented', label: 'Commented' },
-      { key: 'mentioned', label: 'Mentioned' },
-      { key: 'status_changed', label: 'Status Changed' },
+      { key: 'assigned' },
+      { key: 'commented' },
+      { key: 'mentioned' },
+      { key: 'status_changed' },
     ],
   },
   {
@@ -214,10 +213,10 @@ const CATEGORIES: CategoryMeta[] = [
     labelKey: 'messages',
     icon: MessageCircle,
     subTypes: [
-      { key: 'new_message', label: 'New Message' },
-      { key: 'message_assigned', label: 'Message Assigned' },
-      { key: 'team_chat', label: 'Team Chat' },
-      { key: 'social_admin', label: 'Auto-posts & Templates' },
+      { key: 'new_message' },
+      { key: 'message_assigned' },
+      { key: 'team_chat' },
+      { key: 'social_admin' },
     ],
   },
   {
@@ -225,9 +224,9 @@ const CATEGORIES: CategoryMeta[] = [
     labelKey: 'invoices',
     icon: Receipt,
     subTypes: [
-      { key: 'created', label: 'Created' },
-      { key: 'paid', label: 'Paid' },
-      { key: 'overdue', label: 'Overdue' },
+      { key: 'created' },
+      { key: 'paid' },
+      { key: 'overdue' },
     ],
   },
   {
@@ -235,12 +234,12 @@ const CATEGORIES: CategoryMeta[] = [
     labelKey: 'leave',
     icon: CalendarDays,
     subTypes: [
-      { key: 'submitted', label: 'Submitted' },
-      { key: 'approved', label: 'Approved' },
-      { key: 'rejected', label: 'Rejected' },
-      { key: 'progress', label: 'Partially Approved' },
-      { key: 'awaiting_approval', label: 'Awaiting My Approval' },
-      { key: 'cancelled', label: 'Cancelled' },
+      { key: 'submitted' },
+      { key: 'approved' },
+      { key: 'rejected' },
+      { key: 'progress' },
+      { key: 'awaiting_approval' },
+      { key: 'cancelled' },
     ],
   },
   {
@@ -248,10 +247,10 @@ const CATEGORIES: CategoryMeta[] = [
     labelKey: 'bookings',
     icon: Calendar,
     subTypes: [
-      { key: 'confirmed', label: 'Confirmed' },
-      { key: 'cancelled', label: 'Cancelled' },
-      { key: 'reminder', label: 'Reminder' },
-      { key: 'assigned', label: 'Assigned to Me' },
+      { key: 'confirmed' },
+      { key: 'cancelled' },
+      { key: 'reminder' },
+      { key: 'assigned' },
     ],
   },
   {
@@ -259,8 +258,8 @@ const CATEGORIES: CategoryMeta[] = [
     labelKey: 'calls',
     icon: Phone,
     subTypes: [
-      { key: 'missed', label: 'Missed' },
-      { key: 'voicemail', label: 'Voicemail' },
+      { key: 'missed' },
+      { key: 'voicemail' },
     ],
   },
 ]
@@ -347,7 +346,12 @@ function mergeApiPreferences(
 // Component
 // -------------------------------------------------------------------
 
-export function NotificationPreferences() {
+export function NotificationPreferences({
+  variant = 'card',
+}: {
+  /** `settings`: design form section (settings shell); `card`: standalone card (preferences page). */
+  variant?: 'card' | 'settings'
+} = {}) {
   const t = useTranslations('notificationPreferences')
   const [prefs, setPrefs] = useState<NotificationPreferences>(defaultPreferences)
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -431,8 +435,89 @@ export function NotificationPreferences() {
     [debouncedApiSave],
   )
 
+  const matrix = (
+    <div role="group" aria-label={t('title')} data-testid="notification-preferences-matrix">
+      {CATEGORIES.map((cat) => {
+        const Icon = cat.icon
+        const catPrefs = prefs[cat.key]
+
+        return (
+          <div key={cat.key} className="border-b last:border-b-0" data-testid={`notification-category-${cat.key}`}>
+            {/* Category header with bulk toggles */}
+            <div className="flex min-h-10 items-center gap-2 bg-muted/20 py-1.5 pe-2 ps-4">
+              <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+              <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{t(cat.labelKey)}</span>
+              <div className="flex shrink-0 items-center">
+                {CHANNELS.map((ch) => {
+                  const allOn = Object.values(catPrefs).every((s) => s[ch.key])
+                  return (
+                    <button
+                      key={ch.key}
+                      type="button"
+                      onClick={() => toggleCategoryChannel(cat.key, ch.key)}
+                      aria-pressed={allOn}
+                      className="flex w-14 flex-col items-center gap-1 rounded-md py-1 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <span className="max-w-full truncate px-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                        {t(ch.labelKey)}
+                      </span>
+                      <span
+                        aria-hidden
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          allOn ? 'bg-primary' : 'bg-muted-foreground/30'
+                        }`}
+                      />
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Sub-type rows */}
+            {cat.subTypes.map((sub) => {
+              const subPref = catPrefs[sub.key]
+              const subLabel = t(`types.${cat.key}.${sub.key}`)
+              return (
+                <div
+                  key={sub.key}
+                  className="flex min-h-10 items-center gap-2 border-t border-border/60 py-1.5 pe-2 ps-4 sm:ps-[38px]"
+                >
+                  <span className="min-w-0 flex-1 text-[13px] text-muted-foreground">
+                    {subLabel}
+                  </span>
+                  <div className="flex shrink-0 items-center">
+                    {CHANNELS.map((ch) => (
+                      <span key={ch.key} className="flex w-14 justify-center">
+                        <SettingsToggle
+                          size="sm"
+                          checked={subPref[ch.key]}
+                          onCheckedChange={() => toggle(cat.key, sub.key, ch.key)}
+                          aria-label={`${subLabel} ${t(ch.labelKey)}`}
+                        />
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )
+      })}
+    </div>
+  )
+
+  // Inside the settings shell: a design form section. Elsewhere
+  // (/preferences/notifications): the same matrix in the original card.
+  if (variant === 'settings') {
+    return (
+      <SettingsSection title={t('title')} hint={t('subtitle')} testId="notification-preferences">
+        {matrix}
+      </SettingsSection>
+    )
+  }
+
   return (
-    <Card>
+    <Card data-testid="notification-preferences">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5" />
@@ -440,74 +525,7 @@ export function NotificationPreferences() {
         </CardTitle>
         <CardDescription>{t('subtitle')}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {CATEGORIES.map((cat) => {
-          const Icon = cat.icon
-          const catPrefs = prefs[cat.key]
-
-          return (
-            <div key={cat.key} className="space-y-3">
-              {/* Category header with bulk toggles */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-muted-foreground" />
-                  <Label className="text-base font-semibold">{t(cat.labelKey)}</Label>
-                </div>
-                <div className="flex items-center gap-4">
-                  {CHANNELS.map((ch) => {
-                    const allOn = Object.values(catPrefs).every((s) => s[ch.key])
-                    return (
-                      <button
-                        key={ch.key}
-                        type="button"
-                        onClick={() => toggleCategoryChannel(cat.key, ch.key)}
-                        className="flex flex-col items-center gap-0.5"
-                      >
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                          {t(ch.labelKey)}
-                        </span>
-                        <span
-                          className={`h-2 w-2 rounded-full ${
-                            allOn ? 'bg-primary' : 'bg-muted-foreground/30'
-                          }`}
-                        />
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Sub-type rows */}
-              <div className="ml-6 space-y-2">
-                {cat.subTypes.map((sub) => {
-                  const subPref = catPrefs[sub.key]
-                  return (
-                    <div
-                      key={sub.key}
-                      className="flex items-center justify-between py-1"
-                    >
-                      <span className="text-sm text-muted-foreground">
-                        {sub.label}
-                      </span>
-                      <div className="flex items-center gap-4">
-                        {CHANNELS.map((ch) => (
-                          <Switch
-                            key={ch.key}
-                            checked={subPref[ch.key]}
-                            onCheckedChange={() => toggle(cat.key, sub.key, ch.key)}
-                            className="scale-75"
-                            aria-label={`${sub.label} ${t(ch.labelKey)}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })}
-      </CardContent>
+      <CardContent className="border-t p-0">{matrix}</CardContent>
     </Card>
   )
 }

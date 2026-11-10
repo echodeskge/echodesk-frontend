@@ -1,15 +1,10 @@
 "use client";
 
 import { Users, MessageSquare, HardDrive } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TonePill } from "@/components/redesign/pill";
+import { SettingsSection } from "@/components/redesign/settings";
 import { useTranslations } from "next-intl";
 import type { UsageLimitCheck } from "@/contexts/SubscriptionContext";
 
@@ -58,18 +53,13 @@ export function UsageStatsCard({
   const t = useTranslations('subscription.usageStats');
   if (isLoading) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="h-16 bg-gray-200 rounded animate-pulse" />
-            <div className="h-16 bg-gray-200 rounded animate-pulse" />
-            <div className="h-16 bg-gray-200 rounded animate-pulse" />
-          </div>
-        </CardContent>
-      </Card>
+      <SettingsSection title={t('title')} hint={t('description')} testId="usage-stats">
+        <div className="flex flex-col gap-4 px-4 py-3.5" aria-busy="true">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </SettingsSection>
     );
   }
 
@@ -91,7 +81,7 @@ export function UsageStatsCard({
   const storageStatus = getLimitStatus(usage_limits?.storage);
 
   const getUsageColor = (check: unknown, status: LimitStatus) => {
-    if (!check) return "text-gray-600";
+    if (!check) return "text-muted-foreground";
     if (status.isExceeded) return "text-red-600";
     if (status.isNearLimit) return "text-amber-600";
     return "text-green-600";
@@ -99,113 +89,74 @@ export function UsageStatsCard({
 
   const getProgressColor = (check: unknown, status: LimitStatus) => {
     if (!check) return "";
-    if (status.isExceeded) return "bg-red-500";
-    if (status.isNearLimit) return "bg-amber-500";
+    // Colour the filled indicator (the Progress child), not the track.
+    if (status.isExceeded) return "[&>div]:bg-red-500";
+    if (status.isNearLimit) return "[&>div]:bg-amber-500";
     return "";
   };
 
+  const badges = (status: LimitStatus) => (
+    <>
+      {status.isExceeded && <TonePill tone="danger">{t('badges.limitExceeded')}</TonePill>}
+      {status.isNearLimit && <TonePill tone="warning">{t('badges.nearLimit')}</TonePill>}
+    </>
+  );
+
+  const row = (
+    key: string,
+    Icon: typeof Users,
+    label: string,
+    value: string,
+    check: unknown,
+    status: LimitStatus,
+    showBar = true
+  ) => (
+    <div key={key} className="flex flex-col gap-2 border-b px-4 py-3.5 last:border-b-0" data-testid={`usage-${key}`}>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <span className="flex min-w-0 items-center gap-2 text-[13px] font-medium">
+          <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          {label}
+        </span>
+        <span className="flex flex-wrap items-center gap-2">
+          <span className={`text-[13px] font-medium tabular-nums ${getUsageColor(check, status)}`}>{value}</span>
+          {badges(status)}
+        </span>
+      </div>
+      {showBar && (
+        <Progress value={status.percentUsed} className={`h-1.5 ${getProgressColor(check, status)}`} />
+      )}
+    </div>
+  );
+
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{t('title')}</CardTitle>
-        <CardDescription>
-          {t('description')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Users */}
-        <div>
-          <div className="flex justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-gray-500" />
-              <span className="text-sm font-medium">{t('activeUsers')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-sm font-medium ${getUsageColor(usage_limits?.users, usersStatus)}`}>
-                {usage?.current_users || 0} / {limits?.max_users || t('unlimited')}
-              </span>
-              {usersStatus.isExceeded && (
-                <Badge variant="destructive" className="text-xs">
-                  {t('badges.limitExceeded')}
-                </Badge>
-              )}
-              {usersStatus.isNearLimit && (
-                <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-                  {t('badges.nearLimit')}
-                </Badge>
-              )}
-            </div>
-          </div>
-          <Progress
-            value={usersStatus.percentUsed}
-            className={`h-2 ${getProgressColor(usage_limits?.users, usersStatus)}`}
-          />
-        </div>
-
-        {/* WhatsApp Messages */}
-        <div>
-          <div className="flex justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-gray-500" />
-              <span className="text-sm font-medium">{t('whatsappMessages')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-sm font-medium ${getUsageColor(usage_limits?.whatsapp, whatsappStatus)}`}>
-                {usage?.whatsapp_messages_used || 0} /{" "}
-                {limits?.max_whatsapp_messages === -1
-                  ? t('unlimited')
-                  : limits?.max_whatsapp_messages || 0}
-              </span>
-              {whatsappStatus.isExceeded && (
-                <Badge variant="destructive" className="text-xs">
-                  {t('badges.limitExceeded')}
-                </Badge>
-              )}
-              {whatsappStatus.isNearLimit && (
-                <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-                  {t('badges.nearLimit')}
-                </Badge>
-              )}
-            </div>
-          </div>
-          {limits?.max_whatsapp_messages !== -1 && (
-            <Progress
-              value={whatsappStatus.percentUsed}
-              className={`h-2 ${getProgressColor(usage_limits?.whatsapp, whatsappStatus)}`}
-            />
-          )}
-        </div>
-
-        {/* Storage */}
-        <div>
-          <div className="flex justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <HardDrive className="h-4 w-4 text-gray-500" />
-              <span className="text-sm font-medium">{t('storageUsed')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-sm font-medium ${getUsageColor(usage_limits?.storage, storageStatus)}`}>
-                {formatStorage(usage?.storage_used_gb || 0)} /{" "}
-                {formatStorage(limits?.max_storage_gb || 0)}
-              </span>
-              {storageStatus.isExceeded && (
-                <Badge variant="destructive" className="text-xs">
-                  {t('badges.limitExceeded')}
-                </Badge>
-              )}
-              {storageStatus.isNearLimit && (
-                <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-                  {t('badges.nearLimit')}
-                </Badge>
-              )}
-            </div>
-          </div>
-          <Progress
-            value={storageStatus.percentUsed}
-            className={`h-2 ${getProgressColor(usage_limits?.storage, storageStatus)}`}
-          />
-        </div>
-      </CardContent>
-    </Card>
+    <SettingsSection title={t('title')} hint={t('description')} testId="usage-stats">
+      {row(
+        "users",
+        Users,
+        t('activeUsers'),
+        `${usage?.current_users || 0} / ${limits?.max_users || t('unlimited')}`,
+        usage_limits?.users,
+        usersStatus
+      )}
+      {row(
+        "whatsapp",
+        MessageSquare,
+        t('whatsappMessages'),
+        `${usage?.whatsapp_messages_used || 0} / ${
+          limits?.max_whatsapp_messages === -1 ? t('unlimited') : limits?.max_whatsapp_messages || 0
+        }`,
+        usage_limits?.whatsapp,
+        whatsappStatus,
+        limits?.max_whatsapp_messages !== -1
+      )}
+      {row(
+        "storage",
+        HardDrive,
+        t('storageUsed'),
+        `${formatStorage(usage?.storage_used_gb || 0)} / ${formatStorage(limits?.max_storage_gb || 0)}`,
+        usage_limits?.storage,
+        storageStatus
+      )}
+    </SettingsSection>
   );
 }
