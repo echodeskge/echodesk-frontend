@@ -97,6 +97,7 @@ const EMPTY_FORM: InboundFormState = {
 
 export default function InboundRoutesPage() {
   const t = useTranslations("pbxSettings.inbound");
+  const tStatus = useTranslations("pbxSettings.status");
   const tForm = useTranslations("pbxSettings.form");
   const tToast = useTranslations("pbxSettings.toast");
 
@@ -189,7 +190,7 @@ export default function InboundRoutesPage() {
   });
 
   const validate = (): string | null => {
-    if (!form.did.trim()) return "DID";
+    if (!form.did.trim()) return t("form.errors.didRequired");
     if (form.destination_type === "queue" && form.destination_queue == null)
       return t("form.errors.queueRequired");
     if (form.destination_type === "extension" && form.destination_extension == null)
@@ -282,10 +283,10 @@ export default function InboundRoutesPage() {
                   <TableCell>{r.priority ?? 100}</TableCell>
                   <TableCell>
                     {r.is_active ? (
-                      <Badge variant="default">Active</Badge>
-                    ) : (
-                      <Badge variant="secondary">Inactive</Badge>
-                    )}
+<Badge variant="default">{tStatus("active")}</Badge>
+) : (
+<Badge variant="secondary">{tStatus("inactive")}</Badge>
+)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1 justify-end">
@@ -398,7 +399,7 @@ export default function InboundRoutesPage() {
                   <SelectContent>
                     {assignments.map((a) => (
                       <SelectItem key={a.id} value={String(a.id)}>
-                        ext {a.extension} — {a.user_name}
+                        {t("extOption", { extension: a.extension, name: a.user_name })}
                       </SelectItem>
                     ))}
                   </SelectContent>

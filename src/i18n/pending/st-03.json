@@ -24,6 +24,30 @@
       "settings": {
         "saveAssignmentFailed": "Failed to save assignment"
       }
+    },
+    "pbxSettings": {
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "queues": {
+        "ext": "ext {extension}",
+        "paused": "paused",
+        "emptyModes": {
+          "yes": "Yes",
+          "no": "No",
+          "strict": "Strict",
+          "loose": "Loose"
+        }
+      },
+      "inbound": {
+        "extOption": "ext {extension} — {name}",
+        "form": {
+          "errors": {
+            "didRequired": "Enter the DID or pattern."
+          }
+        }
+      }
     }
   },
   "ka": {
@@ -50,6 +74,30 @@
     "calls": {
       "settings": {
         "saveAssignmentFailed": "მინიჭების შენახვა ვერ მოხერხდა"
+      }
+    },
+    "pbxSettings": {
+      "status": {
+        "active": "აქტიური",
+        "inactive": "არააქტიური"
+      },
+      "queues": {
+        "ext": "გაფ. {extension}",
+        "paused": "შეჩერებული",
+        "emptyModes": {
+          "yes": "კი",
+          "no": "არა",
+          "strict": "მკაცრად",
+          "loose": "თავისუფლად"
+        }
+      },
+      "inbound": {
+        "extOption": "გაფ. {extension} — {name}",
+        "form": {
+          "errors": {
+            "didRequired": "შეიყვანეთ DID ან ნიმუში."
+          }
+        }
       }
     }
   }

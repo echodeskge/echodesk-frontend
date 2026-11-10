@@ -85,6 +85,7 @@ const EMPTY_FORM: TrunkFormState = {
 
 export default function TrunksPage() {
   const t = useTranslations("pbxSettings.trunks");
+  const tStatus = useTranslations("pbxSettings.status");
   const tForm = useTranslations("pbxSettings.form");
   const tToast = useTranslations("pbxSettings.toast");
 
@@ -251,10 +252,10 @@ export default function TrunksPage() {
                     </TableCell>
                     <TableCell>
                       {trunk.is_active ? (
-                        <Badge variant="default">Active</Badge>
-                      ) : (
-                        <Badge variant="secondary">Inactive</Badge>
-                      )}
+<Badge variant="default">{tStatus("active")}</Badge>
+) : (
+<Badge variant="secondary">{tStatus("inactive")}</Badge>
+)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 justify-end">

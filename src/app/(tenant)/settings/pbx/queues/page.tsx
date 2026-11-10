@@ -127,6 +127,7 @@ function slugify(input: string): string {
 
 export default function QueuesPage() {
   const t = useTranslations("pbxSettings.queues");
+  const tStatus = useTranslations("pbxSettings.status");
   const tForm = useTranslations("pbxSettings.form");
   const tToast = useTranslations("pbxSettings.toast");
 
@@ -299,10 +300,10 @@ export default function QueuesPage() {
                   <TableCell>{q.member_count}</TableCell>
                   <TableCell>
                     {q.is_active ? (
-                      <Badge variant="default">Active</Badge>
-                    ) : (
-                      <Badge variant="secondary">Inactive</Badge>
-                    )}
+<Badge variant="default">{tStatus("active")}</Badge>
+) : (
+<Badge variant="secondary">{tStatus("inactive")}</Badge>
+)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1 justify-end">
@@ -457,7 +458,7 @@ export default function QueuesPage() {
                 <SelectContent>
                   {JOIN_EMPTY.map((v) => (
                     <SelectItem key={v} value={v}>
-                      {v}
+                      {t(`emptyModes.${v}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -477,7 +478,7 @@ export default function QueuesPage() {
                 <SelectContent>
                   {LEAVE_WHEN_EMPTY.map((v) => (
                     <SelectItem key={v} value={v}>
-                      {v}
+                      {t(`emptyModes.${v}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -581,8 +582,8 @@ function QueueMembersInline({ queueId }: { queueId: number }) {
     <ul className="divide-y text-sm">
       {members.map((m) => (
         <li key={m.id} className="py-2 flex items-center justify-between">
-          <span className="font-mono">ext {m.extension}</span>
-          {m.paused && <Badge variant="secondary">paused</Badge>}
+          <span className="font-mono">{t("ext", { extension: m.extension })}</span>
+          {m.paused && <Badge variant="secondary">{t("paused")}</Badge>}
         </li>
       ))}
     </ul>
