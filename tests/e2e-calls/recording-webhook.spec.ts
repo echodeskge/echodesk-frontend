@@ -19,8 +19,8 @@ test.describe("recording-webhook", () => {
 
     await dial(a101.page, NUMBERS.recording);
     await waitActive(a101.page, 15_000);
-    // Playback + Wait(2) + Hangup from the PBX side.
-    await expectIdle(a101.page, 30_000);
+    // Playback(demo-congrats, ~30 s) + Wait(2) + Hangup from the PBX side.
+    await expectIdle(a101.page, 45_000);
 
     const rows = await waitForLogs(
       since,
