@@ -501,6 +501,13 @@ export default function CallSettingsPage() {
         stun_server: config.stun_server || "",
         turn_server: config.turn_server || "",
         turn_username: config.turn_username || "",
+        // Without these the edit dialog showed Active / Default unticked,
+        // 5 max calls, "/ws" and an empty trunk number whatever was stored.
+        phone_number: config.phone_number || "",
+        websocket_path: config.websocket_path || "/ws",
+        is_active: config.is_active,
+        is_default: config.is_default,
+        max_concurrent_calls: config.max_concurrent_calls,
       });
       setShowModal(true);
     } catch (error) {
