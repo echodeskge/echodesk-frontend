@@ -139,6 +139,14 @@ describe("Calls & SIP settings", () => {
     expect(within(row).queryByTestId("sip-set-default")).toBeNull()
   })
 
+  it("has no Quick setup button (S1: it carried a real SIP password)", async () => {
+    renderSt(<CallSettingsPage />)
+    await screen.findByTestId("sip-config-row")
+    expect(screen.queryByTestId("sip-quick-setup")).toBeNull()
+    expect(screen.queryByText(/Quick Setup/i)).toBeNull()
+    expect(screen.getByTestId("sip-add")).toBeInTheDocument()
+  })
+
   it("creates a configuration WITH the typed password (bug fix) and a translated toast", async () => {
     renderSt(<CallSettingsPage />)
     await screen.findByTestId("sip-config-row")
