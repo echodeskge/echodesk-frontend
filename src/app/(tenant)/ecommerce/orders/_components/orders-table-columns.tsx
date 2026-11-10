@@ -108,7 +108,9 @@ export function getOrderColumns({
             header: "",
             width: "96px",
             align: "end",
-            mobile: "end",
+            // Own line on phones: next to the "Cleaned" pill it squeezed the
+            // order number to "#ORD-DEM…" in Georgian at 390px.
+            mobile: "actions",
             cell: (o) => (
               <button
                 type="button"
