@@ -52,7 +52,7 @@ export default function SubscriptionPage() {
         window.location.href = result.payment_url;
       }
     } catch (error: any) {
-      toast.error(getApiErrorMessage(error, 'Failed to initiate card addition'));
+      toast.error(getApiErrorMessage(error, tSub('savedCards.messages.initiateFailed')));
       console.error('Add card error:', error);
     }
   };
@@ -60,9 +60,9 @@ export default function SubscriptionPage() {
   const handleRemoveCard = async (cardId: number) => {
     try {
       await removeCardMutation.mutateAsync({ card_id: cardId });
-      toast.success('Card removed successfully');
+      toast.success(tSub('savedCards.messages.removeSuccess'));
     } catch (error: any) {
-      toast.error(getApiErrorMessage(error, 'Failed to remove card'));
+      toast.error(getApiErrorMessage(error, tSub('savedCards.messages.removeFailed')));
       console.error('Remove card error:', error);
     }
   };
@@ -70,9 +70,9 @@ export default function SubscriptionPage() {
   const handleSetDefaultCard = async (cardId: number) => {
     try {
       await setDefaultCardMutation.mutateAsync({ card_id: cardId });
-      toast.success('Default card updated');
+      toast.success(tSub('savedCards.messages.defaultSuccess'));
     } catch (error: any) {
-      toast.error(getApiErrorMessage(error, 'Failed to set default card'));
+      toast.error(getApiErrorMessage(error, tSub('savedCards.messages.defaultFailed')));
       console.error('Set default card error:', error);
     }
   };

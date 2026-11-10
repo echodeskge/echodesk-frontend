@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 interface Feature {
   id: number;
@@ -78,6 +79,8 @@ interface RemoveFeatureResponse {
 }
 
 export function FeatureManagementCard() {
+  const t = useTranslations('subscription.featureManagement');
+  const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -111,13 +114,13 @@ export function FeatureManagementCard() {
       if (data.requires_payment || data.requires_authentication) {
         // Redirect to payment page
         if (data.payment_url) {
-          toast.info('Redirecting to payment...');
+          toast.info(t('toasts.redirecting'));
           window.location.href = data.payment_url;
         }
       } else if (data.success) {
         toast.success(data.message);
         if (data.payment_charged) {
-          toast.success(`Charged ${data.prorated_cost.toFixed(2)} GEL for prorated cost`);
+          toast.success(t('toasts.charged', { amount: data.prorated_cost.toFixed(2) }));
         }
         queryClient.invalidateQueries({ queryKey: ['available-features'] });
         queryClient.invalidateQueries({ queryKey: ['tenant-subscription'] });
@@ -125,7 +128,7 @@ export function FeatureManagementCard() {
     },
     onError: (error: any) => {
       // 403s from the staff-only billing endpoints come back as {detail}.
-      const errorMessage = getApiErrorMessage(error, 'Failed to add feature');
+      const errorMessage = getApiErrorMessage(error, t('toasts.addFailed'));
       toast.error(errorMessage);
     },
   });
@@ -140,12 +143,12 @@ export function FeatureManagementCard() {
     },
     onSuccess: (data) => {
       toast.success(data.message);
-      toast.info(`Monthly cost reduced by ${data.cost_reduction.toFixed(2)} GEL`);
+      toast.info(t('toasts.reduced', { amount: data.cost_reduction.toFixed(2) }));
       queryClient.invalidateQueries({ queryKey: ['available-features'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-subscription'] });
     },
     onError: (error: any) => {
-      const errorMessage = getApiErrorMessage(error, 'Failed to remove feature');
+      const errorMessage = getApiErrorMessage(error, t('toasts.removeFailed'));
       toast.error(errorMessage);
     },
   });
@@ -174,8 +177,8 @@ export function FeatureManagementCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Feature Management</CardTitle>
-          <CardDescription>Loading available features...</CardDescription>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('loading')}</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -188,8 +191,8 @@ export function FeatureManagementCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Feature Management</CardTitle>
-          <CardDescription>Unable to load features</CardDescription>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('loadFailed')}</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -202,13 +205,13 @@ export function FeatureManagementCard() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            Feature Management
+            {t('title')}
             <Badge variant="outline">
-              {agent_count} {agent_count === 1 ? 'Agent' : 'Agents'}
+              {t('agents', { count: agent_count })}
             </Badge>
           </CardTitle>
           <CardDescription>
-            Add or remove features from your subscription. Prices shown are monthly costs for your current agent count.
+            {t('description')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -229,7 +232,7 @@ export function FeatureManagementCard() {
                         {feature.is_selected && (
                           <Badge variant="default" className="bg-green-600">
                             <Check className="h-3 w-3 mr-1" />
-                            Active
+                            {t('active')}
                           </Badge>
                         )}
                       </div>
@@ -238,10 +241,10 @@ export function FeatureManagementCard() {
                       </p>
                       <div className="flex items-center gap-4 mt-2">
                         <span className="text-sm font-medium">
-                          {feature.price_per_user_gel.toFixed(2)} GEL / agent / month
+                          {t('pricePerAgent', { price: feature.price_per_user_gel.toFixed(2) })}
                         </span>
                         <span className="text-sm text-muted-foreground">
-                          Total: {feature.monthly_cost_for_current_agents.toFixed(2)} GEL / month
+                          {t('total', { price: feature.monthly_cost_for_current_agents.toFixed(2) })}
                         </span>
                       </div>
                     </div>
@@ -257,12 +260,12 @@ export function FeatureManagementCard() {
                         ) : feature.is_selected ? (
                           <>
                             <Minus className="h-4 w-4 mr-1" />
-                            Remove
+                            {t('remove')}
                           </>
                         ) : (
                           <>
                             <Plus className="h-4 w-4 mr-1" />
-                            Add
+                            {t('add')}
                           </>
                         )}
                       </Button>
@@ -281,47 +284,47 @@ export function FeatureManagementCard() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {confirmDialog.action === 'add' ? 'Add Feature' : 'Remove Feature'}
+              {confirmDialog.action === 'add' ? t('dialog.addTitle') : t('dialog.removeTitle')}
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
               {confirmDialog.feature && confirmDialog.action === 'add' && (
                 <>
                   <p>
-                    You are about to add <strong>{confirmDialog.feature.name}</strong> to your subscription.
+                    {t.rich('dialog.addIntro', { name: confirmDialog.feature.name, b: (chunks) => <strong>{chunks}</strong> })}
                   </p>
                   <div className="bg-blue-50 p-3 rounded-lg text-sm">
-                    <p className="font-medium text-blue-900">Cost Breakdown:</p>
+                    <p className="font-medium text-blue-900">{t('dialog.costBreakdown')}</p>
                     <ul className="mt-2 space-y-1 text-blue-800">
                       <li>
-                        Monthly cost: {confirmDialog.feature.monthly_cost_for_current_agents.toFixed(2)} GEL
+                        {t('dialog.monthlyCost', { price: confirmDialog.feature.monthly_cost_for_current_agents.toFixed(2) })}
                       </li>
                       <li>
-                        Prorated cost will be charged immediately based on remaining days in your billing cycle
+                        {t('dialog.proratedNow')}
                       </li>
                     </ul>
                   </div>
                   <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg">
                     <CreditCard className="h-4 w-4" />
-                    <span className="text-sm">Your saved card will be charged for the prorated amount</span>
+                    <span className="text-sm">{t('dialog.cardCharged')}</span>
                   </div>
                 </>
               )}
               {confirmDialog.feature && confirmDialog.action === 'remove' && (
                 <>
                   <p>
-                    You are about to remove <strong>{confirmDialog.feature.name}</strong> from your subscription.
+                    {t.rich('dialog.removeIntro', { name: confirmDialog.feature.name, b: (chunks) => <strong>{chunks}</strong> })}
                   </p>
                   <div className="bg-amber-50 p-3 rounded-lg text-sm">
-                    <p className="font-medium text-amber-900">Note:</p>
+                    <p className="font-medium text-amber-900">{t('dialog.note')}</p>
                     <ul className="mt-2 space-y-1 text-amber-800">
                       <li>
-                        Your monthly cost will be reduced by {confirmDialog.feature.monthly_cost_for_current_agents.toFixed(2)} GEL
+                        {t('dialog.costReduced', { price: confirmDialog.feature.monthly_cost_for_current_agents.toFixed(2) })}
                       </li>
                       <li>
-                        The reduction will take effect on your next billing cycle
+                        {t('dialog.nextCycle')}
                       </li>
                       <li>
-                        You will lose access to this feature immediately
+                        {t('dialog.loseAccess')}
                       </li>
                     </ul>
                   </div>
@@ -330,9 +333,9 @@ export function FeatureManagementCard() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmAction}>
-              {confirmDialog.action === 'add' ? 'Add Feature' : 'Remove Feature'}
+              {confirmDialog.action === 'add' ? t('dialog.addTitle') : t('dialog.removeTitle')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
