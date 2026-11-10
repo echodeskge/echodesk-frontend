@@ -3,8 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "@/api/axios";
-import type { RecentContact } from "./DialPad";
 import { digitsOnly } from "./call-format";
+
+export interface RecentContact {
+  name: string;
+  number: string;
+}
 
 interface RecentLog {
   id: number;
