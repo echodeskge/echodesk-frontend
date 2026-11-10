@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
-export { SettingsPageHeader as PageHeader } from "@/app/(tenant)/settings/templates/_components/settings-page-header"
+export { SettingsPageHeader as PageHeader } from "./settings/settings-page-header"
 
 /**
  * A section's route shell (rendered by the section layout): a full-height
