@@ -1,10 +1,10 @@
 /**
  * TransferPanel + useTransferAgents: agents from phone assignments + live
- * extension status (own user excluded, offline disabled), 15 s refresh while
- * open, attended vs blind, the external number input, load failure.
+ * extension status (own user excluded, offline disabled), 30 s refresh only
+ * while open, attended vs blind, the external number input, load failure.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 
@@ -62,14 +62,39 @@ describe("useTransferAgents", () => {
     expect(h.extensionsStatusRetrieve).toHaveBeenCalledTimes(1);
   });
 
-  it("refreshes every 15 s while the panel is open (U6)", async () => {
+  it("refreshes every 30 s while the panel is open, staleTime matching (U6)", async () => {
     const { queryClient } = renderPanel();
     await screen.findAllByTestId("call-rail-transfer-agent");
     const query = queryClient.getQueryCache().find({ queryKey: ["calls", "transfer-agents"] });
     const observer = query?.observers[0];
-    expect(TRANSFER_AGENTS_REFRESH_MS).toBe(15_000);
-    expect(observer?.options.refetchInterval).toBe(15_000);
-    expect(observer?.options.staleTime).toBe(15_000);
+    expect(TRANSFER_AGENTS_REFRESH_MS).toBe(30_000);
+    expect(observer?.options.refetchInterval).toBe(30_000);
+    expect(observer?.options.staleTime).toBe(30_000);
+  });
+
+  it("polls only while the panel is mounted: one request per 30 s open, none after it closes", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { queryClient, unmount } = renderPanel();
+      await screen.findAllByTestId("call-rail-transfer-agent");
+      expect(h.phoneAssignmentsList).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(30_100);
+      });
+      expect(h.phoneAssignmentsList).toHaveBeenCalledTimes(2);
+      expect(h.extensionsStatusRetrieve).toHaveBeenCalledTimes(2);
+
+      unmount();
+      expect(queryClient.getQueryCache().find({ queryKey: ["calls", "transfer-agents"] })?.observers).toHaveLength(0);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(90_000);
+      });
+      expect(h.phoneAssignmentsList).toHaveBeenCalledTimes(2);
+      expect(h.extensionsStatusRetrieve).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("buildTransferAgents excludes the own user, labels nameless agents by extension and marks online", () => {

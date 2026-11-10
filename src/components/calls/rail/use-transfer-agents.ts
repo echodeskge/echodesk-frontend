@@ -16,7 +16,12 @@ export interface TransferAgent {
   online: boolean;
 }
 
-export const TRANSFER_AGENTS_REFRESH_MS = 15_000;
+/**
+ * Poll period for the online dots while the transfer panel is mounted. The
+ * status call is an AMI `PJSIPShowContacts` per poll on a PbxServer tenant,
+ * so keep it modest; the panel unmounts when closed, which stops it.
+ */
+export const TRANSFER_AGENTS_REFRESH_MS = 30_000;
 export const TRANSFER_AGENTS_QUERY_KEY = ["calls", "transfer-agents"] as const;
 
 interface RawAgents {
@@ -59,8 +64,10 @@ export function buildTransferAgents(raw: RawAgents, ownUserId: number | undefine
 }
 
 /**
- * The agents of the transfer panel. Fresh for 15 s and refetched every 15 s
- * while the panel is open, so the online dots can't go stale (U6).
+ * The agents of the transfer panel. Fresh for 30 s and refetched every 30 s
+ * only while the panel is open (the observer goes away with the panel, so
+ * nothing polls once it is closed); `staleTime` matches the interval, so a
+ * reopen within 30 s shows the cache and the poll refreshes it (U6).
  */
 export function useTransferAgents(open: boolean) {
   const t = useTranslations("calls.rail");
