@@ -13,6 +13,45 @@
           "ticketSaveFailed": "Failed to save ticket settings"
         }
       }
+    },
+    "notificationPreferences": {
+      "types": {
+        "tickets": {
+          "assigned": "Assigned",
+          "commented": "Commented",
+          "mentioned": "Mentioned",
+          "status_changed": "Status Changed"
+        },
+        "messages": {
+          "new_message": "New Message",
+          "message_assigned": "Message Assigned",
+          "team_chat": "Team Chat",
+          "social_admin": "Auto-posts & Templates"
+        },
+        "invoices": {
+          "created": "Created",
+          "paid": "Paid",
+          "overdue": "Overdue"
+        },
+        "leave": {
+          "submitted": "Submitted",
+          "approved": "Approved",
+          "rejected": "Rejected",
+          "progress": "Partially Approved",
+          "awaiting_approval": "Awaiting My Approval",
+          "cancelled": "Cancelled"
+        },
+        "bookings": {
+          "confirmed": "Confirmed",
+          "cancelled": "Cancelled",
+          "reminder": "Reminder",
+          "assigned": "Assigned to Me"
+        },
+        "calls": {
+          "missed": "Missed",
+          "voicemail": "Voicemail"
+        }
+      }
     }
   },
   "ka": {
@@ -27,6 +66,56 @@
           "logoRemoveFailed": "ლოგოს წაშლა ვერ მოხერხდა",
           "ticketSaved": "ტიკეტების პარამეტრები შენახულია",
           "ticketSaveFailed": "ტიკეტების პარამეტრების შენახვა ვერ მოხერხდა"
+        }
+      }
+    },
+    "notificationPreferences": {
+      "push": "პუში",
+      "settings": {
+        "pushNotifications": "პუშ-შეტყობინებები",
+        "pushEnabled": "პუშ-შეტყობინებები ჩართულია",
+        "pushAvailable": "პუშ-შეტყობინებები ხელმისაწვდომია",
+        "pushBlocked": "პუშ-შეტყობინებები დაბლოკილია",
+        "pushRequiresPermission": "პუშ-შეტყობინებებს ნებართვა სჭირდება",
+        "pushDefaultDesc": "დააჭირეთ გადამრთველს პუშ-შეტყობინებების ჩასართავად",
+        "testPush": "სატესტო პუშ-შეტყობინების გაგზავნა",
+        "testPushFailed": "სატესტო შეტყობინება ვერ გაიგზავნა. გამორთეთ და თავიდან ჩართეთ პუშ-შეტყობინებები და სცადეთ ხელახლა."
+      },
+      "types": {
+        "tickets": {
+          "assigned": "მინიჭებული",
+          "commented": "კომენტარი",
+          "mentioned": "მოხსენიება",
+          "status_changed": "სტატუსის ცვლილება"
+        },
+        "messages": {
+          "new_message": "ახალი შეტყობინება",
+          "message_assigned": "მინიჭებული შეტყობინება",
+          "team_chat": "გუნდის ჩატი",
+          "social_admin": "ავტოპოსტები და შაბლონები"
+        },
+        "invoices": {
+          "created": "შექმნილი",
+          "paid": "გადახდილი",
+          "overdue": "ვადაგადაცილებული"
+        },
+        "leave": {
+          "submitted": "გაგზავნილი",
+          "approved": "დამტკიცებული",
+          "rejected": "უარყოფილი",
+          "progress": "ნაწილობრივ დამტკიცებული",
+          "awaiting_approval": "ელოდება ჩემს დამტკიცებას",
+          "cancelled": "გაუქმებული"
+        },
+        "bookings": {
+          "confirmed": "დადასტურებული",
+          "cancelled": "გაუქმებული",
+          "reminder": "შეხსენება",
+          "assigned": "მე მომენიჭა"
+        },
+        "calls": {
+          "missed": "გამოტოვებული",
+          "voicemail": "ხმოვანი ფოსტა"
         }
       }
     }

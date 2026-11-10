@@ -194,7 +194,7 @@ interface CategoryMeta {
   key: keyof NotificationPreferences
   labelKey: string
   icon: React.ElementType
-  subTypes: { key: string; label: string }[]
+  subTypes: { key: string }[]
 }
 
 const CATEGORIES: CategoryMeta[] = [
@@ -203,10 +203,10 @@ const CATEGORIES: CategoryMeta[] = [
     labelKey: 'tickets',
     icon: Bell,
     subTypes: [
-      { key: 'assigned', label: 'Assigned' },
-      { key: 'commented', label: 'Commented' },
-      { key: 'mentioned', label: 'Mentioned' },
-      { key: 'status_changed', label: 'Status Changed' },
+      { key: 'assigned' },
+      { key: 'commented' },
+      { key: 'mentioned' },
+      { key: 'status_changed' },
     ],
   },
   {
@@ -214,10 +214,10 @@ const CATEGORIES: CategoryMeta[] = [
     labelKey: 'messages',
     icon: MessageCircle,
     subTypes: [
-      { key: 'new_message', label: 'New Message' },
-      { key: 'message_assigned', label: 'Message Assigned' },
-      { key: 'team_chat', label: 'Team Chat' },
-      { key: 'social_admin', label: 'Auto-posts & Templates' },
+      { key: 'new_message' },
+      { key: 'message_assigned' },
+      { key: 'team_chat' },
+      { key: 'social_admin' },
     ],
   },
   {
@@ -225,9 +225,9 @@ const CATEGORIES: CategoryMeta[] = [
     labelKey: 'invoices',
     icon: Receipt,
     subTypes: [
-      { key: 'created', label: 'Created' },
-      { key: 'paid', label: 'Paid' },
-      { key: 'overdue', label: 'Overdue' },
+      { key: 'created' },
+      { key: 'paid' },
+      { key: 'overdue' },
     ],
   },
   {
@@ -235,12 +235,12 @@ const CATEGORIES: CategoryMeta[] = [
     labelKey: 'leave',
     icon: CalendarDays,
     subTypes: [
-      { key: 'submitted', label: 'Submitted' },
-      { key: 'approved', label: 'Approved' },
-      { key: 'rejected', label: 'Rejected' },
-      { key: 'progress', label: 'Partially Approved' },
-      { key: 'awaiting_approval', label: 'Awaiting My Approval' },
-      { key: 'cancelled', label: 'Cancelled' },
+      { key: 'submitted' },
+      { key: 'approved' },
+      { key: 'rejected' },
+      { key: 'progress' },
+      { key: 'awaiting_approval' },
+      { key: 'cancelled' },
     ],
   },
   {
@@ -248,10 +248,10 @@ const CATEGORIES: CategoryMeta[] = [
     labelKey: 'bookings',
     icon: Calendar,
     subTypes: [
-      { key: 'confirmed', label: 'Confirmed' },
-      { key: 'cancelled', label: 'Cancelled' },
-      { key: 'reminder', label: 'Reminder' },
-      { key: 'assigned', label: 'Assigned to Me' },
+      { key: 'confirmed' },
+      { key: 'cancelled' },
+      { key: 'reminder' },
+      { key: 'assigned' },
     ],
   },
   {
@@ -259,8 +259,8 @@ const CATEGORIES: CategoryMeta[] = [
     labelKey: 'calls',
     icon: Phone,
     subTypes: [
-      { key: 'missed', label: 'Missed' },
-      { key: 'voicemail', label: 'Voicemail' },
+      { key: 'missed' },
+      { key: 'voicemail' },
     ],
   },
 ]
@@ -481,13 +481,14 @@ export function NotificationPreferences() {
               <div className="ml-6 space-y-2">
                 {cat.subTypes.map((sub) => {
                   const subPref = catPrefs[sub.key]
+                  const subLabel = t(`types.${cat.key}.${sub.key}`)
                   return (
                     <div
                       key={sub.key}
                       className="flex items-center justify-between py-1"
                     >
                       <span className="text-sm text-muted-foreground">
-                        {sub.label}
+                        {subLabel}
                       </span>
                       <div className="flex items-center gap-4">
                         {CHANNELS.map((ch) => (
@@ -496,7 +497,7 @@ export function NotificationPreferences() {
                             checked={subPref[ch.key]}
                             onCheckedChange={() => toggle(cat.key, sub.key, ch.key)}
                             className="scale-75"
-                            aria-label={`${sub.label} ${t(ch.labelKey)}`}
+                            aria-label={`${subLabel} ${t(ch.labelKey)}`}
                           />
                         ))}
                       </div>
