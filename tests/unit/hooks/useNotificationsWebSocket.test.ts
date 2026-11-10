@@ -131,17 +131,63 @@ vi.mock("@/hooks/useOnlineStatus", () => ({
 }));
 
 import { useNotificationsWebSocket } from "@/hooks/useNotificationsWebSocket";
+import { onCallEvent, __resetCallEventsForTests } from "@/lib/call-events";
 
 describe("useNotificationsWebSocket", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     MockWebSocket.reset();
+    __resetCallEventsForTests();
     localStorage.setItem("echodesk_auth_token", "test-token");
   });
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  describe("call_event", () => {
+    it("publishes the call payload on the call-events emitter", () => {
+      const listener = vi.fn();
+      onCallEvent(listener);
+      renderHook(() => useNotificationsWebSocket());
+
+      act(() => {
+        MockWebSocket.lastInstance!.simulateOpen();
+      });
+
+      const call = {
+        id: 42,
+        call_id: "uuid-42",
+        pbx_call_id: "1700000000.12",
+        sip_call_id: "abc@host",
+        status: "answered",
+        direction: "inbound",
+        handled_by: 7,
+      };
+      act(() => {
+        MockWebSocket.lastInstance!.simulateMessage({ type: "call_event", call });
+      });
+
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenCalledWith(call);
+    });
+
+    it("drops a call_event without a usable call payload", () => {
+      const listener = vi.fn();
+      onCallEvent(listener);
+      renderHook(() => useNotificationsWebSocket());
+
+      act(() => {
+        MockWebSocket.lastInstance!.simulateOpen();
+      });
+      act(() => {
+        MockWebSocket.lastInstance!.simulateMessage({ type: "call_event" });
+        MockWebSocket.lastInstance!.simulateMessage({ type: "call_event", call: { foo: 1 } });
+      });
+
+      expect(listener).not.toHaveBeenCalled();
+    });
   });
 
   describe("connection", () => {
