@@ -35,6 +35,14 @@ const EVENT_TYPE_ICONS: Record<SecurityEventType, React.ReactNode> = {
   token_expired: <Clock className="h-4 w-4 text-orange-500" />,
 };
 
+// Event labels from our catalog (the API's event_type_display is English).
+const EVENT_TYPE_LABEL_KEYS: Record<SecurityEventType, string> = {
+  login_success: "logs.loginSuccess",
+  login_failed: "logs.loginFailed",
+  logout: "logs.logout",
+  token_expired: "logs.tokenExpired",
+};
+
 const EVENT_TYPE_TONES: Record<SecurityEventType, Tone> = {
   login_success: "success",
   login_failed: "danger",
@@ -90,7 +98,9 @@ export function SecurityLogsTab() {
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5">{EVENT_TYPE_ICONS[log.event_type]}</span>
-            <TonePill tone={EVENT_TYPE_TONES[log.event_type] ?? "neutral"}>{log.event_type_display}</TonePill>
+            <TonePill tone={EVENT_TYPE_TONES[log.event_type] ?? "neutral"}>
+              {EVENT_TYPE_LABEL_KEYS[log.event_type] ? t(EVENT_TYPE_LABEL_KEYS[log.event_type]) : log.event_type_display}
+            </TonePill>
           </span>
           {log.failure_reason && (
             <span className="truncate text-xs text-muted-foreground" title={log.failure_reason}>
