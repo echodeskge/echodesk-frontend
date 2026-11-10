@@ -120,10 +120,13 @@ export default function UserDetailsModal({
             </InfoItem>
           </InfoSection>
 
-          {user.permissions && (
+          {user.permissions && (Array.isArray(user.permissions) ? user.permissions.length > 0 : true) && (
             <section className="overflow-hidden rounded-[10px] border">
               <h3 className="border-b bg-muted/35 px-4 py-2.5 text-[13px] font-semibold">{t("ui.details.permissions")}</h3>
-              <div className="whitespace-pre-wrap break-words p-4 font-mono text-xs text-muted-foreground">{user.permissions}</div>
+              <div className="whitespace-pre-wrap break-words p-4 font-mono text-xs text-muted-foreground">
+                {/* The API sends a list; rendered as-is the codes ran together ("create_ticketsedit_own_tickets…"). */}
+                {Array.isArray(user.permissions) ? user.permissions.join("\n") : user.permissions}
+              </div>
             </section>
           )}
         </div>

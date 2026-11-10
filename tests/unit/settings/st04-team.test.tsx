@@ -325,3 +325,18 @@ describe("settings/groups (LIST PAGE)", () => {
     expect(screen.getByTestId("groups-count")).toHaveTextContent("1 ჯგუფი")
   })
 })
+
+describe("UserDetailsModal permissions (ST-04 fix)", () => {
+  it("lists each permission code on its own line, and hides an empty list", () => {
+    const base = { onClose: vi.fn(), onEdit: vi.fn(), onDelete: vi.fn(), onChangeStatus: vi.fn(), onSendNewPassword: vi.fn() }
+    const { unmount } = renderSt(
+      <UserDetailsModal {...base} user={makeUser({ permissions: ["create_tickets", "edit_own_tickets"] as never })} />
+    )
+    expect(screen.getByText("Additional Permissions")).toBeInTheDocument()
+    expect(screen.getByText(/create_tickets\s+edit_own_tickets/)).toBeInTheDocument()
+    expect(screen.queryByText("create_ticketsedit_own_tickets")).not.toBeInTheDocument()
+    unmount()
+    renderSt(<UserDetailsModal {...base} user={makeUser({ permissions: [] as never })} />)
+    expect(screen.queryByText("Additional Permissions")).not.toBeInTheDocument()
+  })
+})
