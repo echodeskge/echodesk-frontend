@@ -298,7 +298,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
     { id: "whatsapp", label: "WhatsApp", icon: WhatsAppIcon as unknown as LucideIcon, color: "#25D366" },
     { id: "email", label: t("connections.email"), icon: Mail, color: "#dc2626" },
     { id: "widget", label: t("connections.widget"), icon: MessageCircle, color: "#4f46e5" },
-    { id: "tiktok", label: "TikTok", icon: TikTokIcon as unknown as LucideIcon, color: "#000000" },
+    { id: "tiktok", label: "TikTok", icon: TikTokIcon as unknown as LucideIcon, color: "linear-gradient(135deg,#25F4EE,#000 40%,#000 60%,#FE2C55)" },
     { id: "telegram", label: "Telegram", icon: TelegramIcon as unknown as LucideIcon, color: "#229ED9" },
   ];
 

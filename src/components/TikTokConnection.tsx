@@ -115,7 +115,7 @@ export function TikTokConnection() {
     <>
       <ChannelDetailCard
         icon={TikTokIcon as unknown as LucideIcon}
-        color="#000000"
+        color="linear-gradient(135deg,#25F4EE,#000 40%,#000 60%,#FE2C55)"
         title={t('tiktok.title')}
         status={isConnected && account ? t('tiktok.connected') : t('tiktok.notConnected')}
         statusIcon={isConnected && account ? Check : X}
