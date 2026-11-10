@@ -12,6 +12,31 @@
           "ticketSaved": "Ticket settings saved successfully",
           "ticketSaveFailed": "Failed to save ticket settings"
         }
+      },
+      "appearance": {
+        "radius": {
+          "sharp": "Sharp",
+          "subtle": "Subtle",
+          "default": "Default",
+          "rounded": "Rounded",
+          "pill": "Pill"
+        },
+        "presets": {
+          "zinc": "Zinc",
+          "slate": "Slate",
+          "blue": "Blue",
+          "green": "Green",
+          "orange": "Orange",
+          "rose": "Rose",
+          "violet": "Violet",
+          "red": "Red"
+        },
+        "previewPrimary": "Primary Button",
+        "previewSecondary": "Secondary",
+        "previewOutline": "Outline",
+        "previewDestructive": "Destructive",
+        "previewCardTitle": "Card Preview",
+        "previewCardText": "This is how cards will look with the current theme settings."
       }
     },
     "notificationPreferences": {
@@ -102,6 +127,31 @@
           "ticketSaved": "ტიკეტების პარამეტრები შენახულია",
           "ticketSaveFailed": "ტიკეტების პარამეტრების შენახვა ვერ მოხერხდა"
         }
+      },
+      "appearance": {
+        "radius": {
+          "sharp": "მკვეთრი",
+          "subtle": "მსუბუქი",
+          "default": "ნაგულისხმევი",
+          "rounded": "მომრგვალებული",
+          "pill": "კაფსულა"
+        },
+        "presets": {
+          "zinc": "თუთია",
+          "slate": "ფიქალი",
+          "blue": "ლურჯი",
+          "green": "მწვანე",
+          "orange": "ნარინჯისფერი",
+          "rose": "ვარდისფერი",
+          "violet": "იისფერი",
+          "red": "წითელი"
+        },
+        "previewPrimary": "ძირითადი ღილაკი",
+        "previewSecondary": "მეორადი",
+        "previewOutline": "კონტურიანი",
+        "previewDestructive": "საშიში",
+        "previewCardTitle": "ბარათის ნიმუში",
+        "previewCardText": "ასე გამოჩნდება ბარათები თემის მიმდინარე პარამეტრებით."
       }
     },
     "notificationPreferences": {

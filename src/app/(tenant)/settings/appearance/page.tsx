@@ -78,7 +78,7 @@ function hexToHsl(hex: string): string {
   return `${Math.round(h)} ${(s * 100).toFixed(1)}% ${(l * 100).toFixed(1)}%`;
 }
 
-// Preset theme colors
+// Preset theme colors (name lower-cased = key under settings.appearance.presets)
 const PRESET_THEMES = [
   { name: "Zinc", hsl: "240 5.9% 10%", hex: "#18181b" },
   { name: "Slate", hsl: "215.4 16.3% 46.9%", hex: "#64748b" },
@@ -90,13 +90,13 @@ const PRESET_THEMES = [
   { name: "Red", hsl: "0 72.2% 50.6%", hex: "#dc2626" },
 ];
 
-// Border radius options
+// Border radius options (label = key under settings.appearance.radius)
 const BORDER_RADIUS_OPTIONS = [
-  { value: "0", label: "Sharp" },
-  { value: "0.3rem", label: "Subtle" },
-  { value: "0.5rem", label: "Default" },
-  { value: "0.75rem", label: "Rounded" },
-  { value: "1rem", label: "Pill" },
+  { value: "0", label: "sharp" },
+  { value: "0.3rem", label: "subtle" },
+  { value: "0.5rem", label: "default" },
+  { value: "0.75rem", label: "rounded" },
+  { value: "1rem", label: "pill" },
 ];
 
 interface SidebarItem {
@@ -340,7 +340,7 @@ export default function AppearanceSettingsPage() {
                         : "border-transparent hover:scale-110"
                     )}
                     style={{ backgroundColor: preset.hex }}
-                    title={preset.name}
+                    title={t(`presets.${preset.name.toLowerCase()}`)}
                   >
                     {formData.primary_color === preset.hsl && (
                       <Check className="h-5 w-5 text-white drop-shadow-md" />
@@ -448,7 +448,7 @@ export default function AppearanceSettingsPage() {
                   onClick={() => handleBorderRadiusChange(option.value)}
                   style={{ borderRadius: option.value }}
                 >
-                  {option.label}
+                  {t(`radius.${option.label}`)}
                 </Button>
               ))}
             </div>
@@ -465,15 +465,15 @@ export default function AppearanceSettingsPage() {
         <CardContent>
           <div className="space-y-4">
             <div className="flex flex-wrap gap-3">
-              <Button>Primary Button</Button>
-              <Button variant="secondary">Secondary</Button>
-              <Button variant="outline">Outline</Button>
-              <Button variant="destructive">Destructive</Button>
+              <Button>{t('previewPrimary')}</Button>
+              <Button variant="secondary">{t('previewSecondary')}</Button>
+              <Button variant="outline">{t('previewOutline')}</Button>
+              <Button variant="destructive">{t('previewDestructive')}</Button>
             </div>
             <div className="p-4 rounded-lg border bg-card">
-              <h4 className="font-semibold mb-2">Card Preview</h4>
+              <h4 className="font-semibold mb-2">{t('previewCardTitle')}</h4>
               <p className="text-sm text-muted-foreground">
-                This is how cards will look with the current theme settings.
+                {t('previewCardText')}
               </p>
             </div>
           </div>
