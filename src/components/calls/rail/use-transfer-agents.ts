@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { extensionsStatusRetrieve, phoneAssignmentsList } from "@/api/generated/api";
 import type { ExtensionStatusResponse, PaginatedUserPhoneAssignmentList, UserPhoneAssignment } from "@/api/generated/interfaces";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCallState } from "@/contexts/CallContext";
 
 export interface TransferAgent {
   id: number;
@@ -48,19 +49,39 @@ async function fetchTransferAgents(): Promise<RawAgents> {
   };
 }
 
-/** Agents with an active phone assignment plus their live online state. */
-export function buildTransferAgents(raw: RawAgents, ownUserId: number | undefined, extLabel: (ext: string) => string): TransferAgent[] {
+/**
+ * Agents with an active phone assignment plus their live online state.
+ *
+ * Only assignments of the softphone's own SIP configuration are offered
+ * (`sipConfigurationId`; every configuration when unknown): a tenant can keep
+ * a legacy configuration next to its PbxServer one, and an extension on
+ * another PBX cannot be reached by a transfer. One row per extension, the
+ * first assignment wins, so a duplicated extension never shows twice.
+ */
+export function buildTransferAgents(
+  raw: RawAgents,
+  ownUserId: number | undefined,
+  extLabel: (ext: string) => string,
+  sipConfigurationId?: number | null
+): TransferAgent[] {
   const online = new Set(raw.onlineExtensions);
-  return raw.assignments
-    .filter((a) => a.user !== ownUserId)
-    .map((a) => ({
+  const seen = new Set<string>();
+  const agents: TransferAgent[] = [];
+  for (const a of raw.assignments) {
+    if (a.user === ownUserId) continue;
+    if (sipConfigurationId != null && a.sip_configuration != null && a.sip_configuration !== sipConfigurationId) continue;
+    if (seen.has(a.extension)) continue;
+    seen.add(a.extension);
+    agents.push({
       id: a.id,
       userId: a.user,
       name: a.user_name || extLabel(a.extension),
       extension: a.extension,
       phone: a.phone_number,
       online: online.has(a.extension),
-    }));
+    });
+  }
+  return agents;
 }
 
 /**
@@ -72,11 +93,13 @@ export function buildTransferAgents(raw: RawAgents, ownUserId: number | undefine
 export function useTransferAgents(open: boolean) {
   const t = useTranslations("calls.rail");
   const { user } = useAuth();
+  const { activeSipConfig } = useCallState();
   const ownUserId = user?.id;
+  const sipConfigurationId = activeSipConfig?.id ?? null;
 
   const select = useCallback(
-    (raw: RawAgents) => buildTransferAgents(raw, ownUserId, (ext) => t("ext", { ext })),
-    [ownUserId, t]
+    (raw: RawAgents) => buildTransferAgents(raw, ownUserId, (ext) => t("ext", { ext }), sipConfigurationId),
+    [ownUserId, sipConfigurationId, t]
   );
 
   return useQuery({

@@ -108,6 +108,47 @@ describe("useTransferAgents", () => {
       { id: 3, userId: 3, name: "ext 103", extension: "103", phone: "", online: false },
     ]);
   });
+
+  it("buildTransferAgents keeps only the softphone's SIP configuration and one row per extension", () => {
+    // A legacy configuration (1) next to the PbxServer one (2): the same
+    // extension is assigned twice and 104 exists only on the other PBX.
+    const mixed = [
+      { id: 1, user: 2, user_name: "Old Ana", extension: "102", phone_number: "", sip_configuration: 1 },
+      { id: 2, user: 5, user_name: "Other PBX", extension: "104", phone_number: "", sip_configuration: 1 },
+      { id: 3, user: 2, user_name: "Ana Lomidze", extension: "102", phone_number: "", sip_configuration: 2 },
+      { id: 4, user: 3, user_name: "Luka", extension: "103", phone_number: "", sip_configuration: 2 },
+      { id: 5, user: 4, user_name: "Luka twice", extension: "103", phone_number: "", sip_configuration: 2 },
+    ];
+    const scoped = buildTransferAgents({ assignments: mixed as never, onlineExtensions: ["102"] }, 1, (ext) => ext, 2);
+    expect(scoped.map((a) => [a.id, a.extension, a.online])).toEqual([
+      [3, "102", true],
+      [4, "103", false],
+    ]);
+    // Unknown configuration: every assignment is considered, still one row per extension.
+    const all = buildTransferAgents({ assignments: mixed as never, onlineExtensions: [] }, 1, (ext) => ext, null);
+    expect(all.map((a) => a.extension)).toEqual(["102", "104", "103"]);
+  });
+
+  it("the panel scopes the list to the registered SIP configuration", async () => {
+    h.state = makeState({
+      activeCall: makeActiveCall(),
+      activeSipConfig: { id: 2, username: "100" } as CallStateValue["activeSipConfig"],
+    });
+    h.phoneAssignmentsList.mockResolvedValue({
+      count: 3,
+      results: [
+        { id: 1, user: 2, user_name: "Old Ana", extension: "102", phone_number: "", sip_configuration: 1 },
+        { id: 2, user: 5, user_name: "Other PBX", extension: "104", phone_number: "", sip_configuration: 1 },
+        { id: 3, user: 2, user_name: "Ana Lomidze", extension: "102", phone_number: "", sip_configuration: 2 },
+      ],
+    });
+    renderPanel();
+    const rows = await screen.findAllByTestId("call-rail-transfer-agent");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toHaveAttribute("data-extension", "102");
+    expect(rows[0]).toHaveTextContent("Ana Lomidze");
+    expect(screen.queryByText("Other PBX")).not.toBeInTheDocument();
+  });
 });
 
 describe("TransferPanel", () => {
