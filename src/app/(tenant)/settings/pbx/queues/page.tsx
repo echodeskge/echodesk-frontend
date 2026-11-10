@@ -18,7 +18,7 @@ import type { Column } from "@/components/redesign/data-table";
 import { rdButton } from "@/components/redesign/buttons";
 import { TonePill } from "@/components/redesign/pill";
 import { AvatarCell, BadgeCell, SettingsToggle, TextCell } from "@/components/redesign/settings";
-import { PbxEmpty, PbxListBlock, RowIconButton, dialogInputClass } from "../_components/pbx-ui";
+import { LabeledCount, PbxEmpty, PbxListBlock, RowIconButton, dialogInputClass } from "../_components/pbx-ui";
 import {
   Select,
   SelectContent,
@@ -271,7 +271,7 @@ export default function QueuesPage() {
       header: t("columns.members"),
       width: "80px",
       numeric: true,
-      cell: (q) => q.member_count,
+      cell: (q) => <LabeledCount label={t("columns.members")} value={q.member_count} />,
     },
     {
       id: "status",

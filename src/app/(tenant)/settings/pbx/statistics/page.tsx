@@ -11,7 +11,7 @@ import { DataTable } from "@/components/redesign/data-table";
 import { BarCell, StatsPanel } from "@/components/redesign/settings";
 import { formatDuration } from "@/lib/formatDuration";
 import { answerRateOf, formatRate } from "../_lib/stats";
-import { PbxBlockHeader, PbxEmpty, usePbxStates } from "../_components/pbx-ui";
+import { LabeledCount, PbxBlockHeader, PbxEmpty, usePbxStates } from "../_components/pbx-ui";
 type UserStatsRow = {
   user_id?: number;
   user_name?: string;
@@ -71,9 +71,9 @@ export default function PbxStatisticsPage() {
           <span className="truncate font-medium">{nameOf(r)}</span>
         ),
     },
-    { id: "answered", header: t("columns.answered"), width: "84px", align: "end", numeric: true, cell: (r) => r.answered_count ?? 0 },
-    { id: "missed", header: t("columns.missed"), width: "84px", align: "end", numeric: true, cell: (r) => r.missed_count ?? 0 },
-    { id: "outbound", header: t("columns.outbound"), width: "84px", align: "end", numeric: true, cell: (r) => r.outbound_count ?? 0 },
+    { id: "answered", header: t("columns.answered"), width: "84px", align: "end", numeric: true, cell: (r) => <LabeledCount label={t("columns.answered")} value={r.answered_count ?? 0} /> },
+    { id: "missed", header: t("columns.missed"), width: "84px", align: "end", numeric: true, cell: (r) => <LabeledCount label={t("columns.missed")} value={r.missed_count ?? 0} /> },
+    { id: "outbound", header: t("columns.outbound"), width: "84px", align: "end", numeric: true, cell: (r) => <LabeledCount label={t("columns.outbound")} value={r.outbound_count ?? 0} /> },
     {
       id: "totalTalk",
       header: t("columns.totalTalk"),
@@ -94,7 +94,7 @@ export default function PbxStatisticsPage() {
       width: "84px",
       align: "end",
       numeric: true,
-      cell: (r) => formatDuration(r.avg_talk_seconds),
+      cell: (r) => <LabeledCount label={t("columns.avgTalk")} value={formatDuration(r.avg_talk_seconds)} />,
     },
   ];
 

@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import type { Column } from "@/components/redesign/data-table";
 import { rdButton } from "@/components/redesign/buttons";
 import { BadgeCell, SettingsToggle, TextCell } from "@/components/redesign/settings";
-import { PbxEmpty, PbxListBlock, RowIconButton, dialogInputClass } from "../_components/pbx-ui";
+import { LabeledCount, PbxEmpty, PbxListBlock, RowIconButton, dialogInputClass } from "../_components/pbx-ui";
 import {
   Select,
   SelectContent,
@@ -255,7 +255,7 @@ export default function InboundRoutesPage() {
       header: t("columns.priority"),
       width: "80px",
       numeric: true,
-      cell: (r) => r.priority ?? 100,
+      cell: (r) => <LabeledCount label={t("columns.priority")} value={r.priority ?? 100} />,
     },
     {
       id: "status",

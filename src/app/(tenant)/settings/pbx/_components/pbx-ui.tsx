@@ -273,3 +273,16 @@ export function DialogSwitchRow({
 
 /** 34px inputs / select triggers inside the restyled dialogs. */
 export const dialogInputClass = "h-[34px] text-[13px]";
+
+/**
+ * A numeric cell that names itself on narrow tables (where the DataTable
+ * folds columns into a "1 · 0 · 2" meta line without headers).
+ */
+export function LabeledCount({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <span className="whitespace-nowrap">
+      <span className="text-muted-foreground @3xl:hidden">{label} </span>
+      {value}
+    </span>
+  );
+}

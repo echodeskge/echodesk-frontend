@@ -21,7 +21,7 @@ import {
 } from "recharts";
 import { formatDuration } from "@/lib/formatDuration";
 import { useSettingsSubCrumb } from "../../../../_lib/settings-crumb";
-import { PbxBlockHeader, PbxEmpty, usePbxStates } from "../../../_components/pbx-ui";
+import { LabeledCount, PbxBlockHeader, PbxEmpty, usePbxStates } from "../../../_components/pbx-ui";
 
 type TimelineRow = {
   date?: string;
@@ -100,9 +100,9 @@ export default function UserStatisticsPage({
       mobile: "title",
       cell: (r) => <span className="font-mono text-xs tabular-nums">{r.date ?? r.day ?? "—"}</span>,
     },
-    { id: "answered", header: t("columns.answered"), width: "90px", align: "end", numeric: true, cell: (r) => r.answered_count ?? 0 },
-    { id: "missed", header: t("columns.missed"), width: "90px", align: "end", numeric: true, cell: (r) => r.missed_count ?? 0 },
-    { id: "outbound", header: t("columns.outbound"), width: "90px", align: "end", numeric: true, cell: (r) => r.outbound_count ?? 0 },
+    { id: "answered", header: t("columns.answered"), width: "90px", align: "end", numeric: true, cell: (r) => <LabeledCount label={t("columns.answered")} value={r.answered_count ?? 0} /> },
+    { id: "missed", header: t("columns.missed"), width: "90px", align: "end", numeric: true, cell: (r) => <LabeledCount label={t("columns.missed")} value={r.missed_count ?? 0} /> },
+    { id: "outbound", header: t("columns.outbound"), width: "90px", align: "end", numeric: true, cell: (r) => <LabeledCount label={t("columns.outbound")} value={r.outbound_count ?? 0} /> },
     {
       id: "talk",
       header: t("columns.totalTalk"),
