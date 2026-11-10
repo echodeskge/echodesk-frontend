@@ -3,27 +3,15 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { BarChart3 } from "lucide-react";
 import { useCallStatsOverview, useCallStatsUsers } from "@/hooks/usePbxQueries";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import type { Column } from "@/components/redesign/data-table";
+import { DataTable } from "@/components/redesign/data-table";
+import { BarCell, StatsPanel } from "@/components/redesign/settings";
 import { formatDuration } from "@/lib/formatDuration";
 import { answerRateOf, formatRate } from "../_lib/stats";
-
+import { PbxBlockHeader, PbxEmpty, usePbxStates } from "../_components/pbx-ui";
 type UserStatsRow = {
   user_id?: number;
   user_name?: string;
@@ -61,119 +49,99 @@ export default function PbxStatisticsPage() {
     answer_rate?: number;
   };
 
+  const { renderError } = usePbxStates();
+  const maxTalk = Math.max(0, ...rows.map((r) => r.total_talk_seconds ?? 0));
+  const nameOf = (r: UserStatsRow) => r.user_name ?? r.user_email ?? "—";
+
+  const columns: Column<UserStatsRow>[] = [
+    {
+      id: "user",
+      header: t("columns.user"),
+      width: "minmax(0,1.4fr)",
+      mobile: "title",
+      cell: (r) =>
+        r.user_id ? (
+          <Link
+            href={`/settings/pbx/statistics/users/${r.user_id}?month=${month}`}
+            className="truncate font-medium hover:underline"
+          >
+            {nameOf(r)}
+          </Link>
+        ) : (
+          <span className="truncate font-medium">{nameOf(r)}</span>
+        ),
+    },
+    { id: "answered", header: t("columns.answered"), width: "84px", align: "end", numeric: true, cell: (r) => r.answered_count ?? 0 },
+    { id: "missed", header: t("columns.missed"), width: "84px", align: "end", numeric: true, cell: (r) => r.missed_count ?? 0 },
+    { id: "outbound", header: t("columns.outbound"), width: "84px", align: "end", numeric: true, cell: (r) => r.outbound_count ?? 0 },
+    {
+      id: "totalTalk",
+      header: t("columns.totalTalk"),
+      width: "minmax(150px,1.1fr)",
+      mobile: "end",
+      cell: (r) => (
+        <BarCell
+          value={r.total_talk_seconds ?? 0}
+          max={maxTalk}
+          label={formatDuration(r.total_talk_seconds)}
+          ariaLabel={t("columns.totalTalk")}
+        />
+      ),
+    },
+    {
+      id: "avgTalk",
+      header: t("columns.avgTalk"),
+      width: "84px",
+      align: "end",
+      numeric: true,
+      cell: (r) => formatDuration(r.avg_talk_seconds),
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold">{t("title")}</h2>
-        <p className="text-sm text-muted-foreground">{t("description")}</p>
-      </div>
+    <div className="flex min-w-0 flex-col gap-5" data-testid="pbx-statistics">
+      <PbxBlockHeader title={t("title")} description={t("description")} />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-xs uppercase text-muted-foreground">
-              {tOverview("totalCalls")}
-            </div>
-            <div className="mt-2 text-2xl font-semibold">{overview.total_calls ?? 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-xs uppercase text-muted-foreground">
-              {tOverview("answered")}
-            </div>
-            <div className="mt-2 text-2xl font-semibold">
-              {overview.answered_calls ?? 0}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-xs uppercase text-muted-foreground">
-              {tOverview("missed")}
-            </div>
-            <div className="mt-2 text-2xl font-semibold">{overview.missed_calls ?? 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-xs uppercase text-muted-foreground">
-              {tOverview("answerRate")}
-            </div>
-            <div className="mt-2 text-2xl font-semibold">
-              {formatRate(answerRateOf(overview))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatsPanel
+        cards={[
+          { key: "total", label: tOverview("totalCalls"), value: overview.total_calls ?? 0 },
+          { key: "answered", label: tOverview("answered"), value: overview.answered_calls ?? 0 },
+          { key: "missed", label: tOverview("missed"), value: overview.missed_calls ?? 0 },
+          { key: "rate", label: tOverview("answerRate"), value: formatRate(answerRateOf(overview)) },
+        ]}
+      />
 
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-          <div>
-            <CardTitle>{t("leaderboardTitle")}</CardTitle>
-            <CardDescription>{t("description")}</CardDescription>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="month" className="text-xs">
+      <div className="flex min-w-0 flex-col gap-3">
+        <PbxBlockHeader
+          title={t("leaderboardTitle")}
+          description={t("description")}
+          action={
+            <label className="flex items-center gap-2 text-xs text-muted-foreground" htmlFor="month">
               {t("monthPicker")}
-            </Label>
-            <Input
-              id="month"
-              type="month"
-              value={month}
-              onChange={(e) => setMonth(e.target.value || currentMonth())}
-              className="w-40"
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground py-6">…</p>
-          ) : rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6">{t("empty")}</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("columns.user")}</TableHead>
-                  <TableHead className="text-right">{t("columns.answered")}</TableHead>
-                  <TableHead className="text-right">{t("columns.missed")}</TableHead>
-                  <TableHead className="text-right">{t("columns.outbound")}</TableHead>
-                  <TableHead className="text-right">{t("columns.totalTalk")}</TableHead>
-                  <TableHead className="text-right">{t("columns.avgTalk")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((r, i) => (
-                  <TableRow key={r.user_id ?? i}>
-                    <TableCell>
-                      {r.user_id ? (
-                        <Link
-                          href={`/settings/pbx/statistics/users/${r.user_id}?month=${month}`}
-                          className="hover:underline"
-                        >
-                          {r.user_name ?? r.user_email ?? "—"}
-                        </Link>
-                      ) : (
-                        r.user_name ?? r.user_email ?? "—"
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">{r.answered_count ?? 0}</TableCell>
-                    <TableCell className="text-right">{r.missed_count ?? 0}</TableCell>
-                    <TableCell className="text-right">{r.outbound_count ?? 0}</TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatDuration(r.total_talk_seconds)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatDuration(r.avg_talk_seconds)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+              <Input
+                id="month"
+                type="month"
+                value={month}
+                onChange={(e) => setMonth(e.target.value || currentMonth())}
+                className="h-7 w-40 text-xs"
+              />
+            </label>
+          }
+        />
+        <DataTable
+          variant="card"
+          density="comfortable"
+          columns={columns}
+          rows={isLoading ? undefined : rows}
+          rowKey={(r) => r.user_id ?? r.user_email ?? ""}
+          loading={isLoading}
+          renderError={renderError}
+          empty={<PbxEmpty icon={BarChart3} text={t("empty")} />}
+          ariaLabel={t("leaderboardTitle")}
+          idPrefix="pbx-leaderboard"
+          skeletonRows={4}
+        />
+      </div>
     </div>
   );
 }

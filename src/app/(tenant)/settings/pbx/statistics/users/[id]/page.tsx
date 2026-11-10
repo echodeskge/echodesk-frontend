@@ -4,25 +4,12 @@ import { useMemo, useState, use } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft } from "lucide-react";
-import { useCallStatsUserTimeline } from "@/hooks/usePbxQueries";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, BarChart3 } from "lucide-react";
+import { useCallStatsUserTimeline, statsKeys } from "@/hooks/usePbxQueries";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable, type Column } from "@/components/redesign/data-table";
+import { SettingsSection, StatsPanel } from "@/components/redesign/settings";
 import {
   LineChart,
   Line,
@@ -33,6 +20,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatDuration } from "@/lib/formatDuration";
+import { useSettingsSubCrumb } from "../../../../_lib/settings-crumb";
+import { PbxBlockHeader, PbxEmpty, usePbxStates } from "../../../_components/pbx-ui";
 
 type TimelineRow = {
   date?: string;
@@ -42,6 +31,25 @@ type TimelineRow = {
   outbound_count?: number;
   total_talk_seconds?: number;
 };
+
+type CachedAgent = { user_id?: number; user_name?: string; user_email?: string };
+
+/**
+ * The agent's name for the header crumb, read from the statistics list /
+ * overview already in the query cache (no extra request; null on a deep link).
+ */
+function useCachedAgentName(userId: number): string | null {
+  const queryClient = useQueryClient();
+  return useMemo(() => {
+    for (const [, data] of queryClient.getQueriesData({ queryKey: statsKeys.all })) {
+      const d = data as { results?: CachedAgent[]; top_5_users?: CachedAgent[] } | undefined;
+      const list = [...(Array.isArray(d?.results) ? d!.results! : []), ...(d?.top_5_users ?? [])];
+      const hit = list.find((r) => r && typeof r === "object" && r.user_id === userId);
+      if (hit) return hit.user_name ?? hit.user_email ?? null;
+    }
+    return null;
+  }, [queryClient, userId]);
+}
 
 function currentMonth(): string {
   const d = new Date();
@@ -77,58 +85,95 @@ export default function UserStatisticsPage({
     answered: r.answered_count ?? 0,
   }));
 
+  const agentName = useCachedAgentName(userId);
+  useSettingsSubCrumb(agentName ?? tUser("agentFallback"));
+  const { renderError, loading: loadingBlock } = usePbxStates();
+
+  const sum = (pick: (r: TimelineRow) => number | undefined) =>
+    rows.reduce((acc, r) => acc + (pick(r) ?? 0), 0);
+
+  const columns: Column<TimelineRow>[] = [
+    {
+      id: "day",
+      header: tUser("day"),
+      width: "minmax(0,1fr)",
+      mobile: "title",
+      cell: (r) => <span className="font-mono text-xs tabular-nums">{r.date ?? r.day ?? "—"}</span>,
+    },
+    { id: "answered", header: t("columns.answered"), width: "90px", align: "end", numeric: true, cell: (r) => r.answered_count ?? 0 },
+    { id: "missed", header: t("columns.missed"), width: "90px", align: "end", numeric: true, cell: (r) => r.missed_count ?? 0 },
+    { id: "outbound", header: t("columns.outbound"), width: "90px", align: "end", numeric: true, cell: (r) => r.outbound_count ?? 0 },
+    {
+      id: "talk",
+      header: t("columns.totalTalk"),
+      width: "100px",
+      align: "end",
+      mobile: "end",
+      numeric: true,
+      cell: (r) => formatDuration(r.total_talk_seconds),
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+    <div className="flex min-w-0 flex-col gap-5" data-testid="pbx-user-stats">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/settings/pbx/statistics"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden />
           {tUser("backToList")}
         </Link>
-        <div className="space-y-1">
-          <Label htmlFor="month" className="text-xs">
-            {t("monthPicker")}
-          </Label>
+        <label className="flex items-center gap-2 text-xs text-muted-foreground" htmlFor="month">
+          {t("monthPicker")}
           <Input
             id="month"
             type="month"
             value={month}
             onChange={(e) => setMonth(e.target.value || currentMonth())}
-            className="w-40"
+            className="h-7 w-40 text-xs"
           />
-        </div>
+        </label>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("timelineTitle")}</CardTitle>
-          <CardDescription>{tUser("dailyTalk")}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <PbxBlockHeader title={agentName ?? tUser("title")} description={agentName ? tUser("title") : undefined} />
+
+      <StatsPanel
+        loading={isLoading}
+        cards={[
+          { key: "answered", label: t("columns.answered"), value: sum((r) => r.answered_count) },
+          { key: "missed", label: t("columns.missed"), value: sum((r) => r.missed_count) },
+          { key: "outbound", label: t("columns.outbound"), value: sum((r) => r.outbound_count) },
+          { key: "talk", label: t("columns.totalTalk"), value: formatDuration(sum((r) => r.total_talk_seconds)) },
+        ]}
+      />
+
+      <SettingsSection title={t("timelineTitle")} hint={tUser("dailyTalk")}>
+        <div className="px-4 py-3.5">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground py-6">…</p>
+            loadingBlock
           ) : chartData.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6">{t("empty")}</p>
+            <PbxEmpty icon={BarChart3} text={t("empty")} />
           ) : (
-            <div className="h-72">
+            <div className="h-72" data-testid="pbx-user-chart">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="date" className="text-xs" />
-                  <YAxis className="text-xs" />
+                  <XAxis dataKey="date" className="text-xs" tick={{ fontSize: 11 }} />
+                  <YAxis className="text-xs" tick={{ fontSize: 11 }} />
                   <Tooltip />
                   <Line
                     type="monotone"
                     dataKey="talk"
                     name={tUser("dailyTalk")}
+                    stroke="hsl(var(--primary))"
                     strokeWidth={2}
                   />
                   <Line
                     type="monotone"
                     dataKey="answered"
                     name={tUser("dailyCalls")}
+                    stroke="hsl(var(--muted-foreground))"
                     strokeWidth={2}
                     strokeDasharray="5 5"
                   />
@@ -136,43 +181,23 @@ export default function UserStatisticsPage({
               </ResponsiveContainer>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </SettingsSection>
 
       {rows.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{tUser("dailyCalls")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{tUser("day")}</TableHead>
-                  <TableHead className="text-right">{t("columns.answered")}</TableHead>
-                  <TableHead className="text-right">{t("columns.missed")}</TableHead>
-                  <TableHead className="text-right">{t("columns.outbound")}</TableHead>
-                  <TableHead className="text-right">{t("columns.totalTalk")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((r, i) => (
-                  <TableRow key={r.date ?? r.day ?? i}>
-                    <TableCell className="font-mono text-xs">
-                      {r.date ?? r.day ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right">{r.answered_count ?? 0}</TableCell>
-                    <TableCell className="text-right">{r.missed_count ?? 0}</TableCell>
-                    <TableCell className="text-right">{r.outbound_count ?? 0}</TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatDuration(r.total_talk_seconds)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="flex min-w-0 flex-col gap-3">
+          <PbxBlockHeader title={tUser("dailyCalls")} />
+          <DataTable
+            variant="card"
+            density="comfortable"
+            columns={columns}
+            rows={rows}
+            rowKey={(r) => r.date ?? r.day ?? ""}
+            renderError={renderError}
+            ariaLabel={tUser("dailyCalls")}
+            idPrefix="pbx-daily"
+          />
+        </div>
       )}
     </div>
   );
