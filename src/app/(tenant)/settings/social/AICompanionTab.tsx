@@ -2,21 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Bot, Loader2, Save } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { rdButton } from "@/components/redesign/buttons";
+import {
+  FieldRow,
+  SecretInput,
+  SettingsSection,
+  SettingsToggle,
+  settingsFieldWidth,
+  settingsInputClass,
+} from "@/components/redesign/settings";
+import { cn } from "@/lib/utils";
+import { SectionBlock, StackLabel, selectTriggerClass, textareaClass } from "@/components/social/settings-blocks";
 import {
   useAICompanionSettings,
   useUpdateAICompanionSettings,
@@ -109,179 +110,176 @@ export function AICompanionTab() {
 
   if (settingsQuery.isLoading) {
     return (
-      <div className="flex justify-center py-10 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin" />
+      <div className="flex justify-center py-10 text-muted-foreground" role="status">
+        <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5" />
-            {t("settingsPage.aiCompanion.title")}
-          </CardTitle>
-          <CardDescription>
-            {t("settingsPage.aiCompanion.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>{t("settingsPage.aiCompanion.enabled")}</Label>
-              <p className="text-sm text-muted-foreground">
-                {t("settingsPage.aiCompanion.enabledHint")}
-              </p>
-            </div>
-            <Switch checked={isEnabled} onCheckedChange={setIsEnabled} />
-          </div>
+    <>
+      <SettingsSection
+        title={t("settingsPage.aiCompanion.title")}
+        hint={t("settingsPage.aiCompanion.description")}
+        testId="ai-companion-section"
+      >
+        <FieldRow
+          label={t("settingsPage.aiCompanion.enabled")}
+          help={t("settingsPage.aiCompanion.enabledHint")}
+          htmlFor="ai-enabled"
+          align="center"
+        >
+          <SettingsToggle id="ai-enabled" checked={isEnabled} onCheckedChange={setIsEnabled} />
+        </FieldRow>
 
-          <Separator />
+        <SectionBlock>
+          <StackLabel htmlFor="ai-guidance" label={t("settingsPage.aiCompanion.guidancePrompt")} />
+          <Textarea
+            id="ai-guidance"
+            className={textareaClass}
+            value={guidancePrompt}
+            onChange={(e) => setGuidancePrompt(e.target.value)}
+            rows={6}
+            placeholder={t("settingsPage.aiCompanion.guidancePromptPlaceholder")}
+          />
+          <p className="text-xs leading-[17px] text-muted-foreground">
+            {t("settingsPage.aiCompanion.guidancePromptHint")}
+          </p>
+        </SectionBlock>
 
-          <div className="space-y-2">
-            <Label>{t("settingsPage.aiCompanion.guidancePrompt")}</Label>
-            <Textarea
-              value={guidancePrompt}
-              onChange={(e) => setGuidancePrompt(e.target.value)}
-              rows={6}
-              placeholder={t("settingsPage.aiCompanion.guidancePromptPlaceholder")}
-            />
-            <p className="text-xs text-muted-foreground">
-              {t("settingsPage.aiCompanion.guidancePromptHint")}
-            </p>
-          </div>
+        <SectionBlock>
+          <StackLabel htmlFor="ai-escalation" label={t("settingsPage.aiCompanion.escalationInstructions")} />
+          <Textarea
+            id="ai-escalation"
+            className={textareaClass}
+            value={escalationInstructions}
+            onChange={(e) => setEscalationInstructions(e.target.value)}
+            rows={3}
+            placeholder={t("settingsPage.aiCompanion.escalationPlaceholder")}
+          />
+          <p className="text-xs leading-[17px] text-muted-foreground">
+            {t("settingsPage.aiCompanion.escalationHint")}
+          </p>
+        </SectionBlock>
 
-          <div className="space-y-2">
-            <Label>{t("settingsPage.aiCompanion.escalationInstructions")}</Label>
-            <Textarea
-              value={escalationInstructions}
-              onChange={(e) => setEscalationInstructions(e.target.value)}
-              rows={3}
-              placeholder={t("settingsPage.aiCompanion.escalationPlaceholder")}
-            />
-            <p className="text-xs text-muted-foreground">
-              {t("settingsPage.aiCompanion.escalationHint")}
-            </p>
-          </div>
+        <FieldRow label={t("settingsPage.aiCompanion.provider")} align="center">
+          <Select value={provider} onValueChange={(v) => setProvider(v as any)}>
+            <SelectTrigger className={cn(selectTriggerClass, settingsFieldWidth)} aria-label={t("settingsPage.aiCompanion.provider")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
+              <SelectItem value="openai">OpenAI</SelectItem>
+            </SelectContent>
+          </Select>
+        </FieldRow>
 
-          <Separator />
+        <FieldRow label={t("settingsPage.aiCompanion.model")} htmlFor="ai-model" align="center">
+          <input
+            id="ai-model"
+            className={cn(settingsInputClass, settingsFieldWidth)}
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            placeholder={t("settingsPage.aiCompanion.modelPlaceholder")}
+          />
+        </FieldRow>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>{t("settingsPage.aiCompanion.provider")}</Label>
-              <Select value={provider} onValueChange={(v) => setProvider(v as any)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
-                  <SelectItem value="openai">OpenAI</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>{t("settingsPage.aiCompanion.model")}</Label>
-              <Input
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                placeholder={t("settingsPage.aiCompanion.modelPlaceholder")}
-              />
-            </div>
-          </div>
+        <FieldRow label={t("settingsPage.aiCompanion.apiKey")} help={t("settingsPage.aiCompanion.apiKeyHint")} htmlFor="ai-api-key">
+          <SecretInput
+            id="ai-api-key"
+            className={settingsFieldWidth}
+            value={apiKey}
+            onChange={setApiKey}
+            autoComplete="new-password"
+            placeholder={
+              hasStoredKey
+                ? t("settingsPage.aiCompanion.apiKeySet")
+                : t("settingsPage.aiCompanion.apiKeyPlaceholder")
+            }
+            showLabel={t("settingsPage.aiCompanion.showKey")}
+            hideLabel={t("settingsPage.aiCompanion.hideKey")}
+            testId="ai-api-key"
+          />
+        </FieldRow>
 
-          <div className="space-y-2">
-            <Label>{t("settingsPage.aiCompanion.apiKey")}</Label>
-            <Input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={
-                hasStoredKey
-                  ? t("settingsPage.aiCompanion.apiKeySet")
-                  : t("settingsPage.aiCompanion.apiKeyPlaceholder")
+        <FieldRow label={t("settingsPage.aiCompanion.language")} align="center">
+          <Select value={language} onValueChange={setLanguage}>
+            <SelectTrigger className={cn(selectTriggerClass, settingsFieldWidth)} aria-label={t("settingsPage.aiCompanion.language")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LANGUAGES.map((lang) => (
+                <SelectItem key={lang.value} value={lang.value}>
+                  {lang.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FieldRow>
+
+        <FieldRow label={t("settingsPage.aiCompanion.perConversationCap")} htmlFor="ai-per-conversation" align="center">
+          <input
+            id="ai-per-conversation"
+            type="number"
+            min={1}
+            className={cn(settingsInputClass, "w-28 font-mono tabular-nums")}
+            value={perConversationCap}
+            onChange={(e) => setPerConversationCap(Number(e.target.value) || 1)}
+          />
+        </FieldRow>
+
+        <FieldRow label={t("settingsPage.aiCompanion.dailyCap")} htmlFor="ai-daily" align="center">
+          <input
+            id="ai-daily"
+            type="number"
+            min={1}
+            className={cn(settingsInputClass, "w-28 font-mono tabular-nums")}
+            value={dailyCap}
+            onChange={(e) => setDailyCap(Number(e.target.value) || 1)}
+          />
+        </FieldRow>
+      </SettingsSection>
+
+      <SettingsSection
+        title={t("settingsPage.aiCompanion.channels")}
+        hint={t("settingsPage.aiCompanion.channelsHint")}
+        testId="ai-companion-channels"
+      >
+        {AI_PLATFORMS.map((platform) => (
+          <FieldRow
+            key={platform}
+            label={t(`settingsPage.aiCompanion.platforms.${platform}`)}
+            htmlFor={`ai-platform-${platform}`}
+            align="center"
+          >
+            <SettingsToggle
+              id={`ai-platform-${platform}`}
+              checked={!!enabledPlatforms[platform]}
+              onCheckedChange={(checked) =>
+                setEnabledPlatforms((prev) => ({ ...prev, [platform]: checked }))
               }
             />
-            <p className="text-xs text-muted-foreground">
-              {t("settingsPage.aiCompanion.apiKeyHint")}
-            </p>
-          </div>
+          </FieldRow>
+        ))}
+      </SettingsSection>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>{t("settingsPage.aiCompanion.language")}</Label>
-              <Select value={language} onValueChange={setLanguage}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {LANGUAGES.map((lang) => (
-                    <SelectItem key={lang.value} value={lang.value}>
-                      {lang.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t("settingsPage.aiCompanion.perConversationCap")}</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={perConversationCap}
-                  onChange={(e) => setPerConversationCap(Number(e.target.value) || 1)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("settingsPage.aiCompanion.dailyCap")}</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={dailyCap}
-                  onChange={(e) => setDailyCap(Number(e.target.value) || 1)}
-                />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("settingsPage.aiCompanion.channels")}</CardTitle>
-          <CardDescription>
-            {t("settingsPage.aiCompanion.channelsHint")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {AI_PLATFORMS.map((platform) => (
-            <div key={platform} className="flex items-center justify-between">
-              <Label className="capitalize">
-                {t(`settingsPage.aiCompanion.platforms.${platform}`)}
-              </Label>
-              <Switch
-                checked={!!enabledPlatforms[platform]}
-                onCheckedChange={(checked) =>
-                  setEnabledPlatforms((prev) => ({ ...prev, [platform]: checked }))
-                }
-              />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
+      {/* The AI companion keeps its own Save (own endpoint). */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={updateSettings.isPending}>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={updateSettings.isPending}
+          className={rdButton.primary}
+          data-testid="ai-companion-save"
+        >
           {updateSettings.isPending ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
           ) : (
-            <Save className="h-4 w-4 mr-2" />
+            <Save className="h-3.5 w-3.5" aria-hidden />
           )}
           {t("settingsPage.aiCompanion.save")}
-        </Button>
+        </button>
       </div>
-    </div>
+    </>
   );
 }

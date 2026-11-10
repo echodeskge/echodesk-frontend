@@ -4,12 +4,18 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
+import { lastMonthRange, thisMonthRange } from "./_lib/date-range";
 import { useRatingStatistics, useUserChatSessions, RatingUserStats, ChatSession } from "@/hooks/api/useSocial";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DataTable, type Column } from "@/components/redesign/data-table";
+import { Segmented } from "@/components/redesign/segmented";
+import { EmptyBlock } from "@/components/redesign/states";
+import { rdButton } from "@/components/redesign/buttons";
+import { SettingsPage, StatsPanel, settingsInputClass } from "@/components/redesign/settings";
+import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,10 +26,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertCircle,
+  Lock,
   Star,
-  Users,
-  TrendingUp,
-  BarChart3,
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
@@ -48,15 +53,13 @@ const platformColors: Record<string, string> = {
   phone_callback: 'bg-violet-100 text-violet-800',
 };
 
+// Brand names stay as they are; the rest are translated (ratingStatistics.platforms.*).
 const platformLabels: Record<string, string> = {
   facebook: 'Facebook',
   instagram: 'Instagram',
   whatsapp: 'WhatsApp',
-  email: 'Email',
-  widget: 'Widget',
-  phone_sms: 'SMS',
-  phone_callback: 'Callback',
 };
+const TRANSLATED_PLATFORMS = ['email', 'widget', 'phone_sms', 'phone_callback'] as const;
 
 function isPhonePlatform(platform: string): boolean {
   return platform === 'phone_sms' || platform === 'phone_callback';
@@ -75,7 +78,11 @@ function formatDateTime(dateString: string | null): string {
   });
 }
 
-function formatDuration(start: string | null, end: string | null): string {
+function formatDuration(
+  start: string | null,
+  end: string | null,
+  t: (key: string, values?: Record<string, number>) => string,
+): string {
   if (!start || !end) return '-';
   const startDate = new Date(start);
   const endDate = new Date(end);
@@ -83,11 +90,11 @@ function formatDuration(start: string | null, end: string | null): string {
   const diffMins = Math.floor(diffMs / 60000);
 
   if (diffMins < 60) {
-    return `${diffMins} min`;
+    return t('durationMinutes', { minutes: diffMins });
   }
   const hours = Math.floor(diffMins / 60);
   const mins = diffMins % 60;
-  return `${hours}h ${mins}m`;
+  return t('durationHours', { hours, minutes: mins });
 }
 
 export default function RatingStatisticsPage() {
@@ -96,12 +103,9 @@ export default function RatingStatisticsPage() {
   const t = useTranslations("ratingStatistics");
   const isSuperAdmin = user?.is_staff === true;
 
-  // Default date range: this month
-  const today = new Date();
-  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-  const [startDate, setStartDate] = useState(firstOfMonth.toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
+  // Default date range: this month (local calendar days)
+  const [startDate, setStartDate] = useState(() => thisMonthRange().start);
+  const [endDate, setEndDate] = useState(() => thisMonthRange().end);
   const [sortBy, setSortBy] = useState<SortField>('average_rating');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -208,7 +212,7 @@ export default function RatingStatisticsPage() {
     };
 
     return (
-      <div className="flex h-2 w-full overflow-hidden rounded-full bg-gray-200">
+      <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
         {(['5', '4', '3', '2', '1'] as const).map((rating) => {
           const count = breakdown[rating];
           const percentage = (count / total) * 100;
@@ -246,7 +250,9 @@ export default function RatingStatisticsPage() {
 
   const renderPlatformBadge = (session: ChatSession) => {
     const color = platformColors[session.platform] || 'bg-gray-100 text-gray-800';
-    const label = platformLabels[session.platform] || session.platform;
+    const label = (TRANSLATED_PLATFORMS as readonly string[]).includes(session.platform)
+      ? t(`platforms.${session.platform}`)
+      : platformLabels[session.platform] || session.platform;
 
     if (isPhonePlatform(session.platform)) {
       return (
@@ -264,346 +270,248 @@ export default function RatingStatisticsPage() {
     );
   };
 
+  const rangeButtons = (
+    <>
+      <button
+        type="button"
+        className={rdButton.outlineSm}
+        onClick={() => {
+          const range = thisMonthRange();
+          setStartDate(range.start);
+          setEndDate(range.end);
+        }}
+      >
+        {t("thisMonth")}
+      </button>
+      <button
+        type="button"
+        className={rdButton.outlineSm}
+        onClick={() => {
+          const range = lastMonthRange();
+          setStartDate(range.start);
+          setEndDate(range.end);
+        }}
+      >
+        {t("lastMonth")}
+      </button>
+    </>
+  );
+
+  const columns: Column<RatingUserStats>[] = [
+    {
+      id: "user",
+      header: (
+        <button type="button" className="inline-flex items-center gap-1 uppercase" onClick={() => handleSort('name')} data-testid="sort-name">
+          {t("user")} {getSortIcon('name')}
+        </button>
+      ),
+      width: "minmax(0,1.6fr)",
+      mobile: "title",
+      cell: (userStats) => (
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate font-medium">{userStats.name}</span>
+          <span className="truncate text-xs text-muted-foreground">{userStats.email}</span>
+        </span>
+      ),
+    },
+    {
+      id: "total",
+      header: (
+        <button type="button" className="inline-flex items-center gap-1 uppercase" onClick={() => handleSort('total_ratings')} data-testid="sort-total">
+          {t("totalRatings")} {getSortIcon('total_ratings')}
+        </button>
+      ),
+      width: "minmax(110px,0.8fr)",
+      align: "center",
+      cell: (userStats) => (
+        <span className="flex flex-wrap items-center justify-center gap-1.5">
+          <span className="font-medium tabular-nums">{userStats.total_ratings}</span>
+          {source === 'all' && (userStats.social_ratings != null || userStats.call_ratings != null) && (
+            <>
+              {userStats.social_ratings != null && userStats.social_ratings > 0 && (
+                <span className="inline-flex h-5 items-center gap-0.5 rounded border bg-muted/60 px-1.5 text-[11px] text-muted-foreground" title={t("socialMedia")}>
+                  <MessageSquare className="h-3 w-3" aria-hidden />
+                  {userStats.social_ratings}
+                </span>
+              )}
+              {userStats.call_ratings != null && userStats.call_ratings > 0 && (
+                <span className="inline-flex h-5 items-center gap-0.5 rounded border bg-muted/60 px-1.5 text-[11px] text-muted-foreground" title={t("phoneCalls")}>
+                  <Phone className="h-3 w-3" aria-hidden />
+                  {userStats.call_ratings}
+                </span>
+              )}
+            </>
+          )}
+        </span>
+      ),
+    },
+    {
+      id: "average",
+      header: (
+        <button type="button" className="inline-flex items-center gap-1 uppercase" onClick={() => handleSort('average_rating')} data-testid="sort-average">
+          {t("average")} {getSortIcon('average_rating')}
+        </button>
+      ),
+      width: "150px",
+      align: "center",
+      mobile: "end",
+      cell: (userStats) => renderStars(userStats.average_rating),
+    },
+    {
+      id: "breakdown",
+      header: t("ratingBreakdown"),
+      width: "170px",
+      align: "center",
+      mobile: "hidden",
+      cell: (userStats) => (
+        <span className="flex justify-center gap-1 text-xs">
+          {(['5', '4', '3', '2', '1'] as const).map((rating) => (
+            <span key={rating} className="flex flex-col items-center px-1" title={`${rating} ${t("star")}`}>
+              <span className="font-medium tabular-nums">{userStats.rating_breakdown[rating]}</span>
+              <span className="text-muted-foreground">{rating}★</span>
+            </span>
+          ))}
+        </span>
+      ),
+    },
+    {
+      id: "distribution",
+      header: t("distribution"),
+      width: "minmax(120px,1fr)",
+      mobile: "meta",
+      className: "w-full",
+      cell: (userStats) => getRatingBreakdownBar(userStats.rating_breakdown, userStats.total_ratings),
+    },
+  ];
+
+  const totalHint =
+    data?.overall?.by_source && source === 'all'
+      ? [
+          data.overall.by_source.social ? t("socialCount", { count: data.overall.by_source.social.total }) : null,
+          data.overall.by_source.calls_callback ? t("callbackCount", { count: data.overall.by_source.calls_callback.total }) : null,
+          data.overall.by_source.calls_sms ? t("smsCount", { count: data.overall.by_source.calls_sms.total }) : null,
+        ]
+          .filter(Boolean)
+          .join(" · ") || undefined
+      : undefined;
+
   // Check access
   if (!isSuperAdmin) {
     return (
-      <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center p-4 bg-destructive/10 text-destructive rounded-lg">
-              {t("onlySuperadmins")}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <SettingsPage icon={Star} title={t("title")} width="wide" testId="rating-statistics-page">
+        <div className="rounded-[10px] border bg-card" data-testid="rating-statistics-no-access">
+          <EmptyBlock icon={Lock} title={t("onlySuperadmins")} />
+        </div>
+      </SettingsPage>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
-        <div className="flex items-center justify-center h-64">
-          <div className="flex items-center space-x-2">
-            <Spinner className="h-6 w-6" />
-            <span className="text-muted-foreground">{t("loadingStatistics")}</span>
-          </div>
+      <SettingsPage icon={Star} title={t("title")} description={t("description")} width="wide" testId="rating-statistics-page">
+        <div className="flex h-64 items-center justify-center gap-2 text-[13px] text-muted-foreground" role="status">
+          <Spinner className="h-5 w-5" />
+          <span>{t("loadingStatistics")}</span>
         </div>
-      </div>
+      </SettingsPage>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center p-4 bg-destructive/10 text-destructive rounded-lg">
-              {t("loadError")}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <SettingsPage icon={Star} title={t("title")} description={t("description")} width="wide" testId="rating-statistics-page">
+        <div className="rounded-[10px] border bg-card" data-testid="rating-statistics-error">
+          <EmptyBlock icon={AlertCircle} title={t("loadError")} />
+        </div>
+      </SettingsPage>
     );
   }
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
-      {/* Header */}
-      <Card className="mb-6 shadow-none border border-gray-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Star className="h-6 w-6 text-yellow-500" />
-            {t("title")}
-          </CardTitle>
-          <CardDescription>
-            {t("description")}
-          </CardDescription>
-        </CardHeader>
-      </Card>
-
-      {/* Date Range Filter */}
-      <Card className="mb-6 shadow-none border border-gray-200">
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm font-medium">{t("dateRange")}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="start-date" className="sr-only">{t("sessionStart")}</Label>
-              <Input
-                id="start-date"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-40"
-              />
-              <span className="text-muted-foreground">{t("to")}</span>
-              <Label htmlFor="end-date" className="sr-only">{t("sessionEnd")}</Label>
-              <Input
-                id="end-date"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-40"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const today = new Date();
-                  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-                  setStartDate(firstOfMonth.toISOString().split('T')[0]);
-                  setEndDate(today.toISOString().split('T')[0]);
-                }}
-              >
-                {t("thisMonth")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const today = new Date();
-                  const firstOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                  const lastOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-                  setStartDate(firstOfLastMonth.toISOString().split('T')[0]);
-                  setEndDate(lastOfLastMonth.toISOString().split('T')[0]);
-                }}
-              >
-                {t("lastMonth")}
-              </Button>
-            </div>
+    <SettingsPage icon={Star} title={t("title")} description={t("description")} width="wide" testId="rating-statistics-page">
+      <StatsPanel
+        toolbar={
+          <div className="flex min-w-0 flex-wrap items-center gap-2" data-testid="rating-statistics-range">
+            <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+            <span className="text-xs font-medium">{t("dateRange")}</span>
+            <Label htmlFor="start-date" className="sr-only">{t("sessionStart")}</Label>
+            <input
+              id="start-date"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className={cn(settingsInputClass, "h-7 w-[136px] px-2 text-xs tabular-nums")}
+            />
+            <span className="text-xs text-muted-foreground">{t("to")}</span>
+            <Label htmlFor="end-date" className="sr-only">{t("sessionEnd")}</Label>
+            <input
+              id="end-date"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className={cn(settingsInputClass, "h-7 w-[136px] px-2 text-xs tabular-nums")}
+            />
+            {rangeButtons}
           </div>
-        </CardContent>
-      </Card>
+        }
+        cards={[
+          { key: "rated-users", label: t("ratedUsers"), value: data?.users?.length || 0, testId: "stat-rated-users" },
+          { key: "total-ratings", label: t("totalRatings"), value: data?.overall?.total_ratings || 0, hint: totalHint, testId: "stat-total-ratings" },
+          { key: "average", label: t("averageRating"), value: data?.overall?.average_rating?.toFixed(1) || '0.0', testId: "stat-average" },
+          {
+            key: "top",
+            label: t("topRating"),
+            value: data?.users && data.users.length > 0 ? Math.max(...data.users.map(u => u.average_rating)).toFixed(1) : '0.0',
+            testId: "stat-top",
+          },
+        ]}
+      >
+        {/* Source Filter */}
+        <Segmented
+          value={source}
+          onChange={setSource}
+          ariaLabel={t("platform")}
+          testId="rating-statistics-source"
+          className="-mt-2 self-start"
+          options={[
+            { value: "all", label: t("allSources") },
+            { value: "social", label: t("socialMedia"), icon: MessageSquare },
+            { value: "calls", label: t("phoneCalls"), icon: Phone },
+          ]}
+        />
 
-      {/* Source Filter */}
-      <div className="flex gap-2 mb-4">
-        <Button
-          variant={source === 'all' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setSource('all')}
-        >
-          {t("allSources")}
-        </Button>
-        <Button
-          variant={source === 'social' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setSource('social')}
-        >
-          <MessageSquare className="h-4 w-4 mr-1.5" />
-          {t("socialMedia")}
-        </Button>
-        <Button
-          variant={source === 'calls' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setSource('calls')}
-        >
-          <Phone className="h-4 w-4 mr-1.5" />
-          {t("phoneCalls")}
-        </Button>
-      </div>
+        {/* Statistics Table */}
+        <DataTable
+          variant="card"
+          density="comfortable"
+          columns={columns}
+          rows={sortedUsers}
+          rowKey={(u) => u.user_id}
+          onRowClick={(u) => setSelectedUserId(u.user_id)}
+          ariaLabel={t("title")}
+          idPrefix="rating"
+          testId="rating-statistics-table"
+          empty={<div className="py-10 text-center text-[13px] text-muted-foreground">{t("noData")}</div>}
+          renderError={() => <EmptyBlock icon={AlertCircle} title={t("loadError")} />}
+        />
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="shadow-none border border-gray-200">
-          <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 text-center">
-            <Users className="h-8 w-8 text-blue-500 mb-2" />
-            <div className="text-2xl font-bold text-blue-600">
-              {data?.users?.length || 0}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {t("ratedUsers")}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-none border border-gray-200">
-          <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 text-center">
-            <BarChart3 className="h-8 w-8 text-green-500 mb-2" />
-            <div className="text-2xl font-bold text-green-600">
-              {data?.overall?.total_ratings || 0}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {t("totalRatings")}
-            </div>
-            {data?.overall?.by_source && source === 'all' && (
-              <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                {data.overall.by_source.social && (
-                  <div>{t("socialCount", { count: data.overall.by_source.social.total })}</div>
-                )}
-                {data.overall.by_source.calls_callback && (
-                  <div>{t("callbackCount", { count: data.overall.by_source.calls_callback.total })}</div>
-                )}
-                {data.overall.by_source.calls_sms && (
-                  <div>{t("smsCount", { count: data.overall.by_source.calls_sms.total })}</div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-none border border-gray-200">
-          <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 text-center">
-            <Star className="h-8 w-8 text-yellow-500 mb-2" />
-            <div className="text-2xl font-bold text-yellow-600">
-              {data?.overall?.average_rating?.toFixed(1) || '0.0'}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {t("averageRating")}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-none border border-gray-200">
-          <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 text-center">
-            <TrendingUp className="h-8 w-8 text-purple-500 mb-2" />
-            <div className="text-2xl font-bold text-purple-600">
-              {data?.users && data.users.length > 0
-                ? Math.max(...data.users.map(u => u.average_rating)).toFixed(1)
-                : '0.0'}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {t("topRating")}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Statistics Table */}
-      <Card className="shadow-none border border-gray-200">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="[&_tr]:border-b [&_tr]:border-gray-100">
-              <TableRow className="border-b border-gray-100 hover:bg-transparent">
-                <TableHead
-                  className="cursor-pointer select-none"
-                  onClick={() => handleSort('name')}
-                >
-                  <div className="flex items-center gap-2">
-                    {t("user")} {getSortIcon('name')}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="text-center cursor-pointer select-none"
-                  onClick={() => handleSort('total_ratings')}
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    {t("totalRatings")} {getSortIcon('total_ratings')}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="text-center cursor-pointer select-none"
-                  onClick={() => handleSort('average_rating')}
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    {t("average")} {getSortIcon('average_rating')}
-                  </div>
-                </TableHead>
-                <TableHead className="text-center">{t("ratingBreakdown")}</TableHead>
-                <TableHead className="text-center">{t("distribution")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="[&_tr:last-child]:border-0 [&_tr]:border-b [&_tr]:border-gray-100">
-              {sortedUsers.map((userStats) => (
-                <TableRow
-                  key={userStats.user_id}
-                  className="border-b border-gray-100 hover:bg-gray-50/50 cursor-pointer"
-                  onClick={() => setSelectedUserId(userStats.user_id)}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <div className="font-medium">{userStats.name}</div>
-                        <div className="text-sm text-muted-foreground">{userStats.email}</div>
-                      </div>
-                      <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="font-medium">{userStats.total_ratings}</div>
-                    {source === 'all' && (userStats.social_ratings != null || userStats.call_ratings != null) && (
-                      <div className="flex items-center justify-center gap-1.5 mt-1">
-                        {userStats.social_ratings != null && userStats.social_ratings > 0 && (
-                          <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                            <MessageSquare className="h-3 w-3 mr-0.5" />
-                            {userStats.social_ratings}
-                          </Badge>
-                        )}
-                        {userStats.call_ratings != null && userStats.call_ratings > 0 && (
-                          <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                            <Phone className="h-3 w-3 mr-0.5" />
-                            {userStats.call_ratings}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {renderStars(userStats.average_rating)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex justify-center gap-1 text-xs">
-                      {(['5', '4', '3', '2', '1'] as const).map((rating) => (
-                        <div
-                          key={rating}
-                          className="flex flex-col items-center px-1"
-                          title={`${rating} ${t("star")}`}
-                        >
-                          <span className="font-medium">{userStats.rating_breakdown[rating]}</span>
-                          <span className="text-muted-foreground">{rating}★</span>
-                        </div>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell className="min-w-[150px]">
-                    {getRatingBreakdownBar(userStats.rating_breakdown, userStats.total_ratings)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          </div>
-
-          {sortedUsers.length === 0 && (
-            <div className="text-center py-10 text-muted-foreground">
-              {t("noData")}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Legend */}
-      <Card className="mt-4 shadow-none border border-gray-200">
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            <span className="font-medium">{t("distributionLegend")}</span>
-            <div className="flex items-center gap-1">
-              <div className="h-3 w-3 rounded bg-green-500" />
-              <span>5 {t("stars")}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="h-3 w-3 rounded bg-green-400" />
-              <span>4 {t("stars")}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="h-3 w-3 rounded bg-yellow-400" />
-              <span>3 {t("stars")}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="h-3 w-3 rounded bg-orange-400" />
-              <span>2 {t("stars")}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="h-3 w-3 rounded bg-red-400" />
-              <span>1 {t("star")}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Legend */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground" data-testid="rating-legend">
+          <span className="font-medium text-foreground">{t("distributionLegend")}</span>
+          {([
+            ['bg-green-500', `5 ${t("stars")}`],
+            ['bg-green-400', `4 ${t("stars")}`],
+            ['bg-yellow-400', `3 ${t("stars")}`],
+            ['bg-orange-400', `2 ${t("stars")}`],
+            ['bg-red-400', `1 ${t("star")}`],
+          ] as const).map(([color, label]) => (
+            <span key={label} className="inline-flex items-center gap-1.5">
+              <span className={cn("h-2.5 w-2.5 rounded-sm", color)} aria-hidden />
+              {label}
+            </span>
+          ))}
+        </div>
+      </StatsPanel>
 
       {/* User Sessions Modal */}
       <Dialog open={selectedUserId !== null} onOpenChange={(open) => !open && setSelectedUserId(null)}>
@@ -686,7 +594,7 @@ export default function RatingStatisticsPage() {
                           <TableCell>
                             <div className="flex items-center gap-1 text-sm">
                               <Clock className="h-3 w-3" />
-                              {formatDuration(session.session_started_at, session.session_ended_at)}
+                              {formatDuration(session.session_started_at, session.session_ended_at, t)}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -735,7 +643,7 @@ export default function RatingStatisticsPage() {
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             <span className="font-medium text-foreground">{t("duration")}:</span>{" "}
-                            {formatDuration(session.session_started_at, session.session_ended_at)}
+                            {formatDuration(session.session_started_at, session.session_ended_at, t)}
                           </div>
                         </div>
                       </CardContent>
@@ -757,6 +665,6 @@ export default function RatingStatisticsPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </SettingsPage>
   );
 }

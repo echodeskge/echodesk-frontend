@@ -1,9 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { AlertTriangle, CheckCircle, ExternalLink } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
+import { ActionButton, SettingsNote } from "@/components/redesign/settings";
 import { usePublishingStatus, useStartPublishingOAuth } from "@/hooks/api/useAutoPost";
 import { toast } from "sonner";
 
@@ -23,21 +22,17 @@ export function PublishingStatusBanner() {
 
   if (noConnections) {
     return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>{t("noConnections")}</AlertDescription>
-      </Alert>
+      <SettingsNote tone="danger" testId="publishing-status-none">
+        {t("noConnections")}
+      </SettingsNote>
     );
   }
 
   if (allFbHavePermission && allIgHavePermission) {
     return (
-      <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-        <CheckCircle className="h-4 w-4 text-green-600" />
-        <AlertDescription className="text-green-800 dark:text-green-200">
-          {t("publishingEnabled")}
-        </AlertDescription>
-      </Alert>
+      <SettingsNote tone="success" testId="publishing-status-ok">
+        {t("publishingEnabled")}
+      </SettingsNote>
     );
   }
 
@@ -53,31 +48,24 @@ export function PublishingStatusBanner() {
   };
 
   return (
-    <Alert className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
-      <AlertTriangle className="h-4 w-4 text-yellow-600" />
-      <AlertDescription className="flex items-center justify-between">
-        <div className="text-yellow-800 dark:text-yellow-200">
-          <p className="font-medium">{t("publishingRequired")}</p>
-          <div className="mt-1 text-sm space-y-1">
-            {status.facebook_pages.filter(p => !p.has_publishing_permission).map(p => (
-              <p key={p.id}>{t("fbMissing", { name: p.page_name })}</p>
-            ))}
-            {status.instagram_accounts.filter(a => !a.has_publishing_permission).map(a => (
-              <p key={a.id}>{t("igMissing", { name: a.username })}</p>
-            ))}
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleEnablePublishing}
-          disabled={startOAuth.isPending}
-          className="ml-4 shrink-0"
-        >
-          <ExternalLink className="h-4 w-4 mr-2" />
+    <SettingsNote
+      tone="warning"
+      testId="publishing-status-required"
+      action={
+        <ActionButton icon={ExternalLink} onClick={handleEnablePublishing} disabled={startOAuth.isPending}>
           {t("enablePublishing")}
-        </Button>
-      </AlertDescription>
-    </Alert>
+        </ActionButton>
+      }
+    >
+      <p className="font-semibold">{t("publishingRequired")}</p>
+      <div className="mt-1 space-y-0.5">
+        {status.facebook_pages.filter(p => !p.has_publishing_permission).map(p => (
+          <p key={p.id}>{t("fbMissing", { name: p.page_name })}</p>
+        ))}
+        {status.instagram_accounts.filter(a => !a.has_publishing_permission).map(a => (
+          <p key={a.id}>{t("igMissing", { name: a.username })}</p>
+        ))}
+      </div>
+    </SettingsNote>
   );
 }

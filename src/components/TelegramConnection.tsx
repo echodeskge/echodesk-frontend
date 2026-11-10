@@ -3,19 +3,16 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, Phone, RefreshCw, ShieldCheck, X } from "lucide-react";
+import { CheckCircle2, Loader2, Phone, RefreshCw, ShieldCheck, X, type LucideIcon } from "lucide-react";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  AccountRow,
+  AccountRowAction,
+  ChannelDetailCard,
+  SettingsNote,
+  SettingsSection,
+} from "@/components/redesign/settings";
 import {
   Dialog,
   DialogContent,
@@ -26,14 +23,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   useDisconnectTelegram,
   useTelegramSendCode,
   useTelegramStatus,
   useTelegramVerify,
 } from "@/hooks/api/useSocial";
-import { cn } from "@/lib/utils";
 
 export function TelegramIcon({ className }: { className?: string }) {
   return (
@@ -136,117 +131,60 @@ export function TelegramConnection() {
   };
 
   return (
-    <div className="space-y-6">
-      <Card className={cn(isConnected ? "border-sky-200 bg-sky-50/50" : "border-border")}>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-lg bg-[#229ED9]">
-                <TelegramIcon className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-xl">{t("title")}</CardTitle>
-                <CardDescription>
-                  {isConnected
-                    ? `${activeAccounts.length} ${t("accountsConnected")}`
-                    : t("notConnected")}
-                </CardDescription>
-              </div>
-            </div>
-            <Badge
-              variant={isConnected ? "default" : "secondary"}
-              className={cn(isConnected && "bg-sky-600 hover:bg-sky-700")}
-            >
-              {isConnected ? t("badgeConnected") : t("badgeNotConnected")}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              onClick={openWizard}
-              disabled={isLoading}
-              className="bg-[#229ED9] hover:bg-[#1d8dc4] w-full sm:w-auto"
-            >
-              <Phone className="mr-2 h-4 w-4" />
-              {isConnected ? t("connectAnother") : t("connect")}
-            </Button>
-            <Button
-              onClick={() => refetch()}
-              disabled={isRefetching}
-              variant="outline"
-              className="w-full sm:w-auto"
-            >
-              <RefreshCw className={cn("mr-2 h-4 w-4", isRefetching && "animate-spin")} />
-              {t("refreshStatus")}
-            </Button>
-          </div>
-
-          {!isConnected && (
-            <Alert>
-              <ShieldCheck className="h-4 w-4" />
-              <AlertDescription>{t("howItWorks")}</AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+    <>
+      <ChannelDetailCard
+        icon={TelegramIcon as unknown as LucideIcon}
+        color="#229ED9"
+        title={t("title")}
+        status={isConnected ? `${activeAccounts.length} ${t("accountsConnected")}` : t("notConnected")}
+        statusIcon={isConnected ? CheckCircle2 : X}
+        statusTone={isConnected ? "success" : "neutral"}
+        badge={{ label: isConnected ? t("badgeConnected") : t("badgeNotConnected"), tone: isConnected ? "success" : "neutral" }}
+        actions={[
+          { label: isConnected ? t("connectAnother") : t("connect"), icon: Phone, variant: "primary", onClick: openWizard, disabled: isLoading, testId: "telegram-connect" },
+          { label: t("refreshStatus"), icon: RefreshCw, variant: "outline", onClick: () => refetch(), disabled: isRefetching, testId: "telegram-refresh" },
+        ]}
+        testId="telegram-detail"
+      >
+        {!isConnected && (
+          <SettingsNote tone="info" icon={ShieldCheck}>{t("howItWorks")}</SettingsNote>
+        )}
+      </ChannelDetailCard>
 
       {accounts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">{t("connectedAccounts")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {accounts.map((account, index) => (
-                <div key={account.id}>
-                  {index > 0 && <Separator className="my-3" />}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-sky-100 text-sky-600">
-                          {(account.first_name || account.username || "T").charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">
-                          {[account.first_name, account.last_name].filter(Boolean).join(" ") ||
-                            account.username ||
-                            account.phone_number}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {account.username ? `@${account.username} · ` : ""}
-                          {account.phone_number}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {account.is_active ? (
-                        <Badge className="bg-sky-600 hover:bg-sky-700">
-                          <CheckCircle2 className="mr-1 h-3 w-3" />
-                          {t("active")}
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">{t("inactive")}</Badge>
-                      )}
-                      {account.is_active && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDisconnect(account.id)}
-                          disabled={disconnect.isPending}
-                        >
-                          <X className="mr-1 h-3 w-3" />
-                          {t("disconnect")}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <SettingsSection title={t("connectedAccounts")} testId="telegram-accounts">
+          {accounts.map((account) => (
+            <AccountRow
+              key={account.id}
+              avatar={(account.first_name || account.username || "T").charAt(0).toUpperCase()}
+              name={
+                [account.first_name, account.last_name].filter(Boolean).join(" ") ||
+                account.username ||
+                account.phone_number
+              }
+              meta={
+                <>
+                  {account.username ? `@${account.username} · ` : ""}
+                  <span className="font-mono tabular-nums">{account.phone_number}</span>
+                </>
+              }
+              badge={{ label: account.is_active ? t("active") : t("inactive"), tone: account.is_active ? "success" : "neutral" }}
+              actions={
+                account.is_active ? (
+                  <AccountRowAction
+                    label={t("disconnect")}
+                    icon={X}
+                    tone="danger"
+                    onClick={() => handleDisconnect(account.id)}
+                    disabled={disconnect.isPending}
+                    testId="telegram-disconnect"
+                  />
+                ) : undefined
+              }
+              testId="telegram-account-row"
+            />
+          ))}
+        </SettingsSection>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && setDialogOpen(false)}>
@@ -354,6 +292,6 @@ export function TelegramConnection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

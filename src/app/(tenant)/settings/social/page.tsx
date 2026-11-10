@@ -1,23 +1,31 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, BellRing, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe, Settings2, Wrench, Link, Trash2, Mail, ExternalLink, Sparkles } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { Bell, Loader2, Users, Play, MessageSquare, Wrench, Trash2, Mail, Sparkles, Settings2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSocialSettings, useUpdateSocialSettings, useClearPlatformHistory, useEmailStatus, AutoReplySettings, AwayHoursSchedule, PlatformAutoReplySettings } from "@/hooks/api/useSocial";
+import { useSocialSettings, useUpdateSocialSettings, useClearPlatformHistory, useEmailStatus, AutoReplySettings, AwayHoursSchedule, PlatformAutoReplySettings, SocialSettings } from "@/hooks/api/useSocial";
 import { EmailSyncDebug } from "@/components/social/EmailSyncDebug";
 import { AICompanionTab } from "./AICompanionTab";
 import { NOTIFICATION_SOUNDS, getNotificationSound } from "@/utils/notificationSound";
+import { Segmented } from "@/components/redesign/segmented";
+import { rdButton } from "@/components/redesign/buttons";
+import {
+  ActionButton,
+  FieldRow,
+  SettingsFormPage,
+  SettingsNote,
+  SettingsSection,
+  SettingsToggle,
+  StickySaveBar,
+  settingsFieldWidth,
+  settingsInputClass,
+} from "@/components/redesign/settings";
+import { cn } from "@/lib/utils";
+import { ChannelDot, SectionBlock, StackLabel, selectTriggerClass, textareaClass } from "@/components/social/settings-blocks";
 
 // Common timezones
 const TIMEZONES = [
@@ -47,6 +55,106 @@ const defaultPlatformSettings: PlatformAutoReplySettings = {
   away_enabled: false,
   away_message: '',
 };
+
+const DEFAULT_RATING_MESSAGE_KA = "გმადლობთ ჩვენთან საუბრისთვის! გთხოვთ შეაფასოთ თქვენი გამოცდილება: {link}";
+const DEFAULT_RATING_MESSAGE_EN = "Thank you for chatting with us! Please rate your experience: {link}";
+
+/**
+ * Everything the page's Save sends, in one object. `fromSettings` is the
+ * mapping the page always used to load the server values; the save bar
+ * compares the current form with the last loaded one.
+ */
+interface SocialSettingsForm {
+  chatAssignmentEnabled: boolean;
+  hideAssignedChats: boolean;
+  collectCustomerRating: boolean;
+  staleReminderEnabled: boolean;
+  staleReminderMinutes: number;
+  linkBasedRatingEnabled: boolean;
+  ratingRequestMessageKa: string;
+  ratingRequestMessageEn: string;
+  postReviewRedirectUrl: string;
+  soundFacebook: string;
+  soundInstagram: string;
+  soundWhatsapp: string;
+  soundEmail: string;
+  soundWidget: string;
+  soundTeamChat: string;
+  soundSystem: string;
+  timezone: string;
+  awayHoursEnabled: boolean;
+  awayHoursSchedule: AwayHoursSchedule;
+  autoReplySettings: AutoReplySettings;
+}
+
+const INITIAL_FORM: SocialSettingsForm = {
+  chatAssignmentEnabled: false,
+  hideAssignedChats: false,
+  collectCustomerRating: false,
+  staleReminderEnabled: false,
+  staleReminderMinutes: 60,
+  linkBasedRatingEnabled: false,
+  ratingRequestMessageKa: DEFAULT_RATING_MESSAGE_KA,
+  ratingRequestMessageEn: DEFAULT_RATING_MESSAGE_EN,
+  postReviewRedirectUrl: "",
+  soundFacebook: 'mixkit-bubble-pop-up-alert-notification-2357.wav',
+  soundInstagram: 'mixkit-magic-notification-ring-2344.wav',
+  soundWhatsapp: 'mixkit-positive-notification-951.wav',
+  soundEmail: 'mixkit-bell-notification-933.wav',
+  soundWidget: 'mixkit-bubble-pop-up-alert-notification-2357.wav',
+  soundTeamChat: 'mixkit-happy-bells-notification-937.wav',
+  soundSystem: 'mixkit-confirmation-tone-2867.wav',
+  timezone: 'UTC',
+  awayHoursEnabled: false,
+  awayHoursSchedule: {},
+  autoReplySettings: {
+    facebook: { ...defaultPlatformSettings },
+    instagram: { ...defaultPlatformSettings },
+    whatsapp: { ...defaultPlatformSettings },
+  },
+};
+
+/**
+ * A stored sound that is not in the picker list (the backend default for the
+ * widget is the placeholder "default") showed an empty select and played no
+ * file; such a value falls back to the page's default for that channel.
+ */
+function knownSound(value: string | undefined | null, fallback: string): string {
+  return value && NOTIFICATION_SOUNDS.some((s) => s.value === value) ? value : fallback;
+}
+
+function fromSettings(settings: SocialSettings): SocialSettingsForm {
+  return {
+    chatAssignmentEnabled: settings.chat_assignment_enabled ?? false,
+    hideAssignedChats: settings.hide_assigned_chats ?? false,
+    collectCustomerRating: settings.collect_customer_rating ?? false,
+    // Stale assignment reminders
+    staleReminderEnabled: settings.stale_assignment_reminder_enabled ?? false,
+    staleReminderMinutes: settings.stale_assignment_reminder_minutes ?? 60,
+    // Link-based rating settings
+    linkBasedRatingEnabled: settings.link_based_rating_enabled ?? false,
+    ratingRequestMessageKa: settings.rating_request_message_template_ka || DEFAULT_RATING_MESSAGE_KA,
+    ratingRequestMessageEn: settings.rating_request_message_template_en || DEFAULT_RATING_MESSAGE_EN,
+    postReviewRedirectUrl: settings.post_review_redirect_url || '',
+    // Notification sounds
+    soundFacebook: knownSound(settings.notification_sound_facebook, 'mixkit-bubble-pop-up-alert-notification-2357.wav'),
+    soundInstagram: knownSound(settings.notification_sound_instagram, 'mixkit-magic-notification-ring-2344.wav'),
+    soundWhatsapp: knownSound(settings.notification_sound_whatsapp, 'mixkit-positive-notification-951.wav'),
+    soundEmail: knownSound(settings.notification_sound_email, 'mixkit-bell-notification-933.wav'),
+    soundWidget: knownSound(settings.notification_sound_widget, 'mixkit-bubble-pop-up-alert-notification-2357.wav'),
+    soundTeamChat: knownSound(settings.notification_sound_team_chat, 'mixkit-happy-bells-notification-937.wav'),
+    soundSystem: knownSound(settings.notification_sound_system, 'mixkit-confirmation-tone-2867.wav'),
+    // Auto-reply settings
+    timezone: settings.timezone || 'UTC',
+    awayHoursEnabled: settings.away_hours_enabled ?? false,
+    awayHoursSchedule: settings.away_hours_schedule || {},
+    autoReplySettings: {
+      facebook: { ...defaultPlatformSettings, ...settings.auto_reply_settings?.facebook },
+      instagram: { ...defaultPlatformSettings, ...settings.auto_reply_settings?.instagram },
+      whatsapp: { ...defaultPlatformSettings, ...settings.auto_reply_settings?.whatsapp },
+    },
+  };
+}
 
 interface AwayHoursGridProps {
   schedule: AwayHoursSchedule;
@@ -98,14 +206,14 @@ function AwayHoursGrid({ schedule, onChange, disabled }: AwayHoursGridProps) {
   }, []);
 
   return (
-    <div className="overflow-x-auto">
-      <div className="min-w-[800px]">
+    <div className="overflow-x-auto" data-testid="away-hours-grid">
+      <div className="min-w-[640px]">
         {/* Hour headers */}
-        <div className="flex mb-1">
-          <div className="w-20 shrink-0" />
+        <div className="mb-1 flex">
+          <div className="w-14 shrink-0" />
           <div className="flex flex-1 gap-px">
             {HOURS.map(hour => (
-              <div key={hour} className="flex-1 text-center text-xs text-muted-foreground">
+              <div key={hour} className="flex-1 text-center font-mono text-[10px] text-muted-foreground tabular-nums">
                 {hour.toString().padStart(2, '0')}
               </div>
             ))}
@@ -114,22 +222,19 @@ function AwayHoursGrid({ schedule, onChange, disabled }: AwayHoursGridProps) {
 
         {/* Day rows */}
         {DAYS.map(day => (
-          <div key={day} className="flex mb-px">
-            <div className="w-20 shrink-0 text-sm font-medium capitalize py-1">
+          <div key={day} className="mb-px flex">
+            <div className="w-14 shrink-0 py-0.5 text-xs font-medium capitalize">
               {t(`settingsPage.autoReply.days.${day}`)}
             </div>
             <div className="flex flex-1 gap-px">
               {HOURS.map(hour => (
                 <div
                   key={`${day}-${hour}`}
-                  className={`
-                    flex-1 h-6 rounded-sm cursor-pointer transition-colors select-none
-                    ${isSelected(day, hour)
-                      ? 'bg-orange-500 hover:bg-orange-600'
-                      : 'bg-muted hover:bg-muted-foreground/20'
-                    }
-                    ${disabled ? 'cursor-not-allowed opacity-50' : ''}
-                  `}
+                  className={cn(
+                    "h-5 flex-1 cursor-pointer select-none rounded-[3px] transition-colors",
+                    isSelected(day, hour) ? "bg-orange-500 hover:bg-orange-600" : "bg-muted hover:bg-muted-foreground/20",
+                    disabled && "cursor-not-allowed opacity-50"
+                  )}
                   onMouseDown={() => handleMouseDown(day, hour)}
                   onMouseEnter={() => handleMouseEnter(day, hour)}
                   title={`${day.charAt(0).toUpperCase() + day.slice(1)} ${hour}:00 - ${hour + 1}:00`}
@@ -140,13 +245,13 @@ function AwayHoursGrid({ schedule, onChange, disabled }: AwayHoursGridProps) {
         ))}
 
         {/* Legend */}
-        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <div className="w-4 h-4 rounded-sm bg-muted" />
+        <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <div className="h-3 w-3 rounded-[3px] bg-muted" />
             <span>{t("settingsPage.autoReply.available")}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-4 h-4 rounded-sm bg-orange-500" />
+          <div className="flex items-center gap-1.5">
+            <div className="h-3 w-3 rounded-[3px] bg-orange-500" />
             <span>{t("settingsPage.autoReply.awayActive")}</span>
           </div>
         </div>
@@ -170,73 +275,69 @@ function PlatformAutoReplyForm({ platform, settings, onChange }: PlatformAutoRep
   };
 
   return (
-    <div className="space-y-6">
+    <>
       {/* Welcome Message */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <Label className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-green-500" />
-              {t("settingsPage.autoReply.welcomeMessage")}
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              {t("settingsPage.autoReply.welcomeMessageDescription")}
-            </p>
-          </div>
-          <Switch
-            checked={settings.welcome_enabled}
-            onCheckedChange={(checked) => onChange({ ...settings, welcome_enabled: checked })}
-          />
-        </div>
-        {settings.welcome_enabled && (
+      <FieldRow
+        label={t("settingsPage.autoReply.welcomeMessage")}
+        help={t("settingsPage.autoReply.welcomeMessageDescription")}
+        htmlFor={`welcome-${platform}`}
+        align="center"
+      >
+        <SettingsToggle
+          id={`welcome-${platform}`}
+          checked={settings.welcome_enabled}
+          onCheckedChange={(checked) => onChange({ ...settings, welcome_enabled: checked })}
+        />
+      </FieldRow>
+      {settings.welcome_enabled && (
+        <SectionBlock>
           <Textarea
-            placeholder={`Hello {{customer_name}}! Welcome to our ${platformLabels[platform]} support. How can we help you today?`}
+            aria-label={t("settingsPage.autoReply.welcomeMessage")}
+            className={textareaClass}
+            placeholder={t("settingsPage.autoReply.welcomePlaceholder", { platform: platformLabels[platform] })}
             value={settings.welcome_message}
             onChange={(e) => onChange({ ...settings, welcome_message: e.target.value })}
             rows={3}
           />
-        )}
-      </div>
-
-      <Separator />
+        </SectionBlock>
+      )}
 
       {/* Away Message */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <Label className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-orange-500" />
-              {t("settingsPage.autoReply.awayMessage")}
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              {t("settingsPage.autoReply.awayMessageDescription")}
-            </p>
-          </div>
-          <Switch
-            checked={settings.away_enabled}
-            onCheckedChange={(checked) => onChange({ ...settings, away_enabled: checked })}
-          />
-        </div>
-        {settings.away_enabled && (
+      <FieldRow
+        label={t("settingsPage.autoReply.awayMessage")}
+        help={t("settingsPage.autoReply.awayMessageDescription")}
+        htmlFor={`away-${platform}`}
+        align="center"
+      >
+        <SettingsToggle
+          id={`away-${platform}`}
+          checked={settings.away_enabled}
+          onCheckedChange={(checked) => onChange({ ...settings, away_enabled: checked })}
+        />
+      </FieldRow>
+      {settings.away_enabled && (
+        <SectionBlock>
           <Textarea
-            placeholder={`Hi {{customer_name}}! Thanks for reaching out. We're currently away but will respond as soon as we're back. Our business hours are Monday-Friday, 9 AM - 6 PM.`}
+            aria-label={t("settingsPage.autoReply.awayMessage")}
+            className={textareaClass}
+            placeholder={t("settingsPage.autoReply.awayPlaceholder")}
             value={settings.away_message}
             onChange={(e) => onChange({ ...settings, away_message: e.target.value })}
             rows={3}
           />
-        )}
-      </div>
+        </SectionBlock>
+      )}
 
       {/* Variable hint */}
-      <div className="rounded-lg bg-muted/50 p-3">
-        <p className="text-xs text-muted-foreground">
-          <strong>{t("settingsPage.autoReply.availableVariables")}</strong>{" "}
+      <SectionBlock>
+        <SettingsNote tone="neutral">
+          <strong className="font-semibold">{t("settingsPage.autoReply.availableVariables")}</strong>{" "}
           {t.rich("settingsPage.autoReply.variableHint", {
-            code: (chunks) => <code className="bg-muted px-1 rounded">{chunks}</code>
+            code: (chunks) => <code className="rounded bg-muted px-1 font-mono">{chunks}</code>
           })}
-        </p>
-      </div>
-    </div>
+        </SettingsNote>
+      </SectionBlock>
+    </>
   );
 }
 
@@ -284,76 +385,65 @@ function NotificationsTab({
   previewSound: (sound: string) => void;
   t: ReturnType<typeof useTranslations>;
 }) {
-  return (
-    <div className="space-y-6">
-      {/* Notification Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            {t("settingsPage.notifications.title") || "Notifications"}
-          </CardTitle>
-          <CardDescription>
-            {t("settingsPage.notifications.description") || "Manage notification preferences for new messages"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="notifications">{t("settingsPage.notifications.enable") || "Enable notifications"}</Label>
-              <p className="text-sm text-muted-foreground">
-                {t("settingsPage.notifications.enableDescription") || "Show notifications for new messages"}
-              </p>
-            </div>
-            <Switch
-              id="notifications"
-              checked={notifications}
-              onCheckedChange={setNotifications}
-            />
-          </div>
+  const soundRows = [
+    { key: "facebook", label: t("settingsPage.notificationSounds.facebook") || "Facebook", dot: "bg-blue-600", value: soundFacebook, set: setSoundFacebook },
+    { key: "instagram", label: t("settingsPage.notificationSounds.instagram") || "Instagram", dot: "bg-pink-600", value: soundInstagram, set: setSoundInstagram },
+    { key: "whatsapp", label: t("settingsPage.notificationSounds.whatsapp") || "WhatsApp", dot: "bg-green-600", value: soundWhatsapp, set: setSoundWhatsapp },
+    { key: "email", label: t("settingsPage.notificationSounds.email") || "Email", dot: "bg-red-600", value: soundEmail, set: setSoundEmail },
+    { key: "widget", label: t("settingsPage.notificationSounds.widget") || "Website widget", dot: "bg-indigo-600", value: soundWidget, set: setSoundWidget },
+    { key: "team-chat", label: t("settingsPage.notificationSounds.teamChat") || "Team Chat", dot: "bg-purple-600", value: soundTeamChat, set: setSoundTeamChat },
+    { key: "system", label: t("settingsPage.notificationSounds.system") || "System", dot: "bg-gray-600", value: soundSystem, set: setSoundSystem },
+  ];
 
-          {notifications && (
-            <>
-              <Separator />
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <Label htmlFor="notification-sound">{t("settingsPage.notifications.sound") || "Notification sound"}</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {t("settingsPage.notifications.soundDescription") || "Play sound when new message arrives"}
-                  </p>
-                </div>
-                <Switch
-                  id="notification-sound"
-                  checked={notificationSound}
-                  onCheckedChange={setNotificationSound}
-                />
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+  return (
+    <>
+      {/* Notification Settings */}
+      <SettingsSection
+        title={t("settingsPage.notifications.title") || "Notifications"}
+        hint={t("settingsPage.notifications.description") || "Manage notification preferences for new messages"}
+        testId="social-notifications-section"
+      >
+        <FieldRow
+          label={t("settingsPage.notifications.enable") || "Enable notifications"}
+          help={t("settingsPage.notifications.enableDescription") || "Show notifications for new messages"}
+          htmlFor="notifications"
+          align="center"
+        >
+          <SettingsToggle id="notifications" checked={notifications} onCheckedChange={setNotifications} />
+        </FieldRow>
+        {notifications && (
+          <FieldRow
+            label={t("settingsPage.notifications.sound") || "Notification sound"}
+            help={t("settingsPage.notifications.soundDescription") || "Play sound when new message arrives"}
+            htmlFor="notification-sound"
+            align="center"
+          >
+            <SettingsToggle id="notification-sound" checked={notificationSound} onCheckedChange={setNotificationSound} />
+          </FieldRow>
+        )}
+      </SettingsSection>
 
       {/* Notification Sounds Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Volume2 className="h-5 w-5" />
-            {t("settingsPage.notificationSounds.title") || "Notification Sounds"}
-          </CardTitle>
-          <CardDescription>
-            {t("settingsPage.notificationSounds.description") || "Customize notification sounds for each platform"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Facebook Sound */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <Label className="flex items-center gap-2">
-              <span className="text-blue-600">&#9679;</span>
-              {t("settingsPage.notificationSounds.facebook") || "Facebook"}
-            </Label>
-            <div className="flex gap-2">
-              <Select value={soundFacebook} onValueChange={setSoundFacebook}>
-                <SelectTrigger className="w-full sm:w-[200px]">
+      <SettingsSection
+        title={t("settingsPage.notificationSounds.title") || "Notification Sounds"}
+        hint={t("settingsPage.notificationSounds.description") || "Customize notification sounds for each platform"}
+        testId="social-sounds-section"
+      >
+        {soundRows.map((row) => (
+          <FieldRow
+            key={row.key}
+            label={
+              <span className="inline-flex items-center gap-2">
+                <ChannelDot className={row.dot} />
+                {row.label}
+              </span>
+            }
+            align="center"
+            testId={`sound-row-${row.key}`}
+          >
+            <div className={cn("flex items-center gap-1.5", settingsFieldWidth)}>
+              <Select value={row.value} onValueChange={row.set}>
+                <SelectTrigger className={cn(selectTriggerClass, "min-w-0 flex-1")} aria-label={row.label}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -364,176 +454,20 @@ function NotificationsTab({
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant="ghost" size="icon" onClick={() => previewSound(soundFacebook)}>
-                <Play className="h-4 w-4" />
-              </Button>
+              <button
+                type="button"
+                onClick={() => previewSound(row.value)}
+                className={rdButton.ghostIcon}
+                aria-label={t("settingsPage.notificationSounds.play", { channel: row.label })}
+                title={t("settingsPage.notificationSounds.play", { channel: row.label })}
+              >
+                <Play className="h-4 w-4" aria-hidden />
+              </button>
             </div>
-          </div>
-
-          <Separator />
-
-          {/* Instagram Sound */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <Label className="flex items-center gap-2">
-              <span className="text-pink-600">&#9679;</span>
-              {t("settingsPage.notificationSounds.instagram") || "Instagram"}
-            </Label>
-            <div className="flex gap-2">
-              <Select value={soundInstagram} onValueChange={setSoundInstagram}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {NOTIFICATION_SOUNDS.map((sound) => (
-                    <SelectItem key={sound.value} value={sound.value}>
-                      {sound.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button variant="ghost" size="icon" onClick={() => previewSound(soundInstagram)}>
-                <Play className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* WhatsApp Sound */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <Label className="flex items-center gap-2">
-              <span className="text-green-600">&#9679;</span>
-              {t("settingsPage.notificationSounds.whatsapp") || "WhatsApp"}
-            </Label>
-            <div className="flex gap-2">
-              <Select value={soundWhatsapp} onValueChange={setSoundWhatsapp}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {NOTIFICATION_SOUNDS.map((sound) => (
-                    <SelectItem key={sound.value} value={sound.value}>
-                      {sound.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button variant="ghost" size="icon" onClick={() => previewSound(soundWhatsapp)}>
-                <Play className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Email Sound */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <Label className="flex items-center gap-2">
-              <span className="text-red-600">&#9679;</span>
-              {t("settingsPage.notificationSounds.email") || "Email"}
-            </Label>
-            <div className="flex gap-2">
-              <Select value={soundEmail} onValueChange={setSoundEmail}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {NOTIFICATION_SOUNDS.map((sound) => (
-                    <SelectItem key={sound.value} value={sound.value}>
-                      {sound.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button variant="ghost" size="icon" onClick={() => previewSound(soundEmail)}>
-                <Play className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Website Widget Sound */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <Label className="flex items-center gap-2">
-              <span className="text-indigo-600">&#9679;</span>
-              {t("settingsPage.notificationSounds.widget") || "Website widget"}
-            </Label>
-            <div className="flex gap-2">
-              <Select value={soundWidget} onValueChange={setSoundWidget}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {NOTIFICATION_SOUNDS.map((sound) => (
-                    <SelectItem key={sound.value} value={sound.value}>
-                      {sound.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button variant="ghost" size="icon" onClick={() => previewSound(soundWidget)}>
-                <Play className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Team Chat Sound */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <Label className="flex items-center gap-2">
-              <span className="text-purple-600">&#9679;</span>
-              {t("settingsPage.notificationSounds.teamChat") || "Team Chat"}
-            </Label>
-            <div className="flex gap-2">
-              <Select value={soundTeamChat} onValueChange={setSoundTeamChat}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {NOTIFICATION_SOUNDS.map((sound) => (
-                    <SelectItem key={sound.value} value={sound.value}>
-                      {sound.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button variant="ghost" size="icon" onClick={() => previewSound(soundTeamChat)}>
-                <Play className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* System Sound */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <Label className="flex items-center gap-2">
-              <span className="text-gray-600">&#9679;</span>
-              {t("settingsPage.notificationSounds.system") || "System"}
-            </Label>
-            <div className="flex gap-2">
-              <Select value={soundSystem} onValueChange={setSoundSystem}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {NOTIFICATION_SOUNDS.map((sound) => (
-                    <SelectItem key={sound.value} value={sound.value}>
-                      {sound.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button variant="ghost" size="icon" onClick={() => previewSound(soundSystem)}>
-                <Play className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </FieldRow>
+        ))}
+      </SettingsSection>
+    </>
   );
 }
 
@@ -557,31 +491,22 @@ function AutoReplyTab({
   updatePlatformSettings: (platform: 'facebook' | 'instagram' | 'whatsapp', settings: PlatformAutoReplySettings) => void;
 }) {
   const t = useTranslations("social");
+  const [platform, setPlatform] = useState<'facebook' | 'instagram' | 'whatsapp'>("facebook");
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          {t("settingsPage.autoReply.title")}
-        </CardTitle>
-        <CardDescription>
-          {t("settingsPage.autoReply.description")}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <>
+      <SettingsSection
+        title={t("settingsPage.autoReply.title")}
+        hint={t("settingsPage.autoReply.description")}
+        testId="social-auto-reply-section"
+      >
         {/* Timezone Selection */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <Label className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              {t("settingsPage.autoReply.businessTimezone")}
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              {t("settingsPage.autoReply.businessTimezoneDescription")}
-            </p>
-          </div>
+        <FieldRow
+          label={t("settingsPage.autoReply.businessTimezone")}
+          help={t("settingsPage.autoReply.businessTimezoneDescription")}
+          align="center"
+        >
           <Select value={timezone} onValueChange={setTimezone}>
-            <SelectTrigger className="w-full sm:w-[280px]">
+            <SelectTrigger className={cn(selectTriggerClass, settingsFieldWidth)} aria-label={t("settingsPage.autoReply.businessTimezone")}>
               <SelectValue placeholder={t("settingsPage.autoReply.selectTimezone")} />
             </SelectTrigger>
             <SelectContent>
@@ -592,31 +517,22 @@ function AutoReplyTab({
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <Separator />
+        </FieldRow>
 
         {/* Away Hours Toggle */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <Label className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-orange-500" />
-              {t("settingsPage.autoReply.awayHoursSchedule")}
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              {t("settingsPage.autoReply.awayHoursDescription")}
-            </p>
-          </div>
-          <Switch
-            checked={awayHoursEnabled}
-            onCheckedChange={setAwayHoursEnabled}
-          />
-        </div>
+        <FieldRow
+          label={t("settingsPage.autoReply.awayHoursSchedule")}
+          help={t("settingsPage.autoReply.awayHoursDescription")}
+          htmlFor="away-hours-enabled"
+          align="center"
+        >
+          <SettingsToggle id="away-hours-enabled" checked={awayHoursEnabled} onCheckedChange={setAwayHoursEnabled} />
+        </FieldRow>
 
         {/* Away Hours Grid */}
         {awayHoursEnabled && (
-          <div className="mt-4">
-            <p className="text-sm text-muted-foreground mb-3">
+          <SectionBlock className="gap-3">
+            <p className="text-xs leading-[17px] text-muted-foreground">
               {t.rich("settingsPage.autoReply.awayHoursInstruction", {
                 strong: (chunks) => <strong>{chunks}</strong>
               })}
@@ -626,54 +542,36 @@ function AutoReplyTab({
               onChange={setAwayHoursSchedule}
               disabled={!awayHoursEnabled}
             />
-          </div>
+          </SectionBlock>
         )}
+      </SettingsSection>
 
-        <Separator />
-
-        {/* Per-Platform Settings */}
-        <div>
-          <Label className="mb-3 block">{t("settingsPage.autoReply.platformMessages")}</Label>
-          <Tabs defaultValue="facebook" className="w-full">
-            <TabsList className="h-auto flex-wrap">
-              <TabsTrigger value="facebook" className="flex items-center gap-2">
-                <span className="text-blue-600">&#9679;</span>
-                Facebook
-              </TabsTrigger>
-              <TabsTrigger value="instagram" className="flex items-center gap-2">
-                <span className="text-pink-600">&#9679;</span>
-                Instagram
-              </TabsTrigger>
-              <TabsTrigger value="whatsapp" className="flex items-center gap-2">
-                <span className="text-green-600">&#9679;</span>
-                WhatsApp
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="facebook" className="mt-4">
-              <PlatformAutoReplyForm
-                platform="facebook"
-                settings={autoReplySettings.facebook || defaultPlatformSettings}
-                onChange={(s) => updatePlatformSettings('facebook', s)}
-              />
-            </TabsContent>
-            <TabsContent value="instagram" className="mt-4">
-              <PlatformAutoReplyForm
-                platform="instagram"
-                settings={autoReplySettings.instagram || defaultPlatformSettings}
-                onChange={(s) => updatePlatformSettings('instagram', s)}
-              />
-            </TabsContent>
-            <TabsContent value="whatsapp" className="mt-4">
-              <PlatformAutoReplyForm
-                platform="whatsapp"
-                settings={autoReplySettings.whatsapp || defaultPlatformSettings}
-                onChange={(s) => updatePlatformSettings('whatsapp', s)}
-              />
-            </TabsContent>
-          </Tabs>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Per-Platform Settings */}
+      <SettingsSection
+        title={t("settingsPage.autoReply.platformMessages")}
+        actions={
+          <Segmented
+            value={platform}
+            onChange={setPlatform}
+            ariaLabel={t("settingsPage.autoReply.platformMessages")}
+            testId="auto-reply-platforms"
+            options={[
+              { value: "facebook", label: "Facebook" },
+              { value: "instagram", label: "Instagram" },
+              { value: "whatsapp", label: "WhatsApp" },
+            ]}
+          />
+        }
+        testId="social-platform-messages-section"
+      >
+        <PlatformAutoReplyForm
+          key={platform}
+          platform={platform}
+          settings={autoReplySettings[platform] || defaultPlatformSettings}
+          onChange={(s) => updatePlatformSettings(platform, s)}
+        />
+      </SettingsSection>
+    </>
   );
 }
 
@@ -723,268 +621,190 @@ function ChatManagementTab({
   t: ReturnType<typeof useTranslations>;
 }) {
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            {t("settingsPage.chatManagement.title") || "Chat Management"}
-          </CardTitle>
-          <CardDescription>
-            {t("settingsPage.chatManagement.description") || "Configure chat assignment, sessions, and customer ratings"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Chat Assignment Toggle */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="chat-assignment" className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-blue-500" />
-                {t("settingsPage.chatManagement.enableAssignment") || "Enable chat assignment"}
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {t("settingsPage.chatManagement.enableAssignmentDescription") || "Allow users to claim chats and manage sessions. Only the assigned user will receive notifications for that chat."}
-              </p>
-            </div>
-            <Switch
-              id="chat-assignment"
-              checked={chatAssignmentEnabled}
-              onCheckedChange={setChatAssignmentEnabled}
+    <>
+      <SettingsSection
+        title={t("settingsPage.chatManagement.title") || "Chat Management"}
+        hint={t("settingsPage.chatManagement.description") || "Configure chat assignment, sessions, and customer ratings"}
+        testId="social-chat-management-section"
+      >
+        {/* Chat Assignment Toggle */}
+        <FieldRow
+          label={t("settingsPage.chatManagement.enableAssignment") || "Enable chat assignment"}
+          help={t("settingsPage.chatManagement.enableAssignmentDescription") || "Allow users to claim chats and manage sessions. Only the assigned user will receive notifications for that chat."}
+          htmlFor="chat-assignment"
+          align="center"
+        >
+          <SettingsToggle id="chat-assignment" checked={chatAssignmentEnabled} onCheckedChange={setChatAssignmentEnabled} />
+        </FieldRow>
+
+        {/* Hide Assigned Chats Toggle */}
+        <FieldRow
+          label={t("settingsPage.chatManagement.hideAssigned") || "Hide assigned chats from others"}
+          help={t("settingsPage.chatManagement.hideAssignedDescription") || "When enabled, assigned chats are hidden from other users (admins can still see all)"}
+          htmlFor="hide-assigned"
+          align="center"
+        >
+          <SettingsToggle id="hide-assigned" checked={hideAssignedChats} onCheckedChange={setHideAssignedChats} />
+        </FieldRow>
+
+        {/* Stale Assignment Reminder Toggle */}
+        <FieldRow
+          label={t("settingsPage.chatManagement.staleReminder") || "Remind agents about inactive assigned chats"}
+          help={t("settingsPage.chatManagement.staleReminderDescription") || "Agents see a popup when a chat assigned to them has had no activity for the set time."}
+          htmlFor="stale-reminder"
+          align="center"
+        >
+          <SettingsToggle id="stale-reminder" checked={staleReminderEnabled} onCheckedChange={setStaleReminderEnabled} />
+        </FieldRow>
+
+        {/* Threshold (shown when reminders are enabled) */}
+        {staleReminderEnabled && (
+          <FieldRow
+            label={t("settingsPage.chatManagement.staleReminderMinutes") || "Inactivity threshold (minutes)"}
+            help={t("settingsPage.chatManagement.staleReminderMinutesDescription") || "How long a chat can be quiet before the reminder appears (5–10080)."}
+            htmlFor="stale-reminder-minutes"
+            align="center"
+            className="sm:ps-8"
+          >
+            <input
+              id="stale-reminder-minutes"
+              type="number"
+              min={5}
+              max={10080}
+              className={cn(settingsInputClass, "w-32 font-mono tabular-nums")}
+              value={staleReminderMinutes}
+              onChange={(e) => setStaleReminderMinutes(Number(e.target.value))}
             />
-          </div>
+          </FieldRow>
+        )}
 
-          <Separator />
+        {/* Collect Customer Rating Toggle */}
+        <FieldRow
+          label={t("settingsPage.chatManagement.collectRating") || "Collect customer rating"}
+          help={t("settingsPage.chatManagement.collectRatingDescription") || "Send rating request (1-5) to customer when session ends"}
+          htmlFor="collect-rating"
+          align="center"
+        >
+          <SettingsToggle id="collect-rating" checked={collectCustomerRating} onCheckedChange={setCollectCustomerRating} />
+        </FieldRow>
 
-          {/* Hide Assigned Chats Toggle */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="hide-assigned" className="flex items-center gap-2">
-                <EyeOff className="h-4 w-4 text-orange-500" />
-                {t("settingsPage.chatManagement.hideAssigned") || "Hide assigned chats from others"}
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {t("settingsPage.chatManagement.hideAssignedDescription") || "When enabled, assigned chats are hidden from other users (admins can still see all)"}
-              </p>
-            </div>
-            <Switch
-              id="hide-assigned"
-              checked={hideAssignedChats}
-              onCheckedChange={setHideAssignedChats}
-            />
-          </div>
+        {/* Link-based Rating Settings (shown when collect rating is enabled) */}
+        {collectCustomerRating && (
+          <>
+            <FieldRow
+              label={t("settingsPage.chatManagement.linkBasedRating") || "Use link-based rating"}
+              help={t("settingsPage.chatManagement.linkBasedRatingDescription") || "Send a link to a review page instead of in-chat quick replies"}
+              htmlFor="link-based-rating"
+              align="center"
+              className="sm:ps-8"
+            >
+              <SettingsToggle id="link-based-rating" checked={linkBasedRatingEnabled} onCheckedChange={setLinkBasedRatingEnabled} />
+            </FieldRow>
 
-          <Separator />
-
-          {/* Stale Assignment Reminder Toggle */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="stale-reminder" className="flex items-center gap-2">
-                <BellRing className="h-4 w-4 text-purple-500" />
-                {t("settingsPage.chatManagement.staleReminder") || "Remind agents about inactive assigned chats"}
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {t("settingsPage.chatManagement.staleReminderDescription") || "Agents see a popup when a chat assigned to them has had no activity for the set time."}
-              </p>
-            </div>
-            <Switch
-              id="stale-reminder"
-              checked={staleReminderEnabled}
-              onCheckedChange={setStaleReminderEnabled}
-            />
-          </div>
-
-          {/* Threshold (shown when reminders are enabled) */}
-          {staleReminderEnabled && (
-            <div className="space-y-2 pl-6 border-l-2 border-muted">
-              <Label htmlFor="stale-reminder-minutes">
-                {t("settingsPage.chatManagement.staleReminderMinutes") || "Inactivity threshold (minutes)"}
-              </Label>
-              <Input
-                id="stale-reminder-minutes"
-                type="number"
-                min={5}
-                max={10080}
-                className="w-32"
-                value={staleReminderMinutes}
-                onChange={(e) => setStaleReminderMinutes(Number(e.target.value))}
-              />
-              <p className="text-sm text-muted-foreground">
-                {t("settingsPage.chatManagement.staleReminderMinutesDescription") || "How long a chat can be quiet before the reminder appears (5–10080)."}
-              </p>
-            </div>
-          )}
-
-          <Separator />
-
-          {/* Collect Customer Rating Toggle */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="collect-rating" className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-yellow-500" />
-                {t("settingsPage.chatManagement.collectRating") || "Collect customer rating"}
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {t("settingsPage.chatManagement.collectRatingDescription") || "Send rating request (1-5) to customer when session ends"}
-              </p>
-            </div>
-            <Switch
-              id="collect-rating"
-              checked={collectCustomerRating}
-              onCheckedChange={setCollectCustomerRating}
-            />
-          </div>
-
-          {/* Link-based Rating Settings (shown when collect rating is enabled) */}
-          {collectCustomerRating && (
-            <>
-              <Separator />
-              <div className="space-y-4 pl-6 border-l-2 border-muted">
-                {/* Link-based Rating Toggle */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="link-based-rating" className="flex items-center gap-2">
-                      <Link className="h-4 w-4 text-blue-500" />
-                      {t("settingsPage.chatManagement.linkBasedRating") || "Use link-based rating"}
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      {t("settingsPage.chatManagement.linkBasedRatingDescription") || "Send a link to a review page instead of in-chat quick replies"}
-                    </p>
-                  </div>
-                  <Switch
-                    id="link-based-rating"
-                    checked={linkBasedRatingEnabled}
-                    onCheckedChange={setLinkBasedRatingEnabled}
+            {/* Message Templates (shown when link-based rating is enabled) */}
+            {linkBasedRatingEnabled && (
+              <>
+                <SectionBlock className="sm:ps-8">
+                  <StackLabel htmlFor="rating-message-ka" label={t("settingsPage.chatManagement.ratingMessageKa") || "Rating request message (Georgian)"} />
+                  <Textarea
+                    id="rating-message-ka"
+                    className={textareaClass}
+                    placeholder="გმადლობთ ჩვენთან საუბრისთვის! გთხოვთ შეაფასოთ თქვენი გამოცდილება: {link}"
+                    value={ratingRequestMessageKa}
+                    onChange={(e) => setRatingRequestMessageKa(e.target.value)}
+                    rows={2}
                   />
-                </div>
+                </SectionBlock>
+                <SectionBlock className="sm:ps-8">
+                  <StackLabel htmlFor="rating-message-en" label={t("settingsPage.chatManagement.ratingMessageEn") || "Rating request message (English)"} />
+                  <Textarea
+                    id="rating-message-en"
+                    className={textareaClass}
+                    placeholder="Thank you for chatting with us! Please rate your experience: {link}"
+                    value={ratingRequestMessageEn}
+                    onChange={(e) => setRatingRequestMessageEn(e.target.value)}
+                    rows={2}
+                  />
+                  <SettingsNote tone="neutral">
+                    <strong className="font-semibold">{t("settingsPage.chatManagement.templateHint") || "Hint"}:</strong>{" "}
+                    {t("settingsPage.chatManagement.templateHintDescription") || "Use {link} placeholder where you want the rating link to appear."}
+                  </SettingsNote>
+                </SectionBlock>
+                <FieldRow
+                  label={t("settingsPage.chatManagement.postReviewRedirectUrl") || "Post-review redirect URL"}
+                  help={t("settingsPage.chatManagement.postReviewRedirectUrlDescription") || "After submitting a review, the customer will be redirected to this URL (e.g. your website)"}
+                  htmlFor="post-review-redirect-url"
+                  className="sm:ps-8"
+                >
+                  <input
+                    id="post-review-redirect-url"
+                    type="url"
+                    placeholder="https://example.com"
+                    className={cn(settingsInputClass, settingsFieldWidth)}
+                    value={postReviewRedirectUrl}
+                    onChange={(e) => setPostReviewRedirectUrl(e.target.value)}
+                  />
+                </FieldRow>
+              </>
+            )}
+          </>
+        )}
 
-                {/* Message Templates (shown when link-based rating is enabled) */}
-                {linkBasedRatingEnabled && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="rating-message-ka">
-                        {t("settingsPage.chatManagement.ratingMessageKa") || "Rating request message (Georgian)"}
-                      </Label>
-                      <Textarea
-                        id="rating-message-ka"
-                        placeholder="გმადლობთ ჩვენთან საუბრისთვის! გთხოვთ შეაფასოთ თქვენი გამოცდილება: {link}"
-                        value={ratingRequestMessageKa}
-                        onChange={(e) => setRatingRequestMessageKa(e.target.value)}
-                        rows={2}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="rating-message-en">
-                        {t("settingsPage.chatManagement.ratingMessageEn") || "Rating request message (English)"}
-                      </Label>
-                      <Textarea
-                        id="rating-message-en"
-                        placeholder="Thank you for chatting with us! Please rate your experience: {link}"
-                        value={ratingRequestMessageEn}
-                        onChange={(e) => setRatingRequestMessageEn(e.target.value)}
-                        rows={2}
-                      />
-                    </div>
-                    <div className="rounded-lg bg-muted/50 p-3">
-                      <p className="text-xs text-muted-foreground">
-                        <strong>{t("settingsPage.chatManagement.templateHint") || "Hint"}:</strong>{" "}
-                        {t("settingsPage.chatManagement.templateHintDescription") || "Use {link} placeholder where you want the rating link to appear."}
-                      </p>
-                    </div>
-                    <Separator />
-                    <div className="space-y-2">
-                      <Label htmlFor="post-review-redirect-url" className="flex items-center gap-2">
-                        <ExternalLink className="h-4 w-4 text-green-500" />
-                        {t("settingsPage.chatManagement.postReviewRedirectUrl") || "Post-review redirect URL"}
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        {t("settingsPage.chatManagement.postReviewRedirectUrlDescription") || "After submitting a review, the customer will be redirected to this URL (e.g. your website)"}
-                      </p>
-                      <Input
-                        id="post-review-redirect-url"
-                        type="url"
-                        placeholder="https://example.com"
-                        value={postReviewRedirectUrl}
-                        onChange={(e) => setPostReviewRedirectUrl(e.target.value)}
-                      />
-                    </div>
-                  </div>
+        {/* Info box showing enabled features */}
+        {(chatAssignmentEnabled || hideAssignedChats || collectCustomerRating) && (
+          <SectionBlock>
+            <SettingsNote tone="info" testId="enabled-features">
+              <p className="font-semibold">{t("settingsPage.enabledFeatures.title") || "Enabled features:"}</p>
+              <ul className="mt-1 list-inside list-disc space-y-0.5">
+                {chatAssignmentEnabled && (
+                  <>
+                    <li>{t("settingsPage.enabledFeatures.assignToMe") || 'Users can click "Assign to Me" from the chat menu to claim conversations'}</li>
+                    <li>{t("settingsPage.enabledFeatures.startEndSession") || 'Users can "Start Session" and "End Session" for active support'}</li>
+                    <li>{t("settingsPage.enabledFeatures.assignedNotifications") || "Only assigned user receives notifications for that chat (others see 0 unread)"}</li>
+                    <li>{t("settingsPage.enabledFeatures.sessionEndNotifications") || "When session ends, notifications return to all users"}</li>
+                  </>
                 )}
-              </div>
-            </>
-          )}
-
-          {/* Info box showing enabled features */}
-          {(chatAssignmentEnabled || hideAssignedChats || collectCustomerRating) && (
-            <>
-              <Separator />
-              <div className="space-y-2 rounded-lg bg-muted/50 p-4">
-                <p className="text-sm font-medium">{t("settingsPage.enabledFeatures.title") || "Enabled features:"}</p>
-                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                  {chatAssignmentEnabled && (
-                    <>
-                      <li>{t("settingsPage.enabledFeatures.assignToMe") || 'Users can click "Assign to Me" from the chat menu to claim conversations'}</li>
-                      <li>{t("settingsPage.enabledFeatures.startEndSession") || 'Users can "Start Session" and "End Session" for active support'}</li>
-                      <li>{t("settingsPage.enabledFeatures.assignedNotifications") || "Only assigned user receives notifications for that chat (others see 0 unread)"}</li>
-                      <li>{t("settingsPage.enabledFeatures.sessionEndNotifications") || "When session ends, notifications return to all users"}</li>
-                    </>
-                  )}
-                  {hideAssignedChats && (
-                    <li>{t("settingsPage.enabledFeatures.hiddenChats") || "Assigned chats are hidden from other users (admins see all)"}</li>
-                  )}
-                  {collectCustomerRating && (
-                    <li>
-                      {linkBasedRatingEnabled
-                        ? (t("settingsPage.enabledFeatures.linkBasedRating") || "When session ends, customer receives a link to review page with emoji rating")
-                        : (t("settingsPage.enabledFeatures.ratingRequest") || "When session ends, customer receives rating request (1-5)")}
-                    </li>
-                  )}
-                </ul>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+                {hideAssignedChats && (
+                  <li>{t("settingsPage.enabledFeatures.hiddenChats") || "Assigned chats are hidden from other users (admins see all)"}</li>
+                )}
+                {collectCustomerRating && (
+                  <li>
+                    {linkBasedRatingEnabled
+                      ? (t("settingsPage.enabledFeatures.linkBasedRating") || "When session ends, customer receives a link to review page with emoji rating")
+                      : (t("settingsPage.enabledFeatures.ratingRequest") || "When session ends, customer receives rating request (1-5)")}
+                  </li>
+                )}
+              </ul>
+            </SettingsNote>
+          </SectionBlock>
+        )}
+      </SettingsSection>
 
       {/* Auto Assignment Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            {t("settingsPage.autoAssignment.title") || "Automatic Assignment"}
-          </CardTitle>
-          <CardDescription>
-            {t("settingsPage.autoAssignment.description") || "Configure automatic assignment of conversations to agents"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="auto-assign">{t("settingsPage.autoAssignment.enable") || "Auto-assign conversations"}</Label>
-              <p className="text-sm text-muted-foreground">
-                {t("settingsPage.autoAssignment.enableDescription") || "Automatically assign new conversations to available agents"}
-              </p>
-            </div>
-            <Switch
-              id="auto-assign"
-              checked={autoAssign}
-              onCheckedChange={setAutoAssign}
-            />
-          </div>
+      <SettingsSection
+        title={t("settingsPage.autoAssignment.title") || "Automatic Assignment"}
+        hint={t("settingsPage.autoAssignment.description") || "Configure automatic assignment of conversations to agents"}
+        testId="social-auto-assignment-section"
+      >
+        <FieldRow
+          label={t("settingsPage.autoAssignment.enable") || "Auto-assign conversations"}
+          help={t("settingsPage.autoAssignment.enableDescription") || "Automatically assign new conversations to available agents"}
+          htmlFor="auto-assign"
+          align="center"
+        >
+          <SettingsToggle id="auto-assign" checked={autoAssign} onCheckedChange={setAutoAssign} />
+        </FieldRow>
 
-          {autoAssign && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <Label>{t("settingsPage.autoAssignment.method") || "Assignment method"}</Label>
-                <p className="text-sm text-muted-foreground">
-                  {t("settingsPage.autoAssignment.methodDescription") || "Coming soon: Round-robin, load-based, and manual assignment"}
-                </p>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+        {autoAssign && (
+          <SectionBlock>
+            <StackLabel
+              label={t("settingsPage.autoAssignment.method") || "Assignment method"}
+              help={t("settingsPage.autoAssignment.methodDescription") || "Coming soon: Round-robin, load-based, and manual assignment"}
+            />
+          </SectionBlock>
+        )}
+      </SettingsSection>
+    </>
   );
 }
 
@@ -1021,54 +841,42 @@ function ClearHistoryCard() {
   ];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Trash2 className="size-5" />
-          {t("settingsPage.clearHistory.title")}
-        </CardTitle>
-        <CardDescription>
-          {t("settingsPage.clearHistory.description")}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {platforms.map(({ key, label }) => (
-          <div key={key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span className="text-sm">{t("settingsPage.clearHistory.platformMessages", { platform: label })}</span>
-            {confirmPlatform === key ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-destructive">{t("settingsPage.clearHistory.areYouSure")}</span>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={clearHistory.isPending}
-                  onClick={() => handleClear(key)}
-                >
-                  {clearHistory.isPending ? <Loader2 className="size-4 animate-spin" /> : t("settingsPage.clearHistory.yesDeleteAll")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={clearHistory.isPending}
-                  onClick={() => setConfirmPlatform(null)}
-                >
-                  {t("settingsPage.clearHistory.cancel")}
-                </Button>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setConfirmPlatform(key)}
+    <SettingsSection
+      title={t("settingsPage.clearHistory.title")}
+      hint={t("settingsPage.clearHistory.description")}
+      className="border-destructive/40"
+      testId="social-clear-history-section"
+    >
+      {platforms.map(({ key, label }) => (
+        <FieldRow key={key} label={t("settingsPage.clearHistory.platformMessages", { platform: label })} align="center" testId={`clear-history-${key}`}>
+          {confirmPlatform === key ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-destructive">{t("settingsPage.clearHistory.areYouSure")}</span>
+              <button
+                type="button"
+                className={cn(rdButton.primarySm, "bg-destructive text-destructive-foreground")}
+                disabled={clearHistory.isPending}
+                onClick={() => handleClear(key)}
               >
-                <Trash2 className="size-4 mr-1" />
-                {t("settingsPage.clearHistory.clear")}
-              </Button>
-            )}
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+                {clearHistory.isPending ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : t("settingsPage.clearHistory.yesDeleteAll")}
+              </button>
+              <button
+                type="button"
+                className={rdButton.outlineSm}
+                disabled={clearHistory.isPending}
+                onClick={() => setConfirmPlatform(null)}
+              >
+                {t("settingsPage.clearHistory.cancel")}
+              </button>
+            </div>
+          ) : (
+            <ActionButton tone="danger" icon={Trash2} onClick={() => setConfirmPlatform(key)}>
+              {t("settingsPage.clearHistory.clear")}
+            </ActionButton>
+          )}
+        </FieldRow>
+      ))}
+    </SettingsSection>
   );
 }
 
@@ -1087,55 +895,45 @@ function EmailTab() {
   }, [connections, selectedConnectionId]);
 
   return (
-    <div className="space-y-6">
+    <>
       {connections.length > 1 && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <Label className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                {t("settingsPage.email.selectConnection")}
-              </Label>
-              <Select
-                value={selectedConnectionId?.toString() || ''}
-                onValueChange={(v) => setSelectedConnectionId(Number(v))}
-              >
-                <SelectTrigger className="w-full sm:w-[300px]">
-                  <SelectValue placeholder={t("settingsPage.email.selectEmail")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {connections.map((conn) => (
-                    <SelectItem key={conn.id} value={conn.id.toString()}>
-                      {conn.email_address}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+        <SettingsSection title={t("settingsPage.tabs.email")} testId="social-email-connection-picker">
+          <FieldRow label={t("settingsPage.email.selectConnection")} align="center">
+            <Select
+              value={selectedConnectionId?.toString() || ''}
+              onValueChange={(v) => setSelectedConnectionId(Number(v))}
+            >
+              <SelectTrigger className={cn(selectTriggerClass, settingsFieldWidth)} aria-label={t("settingsPage.email.selectConnection")}>
+                <SelectValue placeholder={t("settingsPage.email.selectEmail")} />
+              </SelectTrigger>
+              <SelectContent>
+                {connections.map((conn) => (
+                  <SelectItem key={conn.id} value={conn.id.toString()}>
+                    {conn.email_address}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FieldRow>
+        </SettingsSection>
       )}
 
       {connections.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            {t("settingsPage.email.noConnections")}
-          </CardContent>
-        </Card>
+        <div className="rounded-[10px] border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
+          {t("settingsPage.email.noConnections")}
+        </div>
       ) : (
         <EmailSyncDebug connectionId={selectedConnectionId} />
       )}
-    </div>
+    </>
   );
 }
 
 function AdvancedTab() {
-  return (
-    <div className="space-y-6">
-      <ClearHistoryCard />
-    </div>
-  );
+  return <ClearHistoryCard />;
 }
+
+type SocialTab = "notifications" | "auto-reply" | "chat-management" | "email" | "advanced" | "ai-companion";
 
 export default function SocialSettingsPage() {
   const t = useTranslations("social");
@@ -1149,116 +947,74 @@ export default function SocialSettingsPage() {
   const { data: settings, isLoading: loading } = useSocialSettings();
   const updateSettings = useUpdateSocialSettings();
 
-  // Local state for settings (initialized from query data)
+  // Local-only toggles (never part of the saved payload; unchanged behaviour).
   const [notifications, setNotifications] = useState(true);
   const [notificationSound, setNotificationSound] = useState(true);
   const [autoAssign, setAutoAssign] = useState(false);
 
-  // Chat management settings
-  const [chatAssignmentEnabled, setChatAssignmentEnabled] = useState(false);
-  const [hideAssignedChats, setHideAssignedChats] = useState(false);
-  const [collectCustomerRating, setCollectCustomerRating] = useState(false);
-  const [staleReminderEnabled, setStaleReminderEnabled] = useState(false);
-  const [staleReminderMinutes, setStaleReminderMinutes] = useState(60);
-  const [linkBasedRatingEnabled, setLinkBasedRatingEnabled] = useState(false);
-  const [ratingRequestMessageKa, setRatingRequestMessageKa] = useState("გმადლობთ ჩვენთან საუბრისთვის! გთხოვთ შეაფასოთ თქვენი გამოცდილება: {link}");
-  const [ratingRequestMessageEn, setRatingRequestMessageEn] = useState("Thank you for chatting with us! Please rate your experience: {link}");
-  const [postReviewRedirectUrl, setPostReviewRedirectUrl] = useState("");
+  // Saved settings: the form and the last values loaded from the server.
+  const [form, setForm] = useState<SocialSettingsForm>(INITIAL_FORM);
+  const [loaded, setLoaded] = useState<SocialSettingsForm>(INITIAL_FORM);
+  const setField = <K extends keyof SocialSettingsForm>(key: K) => (value: SocialSettingsForm[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
 
-  // Notification sound settings
-  const [soundFacebook, setSoundFacebook] = useState('mixkit-bubble-pop-up-alert-notification-2357.wav');
-  const [soundInstagram, setSoundInstagram] = useState('mixkit-magic-notification-ring-2344.wav');
-  const [soundWhatsapp, setSoundWhatsapp] = useState('mixkit-positive-notification-951.wav');
-  const [soundEmail, setSoundEmail] = useState('mixkit-bell-notification-933.wav');
-  const [soundWidget, setSoundWidget] = useState('mixkit-bubble-pop-up-alert-notification-2357.wav');
-  const [soundTeamChat, setSoundTeamChat] = useState('mixkit-happy-bells-notification-937.wav');
-  const [soundSystem, setSoundSystem] = useState('mixkit-confirmation-tone-2867.wav');
-
-  // Auto-reply settings
-  const [timezone, setTimezone] = useState('UTC');
-  const [awayHoursEnabled, setAwayHoursEnabled] = useState(false);
-  const [awayHoursSchedule, setAwayHoursSchedule] = useState<AwayHoursSchedule>({});
-  const [autoReplySettings, setAutoReplySettings] = useState<AutoReplySettings>({
-    facebook: { ...defaultPlatformSettings },
-    instagram: { ...defaultPlatformSettings },
-    whatsapp: { ...defaultPlatformSettings },
-  });
+  const [tab, setTab] = useState<SocialTab>("notifications");
 
   // Sync local state with query data when it loads
   useEffect(() => {
     if (settings) {
-      setChatAssignmentEnabled(settings.chat_assignment_enabled ?? false);
-      setHideAssignedChats(settings.hide_assigned_chats ?? false);
-      setCollectCustomerRating(settings.collect_customer_rating ?? false);
-      // Stale assignment reminders
-      setStaleReminderEnabled(settings.stale_assignment_reminder_enabled ?? false);
-      setStaleReminderMinutes(settings.stale_assignment_reminder_minutes ?? 60);
-      // Link-based rating settings
-      setLinkBasedRatingEnabled(settings.link_based_rating_enabled ?? false);
-      setRatingRequestMessageKa(settings.rating_request_message_template_ka || "გმადლობთ ჩვენთან საუბრისთვის! გთხოვთ შეაფასოთ თქვენი გამოცდილება: {link}");
-      setRatingRequestMessageEn(settings.rating_request_message_template_en || "Thank you for chatting with us! Please rate your experience: {link}");
-      setPostReviewRedirectUrl(settings.post_review_redirect_url || '');
-      // Notification sounds
-      setSoundFacebook(settings.notification_sound_facebook || 'mixkit-bubble-pop-up-alert-notification-2357.wav');
-      setSoundInstagram(settings.notification_sound_instagram || 'mixkit-magic-notification-ring-2344.wav');
-      setSoundWhatsapp(settings.notification_sound_whatsapp || 'mixkit-positive-notification-951.wav');
-      setSoundEmail(settings.notification_sound_email || 'mixkit-bell-notification-933.wav');
-      setSoundWidget(settings.notification_sound_widget || 'mixkit-bubble-pop-up-alert-notification-2357.wav');
-      setSoundTeamChat(settings.notification_sound_team_chat || 'mixkit-happy-bells-notification-937.wav');
-      setSoundSystem(settings.notification_sound_system || 'mixkit-confirmation-tone-2867.wav');
-      // Auto-reply settings
-      setTimezone(settings.timezone || 'UTC');
-      setAwayHoursEnabled(settings.away_hours_enabled ?? false);
-      setAwayHoursSchedule(settings.away_hours_schedule || {});
-      setAutoReplySettings({
-        facebook: { ...defaultPlatformSettings, ...settings.auto_reply_settings?.facebook },
-        instagram: { ...defaultPlatformSettings, ...settings.auto_reply_settings?.instagram },
-        whatsapp: { ...defaultPlatformSettings, ...settings.auto_reply_settings?.whatsapp },
-      });
+      const next = fromSettings(settings);
+      setForm(next);
+      setLoaded(next);
       // Update the sound manager with backend settings
       getNotificationSound().updateSettings(settings);
     }
   }, [settings]);
+
+  const dirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(loaded), [form, loaded]);
 
   const previewSound = (soundFile: string) => {
     getNotificationSound().preview(soundFile);
   };
 
   const updatePlatformSettings = (platform: 'facebook' | 'instagram' | 'whatsapp', newSettings: PlatformAutoReplySettings) => {
-    setAutoReplySettings(prev => ({
+    setForm(prev => ({
       ...prev,
-      [platform]: newSettings,
+      autoReplySettings: {
+        ...prev.autoReplySettings,
+        [platform]: newSettings,
+      },
     }));
   };
 
   const handleSaveSettings = () => {
     const payload = {
-      chat_assignment_enabled: Boolean(chatAssignmentEnabled),
+      chat_assignment_enabled: Boolean(form.chatAssignmentEnabled),
       // session_management_enabled is deprecated - session management is now part of chat assignment
-      session_management_enabled: Boolean(chatAssignmentEnabled),
-      hide_assigned_chats: Boolean(hideAssignedChats),
-      collect_customer_rating: Boolean(collectCustomerRating),
+      session_management_enabled: Boolean(form.chatAssignmentEnabled),
+      hide_assigned_chats: Boolean(form.hideAssignedChats),
+      collect_customer_rating: Boolean(form.collectCustomerRating),
       // Stale assignment reminders
-      stale_assignment_reminder_enabled: Boolean(staleReminderEnabled),
-      stale_assignment_reminder_minutes: Math.min(10080, Math.max(5, Number(staleReminderMinutes) || 60)),
+      stale_assignment_reminder_enabled: Boolean(form.staleReminderEnabled),
+      stale_assignment_reminder_minutes: Math.min(10080, Math.max(5, Number(form.staleReminderMinutes) || 60)),
       // Link-based rating settings
-      link_based_rating_enabled: Boolean(linkBasedRatingEnabled),
-      rating_request_message_template_ka: ratingRequestMessageKa,
-      rating_request_message_template_en: ratingRequestMessageEn,
-      post_review_redirect_url: postReviewRedirectUrl,
+      link_based_rating_enabled: Boolean(form.linkBasedRatingEnabled),
+      rating_request_message_template_ka: form.ratingRequestMessageKa,
+      rating_request_message_template_en: form.ratingRequestMessageEn,
+      post_review_redirect_url: form.postReviewRedirectUrl,
       // Notification sound settings
-      notification_sound_facebook: soundFacebook,
-      notification_sound_instagram: soundInstagram,
-      notification_sound_whatsapp: soundWhatsapp,
-      notification_sound_email: soundEmail,
-      notification_sound_widget: soundWidget,
-      notification_sound_team_chat: soundTeamChat,
-      notification_sound_system: soundSystem,
+      notification_sound_facebook: form.soundFacebook,
+      notification_sound_instagram: form.soundInstagram,
+      notification_sound_whatsapp: form.soundWhatsapp,
+      notification_sound_email: form.soundEmail,
+      notification_sound_widget: form.soundWidget,
+      notification_sound_team_chat: form.soundTeamChat,
+      notification_sound_system: form.soundSystem,
       // Auto-reply settings
-      timezone,
-      away_hours_enabled: awayHoursEnabled,
-      away_hours_schedule: awayHoursSchedule,
-      auto_reply_settings: autoReplySettings,
+      timezone: form.timezone,
+      away_hours_enabled: form.awayHoursEnabled,
+      away_hours_schedule: form.awayHoursSchedule,
+      auto_reply_settings: form.autoReplySettings,
     };
 
     updateSettings.mutate(payload, {
@@ -1283,136 +1039,118 @@ export default function SocialSettingsPage() {
 
   // Build tabs based on user role
   const tabs = [
-    { value: "notifications", label: t("settingsPage.tabs.notifications"), icon: Bell },
-    ...(isSuperAdmin ? [{ value: "auto-reply", label: t("settingsPage.tabs.autoReply"), icon: MessageSquare }] : []),
-    ...(isSuperAdmin ? [{ value: "chat-management", label: t("settingsPage.tabs.chatManagement"), icon: Users }] : []),
-    ...(isSuperAdmin ? [{ value: "email", label: t("settingsPage.tabs.email"), icon: Mail }] : []),
-    ...(isSuperAdmin ? [{ value: "advanced", label: t("settingsPage.tabs.advanced"), icon: Wrench }] : []),
-    ...(isSuperAdmin ? [{ value: "ai-companion", label: t("settingsPage.tabs.aiCompanion"), icon: Sparkles }] : []),
+    { value: "notifications" as const, label: t("settingsPage.tabs.notifications"), icon: Bell },
+    ...(isSuperAdmin ? [{ value: "auto-reply" as const, label: t("settingsPage.tabs.autoReply"), icon: MessageSquare }] : []),
+    ...(isSuperAdmin ? [{ value: "chat-management" as const, label: t("settingsPage.tabs.chatManagement"), icon: Users }] : []),
+    ...(isSuperAdmin ? [{ value: "email" as const, label: t("settingsPage.tabs.email"), icon: Mail }] : []),
+    ...(isSuperAdmin ? [{ value: "advanced" as const, label: t("settingsPage.tabs.advanced"), icon: Wrench }] : []),
+    ...(isSuperAdmin ? [{ value: "ai-companion" as const, label: t("settingsPage.tabs.aiCompanion"), icon: Sparkles }] : []),
   ];
+  // A tab that is not offered (no longer staff) falls back to the first one.
+  const activeTab: SocialTab = tabs.some((x) => x.value === tab) ? tab : "notifications";
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">
-          {t("settingsPage.title")}
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          {t("settingsPage.description")}
-        </p>
-      </div>
+    <SettingsFormPage
+      icon={Settings2}
+      title={t("settingsPage.title")}
+      description={t("settingsPage.description")}
+      testId="social-settings-page"
+    >
+      <Segmented
+        value={activeTab}
+        onChange={setTab}
+        options={tabs}
+        ariaLabel={t("settingsPage.title")}
+        testId="social-settings-tabs"
+        className="self-start"
+      />
 
-      <Tabs defaultValue="notifications" className="w-full">
-        <TabsList className="mb-6 h-auto flex-wrap">
-          {tabs.map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              className="flex items-center gap-2"
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {activeTab === "notifications" && (
+        <NotificationsTab
+          notifications={notifications}
+          setNotifications={setNotifications}
+          notificationSound={notificationSound}
+          setNotificationSound={setNotificationSound}
+          soundFacebook={form.soundFacebook}
+          setSoundFacebook={setField("soundFacebook")}
+          soundInstagram={form.soundInstagram}
+          setSoundInstagram={setField("soundInstagram")}
+          soundWhatsapp={form.soundWhatsapp}
+          setSoundWhatsapp={setField("soundWhatsapp")}
+          soundEmail={form.soundEmail}
+          setSoundEmail={setField("soundEmail")}
+          soundWidget={form.soundWidget}
+          setSoundWidget={setField("soundWidget")}
+          soundTeamChat={form.soundTeamChat}
+          setSoundTeamChat={setField("soundTeamChat")}
+          soundSystem={form.soundSystem}
+          setSoundSystem={setField("soundSystem")}
+          previewSound={previewSound}
+          t={t}
+        />
+      )}
 
-        <TabsContent value="notifications" className="mt-0">
-          <NotificationsTab
-            notifications={notifications}
-            setNotifications={setNotifications}
-            notificationSound={notificationSound}
-            setNotificationSound={setNotificationSound}
-            soundFacebook={soundFacebook}
-            setSoundFacebook={setSoundFacebook}
-            soundInstagram={soundInstagram}
-            setSoundInstagram={setSoundInstagram}
-            soundWhatsapp={soundWhatsapp}
-            setSoundWhatsapp={setSoundWhatsapp}
-            soundEmail={soundEmail}
-            setSoundEmail={setSoundEmail}
-            soundWidget={soundWidget}
-            setSoundWidget={setSoundWidget}
-            soundTeamChat={soundTeamChat}
-            setSoundTeamChat={setSoundTeamChat}
-            soundSystem={soundSystem}
-            setSoundSystem={setSoundSystem}
-            previewSound={previewSound}
-            t={t}
-          />
-        </TabsContent>
+      {isSuperAdmin && activeTab === "auto-reply" && (
+        <AutoReplyTab
+          timezone={form.timezone}
+          setTimezone={setField("timezone")}
+          awayHoursEnabled={form.awayHoursEnabled}
+          setAwayHoursEnabled={setField("awayHoursEnabled")}
+          awayHoursSchedule={form.awayHoursSchedule}
+          setAwayHoursSchedule={setField("awayHoursSchedule")}
+          autoReplySettings={form.autoReplySettings}
+          updatePlatformSettings={updatePlatformSettings}
+        />
+      )}
 
-        {isSuperAdmin && (
-          <TabsContent value="auto-reply" className="mt-0">
-            <AutoReplyTab
-              timezone={timezone}
-              setTimezone={setTimezone}
-              awayHoursEnabled={awayHoursEnabled}
-              setAwayHoursEnabled={setAwayHoursEnabled}
-              awayHoursSchedule={awayHoursSchedule}
-              setAwayHoursSchedule={setAwayHoursSchedule}
-              autoReplySettings={autoReplySettings}
-              updatePlatformSettings={updatePlatformSettings}
-            />
-          </TabsContent>
-        )}
+      {isSuperAdmin && activeTab === "chat-management" && (
+        <ChatManagementTab
+          chatAssignmentEnabled={form.chatAssignmentEnabled}
+          setChatAssignmentEnabled={setField("chatAssignmentEnabled")}
+          hideAssignedChats={form.hideAssignedChats}
+          setHideAssignedChats={setField("hideAssignedChats")}
+          collectCustomerRating={form.collectCustomerRating}
+          setCollectCustomerRating={setField("collectCustomerRating")}
+          staleReminderEnabled={form.staleReminderEnabled}
+          setStaleReminderEnabled={setField("staleReminderEnabled")}
+          staleReminderMinutes={form.staleReminderMinutes}
+          setStaleReminderMinutes={setField("staleReminderMinutes")}
+          linkBasedRatingEnabled={form.linkBasedRatingEnabled}
+          setLinkBasedRatingEnabled={setField("linkBasedRatingEnabled")}
+          ratingRequestMessageKa={form.ratingRequestMessageKa}
+          setRatingRequestMessageKa={setField("ratingRequestMessageKa")}
+          ratingRequestMessageEn={form.ratingRequestMessageEn}
+          setRatingRequestMessageEn={setField("ratingRequestMessageEn")}
+          postReviewRedirectUrl={form.postReviewRedirectUrl}
+          setPostReviewRedirectUrl={setField("postReviewRedirectUrl")}
+          autoAssign={autoAssign}
+          setAutoAssign={setAutoAssign}
+          t={t}
+        />
+      )}
 
-        {isSuperAdmin && (
-          <TabsContent value="chat-management" className="mt-0">
-            <ChatManagementTab
-              chatAssignmentEnabled={chatAssignmentEnabled}
-              setChatAssignmentEnabled={setChatAssignmentEnabled}
-              hideAssignedChats={hideAssignedChats}
-              setHideAssignedChats={setHideAssignedChats}
-              collectCustomerRating={collectCustomerRating}
-              setCollectCustomerRating={setCollectCustomerRating}
-              staleReminderEnabled={staleReminderEnabled}
-              setStaleReminderEnabled={setStaleReminderEnabled}
-              staleReminderMinutes={staleReminderMinutes}
-              setStaleReminderMinutes={setStaleReminderMinutes}
-              linkBasedRatingEnabled={linkBasedRatingEnabled}
-              setLinkBasedRatingEnabled={setLinkBasedRatingEnabled}
-              ratingRequestMessageKa={ratingRequestMessageKa}
-              setRatingRequestMessageKa={setRatingRequestMessageKa}
-              ratingRequestMessageEn={ratingRequestMessageEn}
-              setRatingRequestMessageEn={setRatingRequestMessageEn}
-              postReviewRedirectUrl={postReviewRedirectUrl}
-              setPostReviewRedirectUrl={setPostReviewRedirectUrl}
-              autoAssign={autoAssign}
-              setAutoAssign={setAutoAssign}
-              t={t}
-            />
-          </TabsContent>
-        )}
+      {isSuperAdmin && activeTab === "email" && <EmailTab />}
 
-        {isSuperAdmin && (
-          <TabsContent value="email" className="mt-0">
-            <EmailTab />
-          </TabsContent>
-        )}
+      {isSuperAdmin && activeTab === "advanced" && <AdvancedTab />}
 
-        {isSuperAdmin && (
-          <TabsContent value="advanced" className="mt-0">
-            <AdvancedTab />
-          </TabsContent>
-        )}
+      {isSuperAdmin && activeTab === "ai-companion" && <AICompanionTab />}
 
-        {isSuperAdmin && (
-          <TabsContent value="ai-companion" className="mt-0">
-            <AICompanionTab />
-          </TabsContent>
-        )}
-      </Tabs>
-
-      {/* Save Button - Fixed at bottom */}
-      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6 pt-6 border-t">
-        <Button variant="outline" onClick={() => window.history.back()} disabled={saving}>
-          {t("settingsPage.cancel")}
-        </Button>
-        <Button onClick={handleSaveSettings} disabled={saving || loading}>
-          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {saving ? t("settingsPage.saving") : t("settingsPage.saveSettings")}
-        </Button>
-      </div>
-    </div>
+      {/* The page's Save (always reachable, as before) in the design save bar. */}
+      <StickySaveBar
+        mode="always"
+        dirty={dirty}
+        saving={saving}
+        onSave={handleSaveSettings}
+        onDiscard={() => setForm(loaded)}
+        saveDisabled={saving || loading}
+        labels={{
+          unsaved: t("settingsPage.saveBar.unsaved"),
+          discard: t("settingsPage.saveBar.discard"),
+          save: t("settingsPage.saveSettings"),
+          saving: t("settingsPage.saving"),
+          saved: t("settingsPage.saveBar.saved"),
+        }}
+      />
+    </SettingsFormPage>
   );
 }

@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { MessageSquare, Save, RefreshCw } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import { Save, RefreshCw } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { rdButton } from '@/components/redesign/buttons';
+import { FieldRow, SettingsSection, SettingsToggle } from '@/components/redesign/settings';
+import { SectionBlock, StackLabel, textareaClass } from '@/components/social/settings-blocks';
 import { toast } from 'sonner';
 
 type LocaleText = Record<string, string>;
@@ -92,140 +90,99 @@ export function WidgetMessagesEditor({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <MessageSquare className="h-5 w-5" />
-          {t('title')}
-        </CardTitle>
-        <CardDescription>{t('description')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Welcome message */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-sm">{t('welcomeHeading')}</h4>
-          <div className="space-y-2">
-            <Label htmlFor="welcome_en">{t('english')}</Label>
-            <Textarea
-              id="welcome_en"
-              rows={2}
-              value={welcomeEn}
-              onChange={(e) => setWelcomeEn(e.target.value)}
-              placeholder={t('welcomePlaceholderEn')}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="welcome_ka">{t('georgian')}</Label>
-            <Textarea
-              id="welcome_ka"
-              rows={2}
-              value={welcomeKa}
-              onChange={(e) => setWelcomeKa(e.target.value)}
-              placeholder={t('welcomePlaceholderKa')}
-            />
-          </div>
-        </div>
+    <SettingsSection title={t('title')} hint={t('description')} testId="widget-messages">
+      {/* Welcome message */}
+      <SectionBlock>
+        <span className="text-[13px] font-semibold">{t('welcomeHeading')}</span>
+        <StackLabel htmlFor="welcome_en" label={t('english')} />
+        <Textarea
+          id="welcome_en"
+          rows={2}
+          className={textareaClass}
+          value={welcomeEn}
+          onChange={(e) => setWelcomeEn(e.target.value)}
+          placeholder={t('welcomePlaceholderEn')}
+        />
+        <StackLabel htmlFor="welcome_ka" label={t('georgian')} />
+        <Textarea
+          id="welcome_ka"
+          rows={2}
+          className={textareaClass}
+          value={welcomeKa}
+          onChange={(e) => setWelcomeKa(e.target.value)}
+          placeholder={t('welcomePlaceholderKa')}
+        />
+      </SectionBlock>
 
-        <Separator />
+      {/* Offline message */}
+      <SectionBlock>
+        <span className="text-[13px] font-semibold">{t('offlineHeading')}</span>
+        <StackLabel htmlFor="offline_en" label={t('english')} />
+        <Textarea
+          id="offline_en"
+          rows={2}
+          className={textareaClass}
+          value={offlineEn}
+          onChange={(e) => setOfflineEn(e.target.value)}
+          placeholder={t('offlinePlaceholderEn')}
+        />
+        <StackLabel htmlFor="offline_ka" label={t('georgian')} />
+        <Textarea
+          id="offline_ka"
+          rows={2}
+          className={textareaClass}
+          value={offlineKa}
+          onChange={(e) => setOfflineKa(e.target.value)}
+          placeholder={t('offlinePlaceholderKa')}
+        />
+      </SectionBlock>
 
-        {/* Offline message */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-sm">{t('offlineHeading')}</h4>
-          <div className="space-y-2">
-            <Label htmlFor="offline_en">{t('english')}</Label>
-            <Textarea
-              id="offline_en"
-              rows={2}
-              value={offlineEn}
-              onChange={(e) => setOfflineEn(e.target.value)}
-              placeholder={t('offlinePlaceholderEn')}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="offline_ka">{t('georgian')}</Label>
-            <Textarea
-              id="offline_ka"
-              rows={2}
-              value={offlineKa}
-              onChange={(e) => setOfflineKa(e.target.value)}
-              placeholder={t('offlinePlaceholderKa')}
-            />
-          </div>
-        </div>
+      {/* Pre-chat form */}
+      <FieldRow label={t('preChatHeading')} help={t('preChatDescription')} htmlFor="pre_chat_enabled" align="center">
+        <SettingsToggle
+          id="pre_chat_enabled"
+          checked={formEnabled}
+          onCheckedChange={setFormEnabled}
+          aria-label={t('preChatHeading')}
+        />
+      </FieldRow>
+      <div
+        className={formEnabled ? undefined : 'pointer-events-none'}
+        aria-disabled={!formEnabled}
+      >
+        <FieldRow label={t('nameRequired')} help={t('nameRequiredHint')} htmlFor="pre_chat_name_required" align="center" disabled={!formEnabled} className="sm:ps-8">
+          <SettingsToggle
+            id="pre_chat_name_required"
+            checked={nameRequired}
+            onCheckedChange={setNameRequired}
+            disabled={!formEnabled}
+          />
+        </FieldRow>
+        <FieldRow label={t('emailRequired')} help={t('emailRequiredHint')} htmlFor="pre_chat_email_required" align="center" disabled={!formEnabled} className="sm:ps-8">
+          <SettingsToggle
+            id="pre_chat_email_required"
+            checked={emailRequired}
+            onCheckedChange={setEmailRequired}
+            disabled={!formEnabled}
+          />
+        </FieldRow>
+      </div>
 
-        <Separator />
-
-        {/* Pre-chat form */}
-        <div className="space-y-3">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h4 className="font-medium text-sm">{t('preChatHeading')}</h4>
-              <p className="text-xs text-muted-foreground">{t('preChatDescription')}</p>
-            </div>
-            <Switch
-              id="pre_chat_enabled"
-              checked={formEnabled}
-              onCheckedChange={setFormEnabled}
-              aria-label={t('preChatHeading')}
-            />
-          </div>
-
-          <div
-            className={
-              formEnabled
-                ? 'space-y-3 pl-1'
-                : 'pointer-events-none space-y-3 pl-1 opacity-50'
-            }
-            aria-disabled={!formEnabled}
-          >
-            <div className="flex items-center justify-between gap-4 rounded-md border p-3">
-              <div>
-                <Label htmlFor="pre_chat_name_required" className="font-medium">
-                  {t('nameRequired')}
-                </Label>
-                <p className="text-xs text-muted-foreground">{t('nameRequiredHint')}</p>
-              </div>
-              <Switch
-                id="pre_chat_name_required"
-                checked={nameRequired}
-                onCheckedChange={setNameRequired}
-                disabled={!formEnabled}
-              />
-            </div>
-
-            <div className="flex items-center justify-between gap-4 rounded-md border p-3">
-              <div>
-                <Label htmlFor="pre_chat_email_required" className="font-medium">
-                  {t('emailRequired')}
-                </Label>
-                <p className="text-xs text-muted-foreground">{t('emailRequiredHint')}</p>
-              </div>
-              <Switch
-                id="pre_chat_email_required"
-                checked={emailRequired}
-                onCheckedChange={setEmailRequired}
-                disabled={!formEnabled}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button type="button" onClick={handleSave} disabled={saving}>
-            {saving ? (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                {t('saving')}
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                {t('save')}
-              </>
-            )}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      <div className="flex justify-end border-t px-4 py-3">
+        <button type="button" className={rdButton.primarySm} onClick={handleSave} disabled={saving} data-testid="widget-messages-save">
+          {saving ? (
+            <>
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden />
+              {t('saving')}
+            </>
+          ) : (
+            <>
+              <Save className="h-3.5 w-3.5" aria-hidden />
+              {t('save')}
+            </>
+          )}
+        </button>
+      </div>
+    </SettingsSection>
   );
 }

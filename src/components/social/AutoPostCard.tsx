@@ -7,9 +7,10 @@ import {
   CheckCircle, XCircle, Clock, AlertTriangle, Send,
   Facebook, Instagram, Edit2, Eye, ThumbsUp, ThumbsDown,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { rdButton } from "@/components/redesign/buttons";
+import { TONE_CLASS, type Tone } from "@/components/redesign/tones";
+import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
@@ -18,12 +19,12 @@ import type { AutoPostContent } from "@/hooks/api/useAutoPost";
 import { useApprovePost, useRejectPost, useEditPost, usePublishPost } from "@/hooks/api/useAutoPost";
 import { toast } from "sonner";
 
-const statusConfig: Record<string, { icon: React.ElementType; color: string }> = {
-  draft: { icon: Edit2, color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
-  approved: { icon: Clock, color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
-  published: { icon: CheckCircle, color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200" },
-  failed: { icon: AlertTriangle, color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" },
-  rejected: { icon: XCircle, color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200" },
+const statusConfig: Record<string, { icon: React.ElementType; tone: Tone }> = {
+  draft: { icon: Edit2, tone: "info" },
+  approved: { icon: Clock, tone: "success" },
+  published: { icon: CheckCircle, tone: "success" },
+  failed: { icon: AlertTriangle, tone: "danger" },
+  rejected: { icon: XCircle, tone: "neutral" },
 };
 
 interface AutoPostCardProps {
@@ -45,7 +46,7 @@ export function AutoPostCard({ post }: AutoPostCardProps) {
   const editPost = useEditPost();
   const publishPost = usePublishPost();
 
-  const { icon: StatusIcon, color: statusColor } = statusConfig[post.status] || statusConfig.draft;
+  const { icon: StatusIcon, tone: statusTone } = statusConfig[post.status] || statusConfig.draft;
 
   const handleApprove = async () => {
     try {
@@ -91,83 +92,81 @@ export function AutoPostCard({ post }: AutoPostCardProps) {
 
   return (
     <>
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-start gap-4">
-            {/* Image thumbnail */}
-            {post.image_url && (
-              <div className="shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-muted">
-                <img src={post.image_url} alt="" className="w-full h-full object-cover" />
-              </div>
+      <div className="flex flex-wrap items-start gap-3 border-b px-4 py-3 last:border-b-0 sm:flex-nowrap" data-testid="auto-post-row">
+        {/* Image thumbnail */}
+        {post.image_url && (
+          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
+            <img src={post.image_url} alt="" className="h-full w-full object-cover" />
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap items-center gap-1.5">
+            <span className={cn("inline-flex h-5 items-center gap-1 rounded border px-[7px] text-[11px] font-medium", TONE_CLASS[statusTone])}>
+              <StatusIcon className="h-3 w-3" aria-hidden />
+              {t(`status.${post.status}`)}
+            </span>
+            {post.featured_product_name && (
+              <span className="inline-flex h-5 max-w-full items-center truncate rounded border px-[7px] text-[11px] text-muted-foreground">
+                {post.featured_product_name}
+              </span>
             )}
-
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <Badge className={statusColor}>
-                  <StatusIcon className="h-3 w-3 mr-1" />
-                  {t(`status.${post.status}`)}
-                </Badge>
-                {post.featured_product_name && (
-                  <Badge variant="outline">{post.featured_product_name}</Badge>
-                )}
-                <div className="flex items-center gap-1 ml-auto text-muted-foreground">
-                  {post.target_facebook && <Facebook className="h-4 w-4" />}
-                  {post.target_instagram && <Instagram className="h-4 w-4" />}
-                </div>
-              </div>
-
-              <p className="text-sm text-foreground line-clamp-2 mb-2">
-                {post.facebook_text || post.instagram_text}
-              </p>
-
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <span>{t("scheduledFor")}: {format(new Date(post.scheduled_for), "MMM d, yyyy HH:mm")}</span>
-                {post.published_at && (
-                  <span>{t("publishedAt")}: {format(new Date(post.published_at), "MMM d, yyyy HH:mm")}</span>
-                )}
-              </div>
-
-              {post.error_message && (
-                <p className="text-xs text-destructive mt-1">{post.error_message}</p>
-              )}
-
-              {post.status === 'rejected' && post.rejection_reason && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t("rejectionReason")}: {post.rejection_reason}
-                </p>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-1 shrink-0">
-              <Button variant="ghost" size="icon" onClick={() => setShowPreview(true)} title={t("preview")}>
-                <Eye className="h-4 w-4" />
-              </Button>
-              {(post.status === 'draft' || post.status === 'rejected') && (
-                <>
-                  <Button variant="ghost" size="icon" onClick={() => setShowEdit(true)} title={tCommon("edit")}>
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={handleApprove} disabled={approvePost.isPending} title={t("approve")}>
-                    <ThumbsUp className="h-4 w-4" />
-                  </Button>
-                  {post.status === 'draft' && (
-                    <Button variant="ghost" size="icon" onClick={() => setShowReject(true)} title={t("reject")}>
-                      <ThumbsDown className="h-4 w-4" />
-                    </Button>
-                  )}
-                </>
-              )}
-              {(post.status === 'approved' || post.status === 'failed') && (
-                <Button variant="ghost" size="icon" onClick={handlePublish} disabled={publishPost.isPending} title={t("publishNow")}>
-                  <Send className="h-4 w-4" />
-                </Button>
-              )}
+            <div className="ms-auto flex items-center gap-1 text-muted-foreground">
+              {post.target_facebook && <Facebook className="h-3.5 w-3.5" aria-label="Facebook" />}
+              {post.target_instagram && <Instagram className="h-3.5 w-3.5" aria-label="Instagram" />}
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          <p className="mb-1.5 line-clamp-2 text-[13px] text-foreground">
+            {post.facebook_text || post.instagram_text}
+          </p>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-xs text-muted-foreground tabular-nums">
+            <span>{t("scheduledFor")}: {format(new Date(post.scheduled_for), "MMM d, yyyy HH:mm")}</span>
+            {post.published_at && (
+              <span>{t("publishedAt")}: {format(new Date(post.published_at), "MMM d, yyyy HH:mm")}</span>
+            )}
+          </div>
+
+          {post.error_message && (
+            <p className="mt-1 text-xs text-destructive">{post.error_message}</p>
+          )}
+
+          {post.status === 'rejected' && post.rejection_reason && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("rejectionReason")}: {post.rejection_reason}
+            </p>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button type="button" className={rdButton.ghostIconSm} onClick={() => setShowPreview(true)} title={t("preview")} aria-label={t("preview")}>
+            <Eye className="h-4 w-4" aria-hidden />
+          </button>
+          {(post.status === 'draft' || post.status === 'rejected') && (
+            <>
+              <button type="button" className={rdButton.ghostIconSm} onClick={() => setShowEdit(true)} title={tCommon("edit")} aria-label={tCommon("edit")}>
+                <Edit2 className="h-4 w-4" aria-hidden />
+              </button>
+              <button type="button" className={rdButton.ghostIconSm} onClick={handleApprove} disabled={approvePost.isPending} title={t("approve")} aria-label={t("approve")}>
+                <ThumbsUp className="h-4 w-4" aria-hidden />
+              </button>
+              {post.status === 'draft' && (
+                <button type="button" className={rdButton.ghostIconSm} onClick={() => setShowReject(true)} title={t("reject")} aria-label={t("reject")}>
+                  <ThumbsDown className="h-4 w-4" aria-hidden />
+                </button>
+              )}
+            </>
+          )}
+          {(post.status === 'approved' || post.status === 'failed') && (
+            <button type="button" className={rdButton.ghostIconSm} onClick={handlePublish} disabled={publishPost.isPending} title={t("publishNow")} aria-label={t("publishNow")}>
+              <Send className="h-4 w-4" aria-hidden />
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Preview Dialog */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>

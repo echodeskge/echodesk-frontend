@@ -87,7 +87,7 @@ const baseConnection = {
 };
 
 async function openSignatureDialog(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: /Signature/ }));
+  await user.click(screen.getByRole("button", { name: /^signature/ }));
   return screen.findByRole("dialog");
 }
 

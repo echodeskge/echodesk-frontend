@@ -2,14 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Sparkles } from 'lucide-react';
-
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { rdButton } from '@/components/redesign/buttons';
+import { FieldRow, SettingsSection, SettingsToggle, settingsInputClass } from '@/components/redesign/settings';
+import { SectionBlock, StackLabel, textareaClass } from '@/components/social/settings-blocks';
+import { cn } from '@/lib/utils';
 
 type LocaleText = Record<string, string>;
 
@@ -65,95 +62,71 @@ export function WidgetProactiveSection({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Sparkles className="h-4 w-4" />
-          {t('title')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-xs text-muted-foreground">{t('description')}</p>
+    <SettingsSection title={t('title')} hint={t('description')} testId="widget-proactive">
+      <FieldRow label={t('enableLabel')} help={t('enableHelp')} htmlFor="widget_proactive_enabled" align="center">
+        <SettingsToggle
+          id="widget_proactive_enabled"
+          checked={enabled}
+          disabled={saving}
+          onCheckedChange={onToggle}
+          aria-label={t('enableLabel')}
+        />
+      </FieldRow>
 
-        <div className="flex items-center justify-between gap-4 rounded-md border p-3">
-          <div>
-            <Label htmlFor="widget_proactive_enabled" className="font-medium">
-              {t('enableLabel')}
-            </Label>
-            <p className="text-xs text-muted-foreground">{t('enableHelp')}</p>
-          </div>
-          <Switch
-            id="widget_proactive_enabled"
-            checked={enabled}
-            disabled={saving}
-            onCheckedChange={onToggle}
-            aria-label={t('enableLabel')}
+      <div className={enabled ? undefined : 'pointer-events-none opacity-60'}>
+        <SectionBlock>
+          <StackLabel htmlFor="widget_proactive_message_en" label={t('messageEn')} />
+          <Textarea
+            id="widget_proactive_message_en"
+            className={textareaClass}
+            value={en}
+            onChange={(e) => setEn(e.target.value)}
+            placeholder={t('messagePlaceholderEn')}
+            rows={2}
+            disabled={!enabled || saving}
+            maxLength={200}
           />
-        </div>
+          <StackLabel htmlFor="widget_proactive_message_ka" label={t('messageKa')} />
+          <Textarea
+            id="widget_proactive_message_ka"
+            className={textareaClass}
+            value={ka}
+            onChange={(e) => setKa(e.target.value)}
+            placeholder={t('messagePlaceholderKa')}
+            rows={2}
+            disabled={!enabled || saving}
+            maxLength={200}
+          />
+        </SectionBlock>
 
-        <div className={enabled ? 'space-y-4' : 'space-y-4 opacity-60 pointer-events-none'}>
-          <div className="space-y-2">
-            <Label htmlFor="widget_proactive_message_en" className="text-sm font-medium">
-              {t('messageEn')}
-            </Label>
-            <Textarea
-              id="widget_proactive_message_en"
-              value={en}
-              onChange={(e) => setEn(e.target.value)}
-              placeholder={t('messagePlaceholderEn')}
-              rows={2}
+        <FieldRow label={t('delayLabel')} help={t('delayHelp')} htmlFor="widget_proactive_delay">
+          <div className="flex items-center gap-2">
+            <input
+              id="widget_proactive_delay"
+              type="number"
+              min={1}
+              max={3600}
+              value={delay}
+              onChange={(e) => setDelay(Number(e.target.value))}
               disabled={!enabled || saving}
-              maxLength={200}
+              className={cn(settingsInputClass, 'w-24 font-mono tabular-nums')}
             />
+            <span className="text-xs text-muted-foreground">{t('delayUnit')}</span>
           </div>
+        </FieldRow>
 
-          <div className="space-y-2">
-            <Label htmlFor="widget_proactive_message_ka" className="text-sm font-medium">
-              {t('messageKa')}
-            </Label>
-            <Textarea
-              id="widget_proactive_message_ka"
-              value={ka}
-              onChange={(e) => setKa(e.target.value)}
-              placeholder={t('messagePlaceholderKa')}
-              rows={2}
-              disabled={!enabled || saving}
-              maxLength={200}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="widget_proactive_delay" className="text-sm font-medium">
-              {t('delayLabel')}
-            </Label>
-            <div className="flex items-center gap-2">
-              <Input
-                id="widget_proactive_delay"
-                type="number"
-                min={1}
-                max={3600}
-                value={delay}
-                onChange={(e) => setDelay(Number(e.target.value))}
-                disabled={!enabled || saving}
-                className="w-28"
-              />
-              <span className="text-sm text-muted-foreground">{t('delayUnit')}</span>
-            </div>
-            <p className="text-xs text-muted-foreground">{t('delayHelp')}</p>
-          </div>
-
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              size="sm"
-              disabled={!hasChanges || saving || !enabled}
-              onClick={() => void handleSave()}
-            >
-              {saving ? t('saving') : t('save')}
-            </Button>
-          </div>
+        <div className="flex justify-end px-4 py-3">
+          <button
+            type="button"
+            className={rdButton.primarySm}
+            disabled={!hasChanges || saving || !enabled}
+            onClick={() => void handleSave()}
+            data-testid="widget-proactive-save"
+          >
+            {saving ? t('saving') : t('save')}
+          </button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </SettingsSection>
   );
 }

@@ -11,12 +11,12 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  ActionButton,
+  ChannelDetailCard,
+  SettingsNote,
+  SettingsToggle,
+} from '@/components/redesign/settings';
 import {
   Select,
   SelectContent,
@@ -31,7 +31,6 @@ import {
   type WidgetConnection as WidgetConnectionType,
   type PatchedWidgetConnectionRequest,
 } from '@/hooks/api/useSocial';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { WidgetInstallCard } from '@/components/widget-settings/WidgetInstallCard';
 import { WidgetAllowedOriginsEditor } from '@/components/widget-settings/WidgetAllowedOriginsEditor';
@@ -161,65 +160,50 @@ export function WidgetConnection() {
   // Loading
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center rounded-[10px] border bg-card py-12" role="status">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden />
+      </div>
     );
   }
 
   // Error
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription className="flex items-center justify-between gap-2">
-          <span>{t('loadError')}</span>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <RefreshCw className="mr-2 h-4 w-4" />
+      <SettingsNote
+        tone="danger"
+        icon={AlertCircle}
+        testId="widget-load-error"
+        action={
+          <ActionButton icon={RefreshCw} onClick={() => refetch()}>
             {t('retry')}
-          </Button>
-        </AlertDescription>
-      </Alert>
+          </ActionButton>
+        }
+      >
+        {t('loadError')}
+      </SettingsNote>
     );
   }
 
   // Empty — show setup CTA
   if (!connections || connections.length === 0) {
     return (
-      <Card className="border-2 border-dashed">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-600 text-white">
-              <MessageCircle className="h-6 w-6" />
-            </div>
-            <div>
-              <CardTitle>{t('setupTitle')}</CardTitle>
-              <CardDescription>{t('setupDescription')}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Button
-            onClick={handleCreate}
-            disabled={createMutation.isPending}
-            className="bg-indigo-600 hover:bg-indigo-700"
-          >
-            {createMutation.isPending ? (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                {t('creating')}
-              </>
-            ) : (
-              <>
-                <Plus className="mr-2 h-4 w-4" />
-                {t('createButton')}
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+      <ChannelDetailCard
+        icon={MessageCircle}
+        color="#4f46e5"
+        title={t('setupTitle')}
+        status={t('setupDescription')}
+        actions={[
+          {
+            label: createMutation.isPending ? t('creating') : t('createButton'),
+            icon: createMutation.isPending ? RefreshCw : Plus,
+            variant: 'primary',
+            onClick: handleCreate,
+            disabled: createMutation.isPending,
+            testId: 'widget-create',
+          },
+        ]}
+        testId="widget-setup"
+      />
     );
   }
 
@@ -228,101 +212,67 @@ export function WidgetConnection() {
   const isActive = selected.is_active ?? true;
 
   return (
-    <div className="space-y-6">
+    <>
       {/* Header card — status + multi-widget selector */}
-      <Card
-        className={cn(
-          'border-2',
-          isActive ? 'border-indigo-200 bg-indigo-50/50' : 'border-border',
-        )}
+      <ChannelDetailCard
+        icon={MessageCircle}
+        color="#4f46e5"
+        title={selected.label || t('defaultLabel')}
+        status={
+          <>
+            {isActive ? t('statusActive') : t('statusInactive')}
+            {autoSaving && (
+              <span className="ms-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                {t('autoSaving')}
+              </span>
+            )}
+            {!autoSaving && showSavedToast && (
+              <span className="ms-2 inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400">
+                <Check className="h-3 w-3" aria-hidden />
+                {t('autoSaved')}
+              </span>
+            )}
+          </>
+        }
+        statusIcon={isActive ? Check : X}
+        statusTone={isActive ? 'success' : 'neutral'}
+        badge={{ label: isActive ? t('badgeActive') : t('badgeInactive'), tone: isActive ? 'success' : 'neutral' }}
+        testId="widget-detail"
       >
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-600 text-white">
-                <MessageCircle className="h-6 w-6" />
-              </div>
-              <div>
-                <CardTitle className="text-xl">
-                  {selected.label || t('defaultLabel')}
-                </CardTitle>
-                <CardDescription className="flex items-center gap-2 mt-1">
-                  {isActive ? (
-                    <>
-                      <Check className="h-4 w-4 text-green-600" />
-                      <span>{t('statusActive')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <X className="h-4 w-4 text-muted-foreground" />
-                      <span>{t('statusInactive')}</span>
-                    </>
-                  )}
-                  {autoSaving && (
-                    <span className="ml-2 text-xs text-muted-foreground flex items-center gap-1">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      {t('autoSaving')}
-                    </span>
-                  )}
-                  {!autoSaving && showSavedToast && (
-                    <span className="ml-2 text-xs text-green-600 flex items-center gap-1">
-                      <Check className="h-3 w-3" />
-                      {t('autoSaved')}
-                    </span>
-                  )}
-                </CardDescription>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-              {connections.length > 1 && (
-                <Select
-                  value={String(selected.id)}
-                  onValueChange={(v) => setSelectedId(Number(v))}
-                >
-                  <SelectTrigger className="min-w-[200px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {connections.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.label || t('defaultLabel')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              <Badge
-                variant={isActive ? 'default' : 'secondary'}
-                className={cn(
-                  'h-8 self-start sm:self-auto',
-                  isActive && 'bg-indigo-600 hover:bg-indigo-700',
-                )}
-              >
-                {isActive ? t('badgeActive') : t('badgeInactive')}
-              </Badge>
-            </div>
+        {connections.length > 1 && (
+          <Select
+            value={String(selected.id)}
+            onValueChange={(v) => setSelectedId(Number(v))}
+          >
+            <SelectTrigger className="h-[34px] w-full text-[13px] sm:w-[260px]" aria-label={t('defaultLabel')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {connections.map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>
+                  {c.label || t('defaultLabel')}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        <div className="flex items-center justify-between gap-4 rounded-lg border px-3.5 py-3">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <label htmlFor="widget_is_active" className="text-[13px] font-medium">
+              {t('enableToggle')}
+            </label>
+            <span className="text-xs leading-[17px] text-muted-foreground">{t('enableToggleHint')}</span>
           </div>
-        </CardHeader>
-
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between gap-4 rounded-md border bg-background p-3">
-            <div>
-              <Label htmlFor="widget_is_active" className="font-medium">
-                {t('enableToggle')}
-              </Label>
-              <p className="text-xs text-muted-foreground">{t('enableToggleHint')}</p>
-            </div>
-            <Switch
-              id="widget_is_active"
-              checked={isActive}
-              onCheckedChange={(checked) => {
-                scheduleAutoSave(selected.id, { is_active: checked });
-              }}
-            />
-          </div>
-
-        </CardContent>
-      </Card>
+          <SettingsToggle
+            id="widget_is_active"
+            checked={isActive}
+            onCheckedChange={(checked) => {
+              scheduleAutoSave(selected.id, { is_active: checked });
+            }}
+          />
+        </div>
+      </ChannelDetailCard>
 
       <WidgetProactiveSection
         enabled={Boolean((selected as unknown as Record<string, unknown>).proactive_enabled)}
@@ -343,9 +293,9 @@ export function WidgetConnection() {
         }}
       />
 
-      {/* Two-column: editor on the left, preview on the right */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-6">
+      {/* Editors, then the live preview (one column: the channel detail is too narrow for two). */}
+      <div className="flex min-w-0 flex-col gap-3.5">
+        <div className="flex min-w-0 flex-col gap-3.5">
           <WidgetInstallCard widgetToken={selected.widget_token} />
 
           <WidgetAllowedOriginsEditor
@@ -383,10 +333,10 @@ export function WidgetConnection() {
           />
         </div>
 
-        <div className="lg:block">
+        <div className="min-w-0">
           <WidgetPreviewFrame widgetToken={selected.widget_token} />
         </div>
       </div>
-    </div>
+    </>
   );
 }

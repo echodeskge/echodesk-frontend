@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useTenant } from '@/contexts/TenantContext';
 import {
   useWhatsAppStatus,
@@ -11,12 +11,6 @@ import {
   useSyncWhatsAppContacts,
   useSyncWhatsAppHistory,
 } from '@/hooks/api/useSocial';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import {
   Collapsible,
   CollapsibleContent,
@@ -30,20 +24,28 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  MessageSquare,
   Check,
   X,
   RefreshCw,
   AlertCircle,
   Clock,
   Smartphone,
-  Cloud,
   Users,
   History,
   ChevronDown,
   Timer,
-  Zap,
+  type LucideIcon,
 } from 'lucide-react';
+import { TonePill } from '@/components/redesign/pill';
+import {
+  AccountRow,
+  AccountRowAction,
+  ActionButton,
+  ChannelDetailCard,
+  FactsGrid,
+  SettingsNote,
+  SettingsSection,
+} from '@/components/redesign/settings';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -134,126 +136,105 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
   };
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-3">
-      <CollapsibleTrigger asChild>
-        <Button variant="ghost" size="sm" className="w-full justify-between p-2 h-auto">
-          <div className="flex items-center gap-2">
-            <Smartphone className="h-4 w-4 text-green-600" />
-            <span className="text-sm font-medium">{t('whatsapp.coexistence.title')}</span>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} asChild>
+      <section className="min-w-0 overflow-hidden rounded-[10px] border bg-card" data-testid="whatsapp-coexistence">
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex min-h-11 w-full flex-wrap items-center gap-x-2 gap-y-1 bg-muted/35 px-4 py-2.5 text-start hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring data-[state=open]:border-b"
+          >
+            <Smartphone className="h-4 w-4 text-green-600" aria-hidden />
+            <span className="text-[13px] font-semibold">{t('whatsapp.coexistence.title')}</span>
+            <span className="min-w-0 truncate text-xs text-muted-foreground">· {account.business_name}</span>
             {isCoexEnabled && (
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                {t('whatsapp.coexistence.enabled')}
-              </Badge>
+              <TonePill tone="success">{t('whatsapp.coexistence.enabled')}</TonePill>
             )}
-          </div>
-          <ChevronDown className={cn('h-4 w-4 transition-transform', isOpen && 'rotate-180')} />
-        </Button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-3 pt-2">
-        {/* Status Info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-          <div className="flex items-center gap-2">
-            <Cloud className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground">{t('whatsapp.coexistence.platform')}:</span>
-            <span className="font-medium">{localStatus?.platform_type || account.platform_type || t('whatsapp.coexistence.cloudApi')}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground">{t('whatsapp.coexistence.throughput')}:</span>
-            <span className="font-medium">{localStatus?.throughput_limit || account.throughput_limit || 80} {t('whatsapp.coexistence.mps')}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground">{t('whatsapp.coexistence.contactsSynced')}:</span>
-            <span className="font-medium">
-              {localStatus?.contacts_synced_at
-                ? new Date(localStatus.contacts_synced_at).toLocaleDateString()
-                : t('whatsapp.coexistence.never')}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground">{t('whatsapp.coexistence.historySynced')}:</span>
-            <span className="font-medium">
-              {localStatus?.history_synced_at
-                ? new Date(localStatus.history_synced_at).toLocaleDateString()
-                : t('whatsapp.coexistence.never')}
-            </span>
-          </div>
-        </div>
+            <ChevronDown className={cn('ms-auto h-4 w-4 text-muted-foreground transition-transform', isOpen && 'rotate-180')} aria-hidden />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          {/* Status Info */}
+          <FactsGrid
+            items={[
+              { k: t('whatsapp.coexistence.platform'), v: localStatus?.platform_type || account.platform_type || t('whatsapp.coexistence.cloudApi') },
+              { k: t('whatsapp.coexistence.throughput'), v: `${localStatus?.throughput_limit || account.throughput_limit || 80} ${t('whatsapp.coexistence.mps')}` },
+              {
+                k: t('whatsapp.coexistence.contactsSynced'),
+                v: localStatus?.contacts_synced_at
+                  ? new Date(localStatus.contacts_synced_at).toLocaleDateString()
+                  : t('whatsapp.coexistence.never'),
+              },
+              {
+                k: t('whatsapp.coexistence.historySynced'),
+                v: localStatus?.history_synced_at
+                  ? new Date(localStatus.history_synced_at).toLocaleDateString()
+                  : t('whatsapp.coexistence.never'),
+              },
+            ]}
+          />
 
-        {/* Sync Window Alert */}
-        {syncWindowOpen && syncWindowRemaining && (
-          <Alert className="bg-amber-50 border-amber-200">
-            <Timer className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800">
-              <strong>{t('whatsapp.coexistence.syncWindowOpen')}</strong> {t('whatsapp.coexistence.syncWindowDescription', { remaining: formatRemainingTime(syncWindowRemaining) })}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {!syncWindowOpen && localStatus?.onboarded_at && (
-          <Alert className="bg-gray-50 border-gray-200">
-            <AlertCircle className="h-4 w-4 text-gray-500" />
-            <AlertDescription className="text-gray-600">
-              {t('whatsapp.coexistence.syncWindowExpired')}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Sync Controls */}
-        {syncWindowOpen && (
-          <div className="flex flex-col sm:flex-row flex-wrap gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSyncContacts}
-              disabled={syncContacts.isPending}
-              className="w-full sm:w-auto"
-            >
-              {syncContacts.isPending ? (
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Users className="mr-2 h-4 w-4" />
+          {syncWindowOpen || localStatus?.onboarded_at ? (
+            <div className="flex flex-wrap items-center gap-2 px-4 py-3">
+              {/* Sync Window */}
+              {syncWindowOpen && syncWindowRemaining && (
+                <span className="flex min-w-[200px] flex-1 items-start gap-2 text-xs leading-[17px] text-amber-700 dark:text-amber-400">
+                  <Timer className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+                  <span>
+                    <strong className="font-semibold">{t('whatsapp.coexistence.syncWindowOpen')}</strong>{' '}
+                    {t('whatsapp.coexistence.syncWindowDescription', { remaining: formatRemainingTime(syncWindowRemaining) })}
+                  </span>
+                </span>
               )}
-              {t('whatsapp.coexistence.syncContacts')}
-            </Button>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <Select value={historyPhase} onValueChange={setHistoryPhase}>
-                <SelectTrigger className="w-full sm:w-[120px] h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0-1">{t('whatsapp.coexistence.last24h')}</SelectItem>
-                  <SelectItem value="1-90">{t('whatsapp.coexistence.days1to90')}</SelectItem>
-                  <SelectItem value="90-180">{t('whatsapp.coexistence.days90to180')}</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSyncHistory}
-                disabled={syncHistory.isPending}
-                className="w-full sm:w-auto"
-              >
-                {syncHistory.isPending ? (
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <History className="mr-2 h-4 w-4" />
-                )}
-                {t('whatsapp.coexistence.syncHistory')}
-              </Button>
+              {!syncWindowOpen && localStatus?.onboarded_at && (
+                <span className="flex min-w-[200px] flex-1 items-start gap-2 text-xs leading-[17px] text-muted-foreground">
+                  <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+                  {t('whatsapp.coexistence.syncWindowExpired')}
+                </span>
+              )}
+
+              {/* Sync Controls */}
+              {syncWindowOpen && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <ActionButton
+                    icon={syncContacts.isPending ? RefreshCw : Users}
+                    onClick={handleSyncContacts}
+                    disabled={syncContacts.isPending}
+                    testId="whatsapp-sync-contacts"
+                  >
+                    {t('whatsapp.coexistence.syncContacts')}
+                  </ActionButton>
+                  <Select value={historyPhase} onValueChange={setHistoryPhase}>
+                    <SelectTrigger className="h-[30px] w-[130px] text-xs" aria-label={t('whatsapp.coexistence.syncHistory')}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0-1">{t('whatsapp.coexistence.last24h')}</SelectItem>
+                      <SelectItem value="1-90">{t('whatsapp.coexistence.days1to90')}</SelectItem>
+                      <SelectItem value="90-180">{t('whatsapp.coexistence.days90to180')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <ActionButton
+                    icon={syncHistory.isPending ? RefreshCw : History}
+                    onClick={handleSyncHistory}
+                    disabled={syncHistory.isPending}
+                    testId="whatsapp-sync-history"
+                  >
+                    {t('whatsapp.coexistence.syncHistory')}
+                  </ActionButton>
+                </div>
+              )}
             </div>
-          </div>
-        )}
-      </CollapsibleContent>
+          ) : null}
+        </CollapsibleContent>
+      </section>
     </Collapsible>
   );
 }
 
 export function WhatsAppConnection() {
   const t = useTranslations('social');
+  const locale = useLocale();
   const { tenant } = useTenant();
 
   // React Query hooks
@@ -312,7 +293,7 @@ export function WhatsAppConnection() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(locale === 'ka' ? 'ka-GE' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -324,167 +305,86 @@ export function WhatsAppConnection() {
   const isConnected = status?.connected || false;
 
   return (
-    <Card
-      className={cn(
-        'border-2',
-        isConnected ? 'border-green-200 bg-green-50/50' : 'border-border'
-      )}
-    >
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#25D366] text-white">
-              <WhatsAppIcon className="h-6 w-6" />
-            </div>
-            <div>
-              <CardTitle className="text-xl">{t('whatsapp.title')}</CardTitle>
-              <CardDescription className="flex items-center gap-2 mt-1">
-                {isConnected && status ? (
-                  <>
-                    <Check className="h-4 w-4 text-green-600" />
-                    <span>{t('whatsapp.accountsConnected', { count: status.accounts_count })}</span>
-                  </>
-                ) : (
-                  <>
-                    <X className="h-4 w-4 text-muted-foreground" />
-                    <span>{t('whatsapp.notConnected')}</span>
-                  </>
-                )}
-              </CardDescription>
-            </div>
-          </div>
-          <Badge
-            variant={isConnected ? 'default' : 'secondary'}
-            className={cn(
-              'h-8 self-start sm:self-auto',
-              isConnected && 'bg-green-600 hover:bg-green-700'
-            )}
-          >
-            {isConnected ? t('whatsapp.badgeConnected') : t('whatsapp.badgeNotConnected')}
-          </Badge>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {!isConnected ? (
-            <Button
-              onClick={handleConnect}
-              disabled={loading || connectWhatsApp.isPending}
-              className="bg-[#25D366] hover:bg-[#20BA59] w-full sm:w-auto"
-            >
-              {loading || connectWhatsApp.isPending ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  {t('whatsapp.connecting')}
-                </>
-              ) : (
-                <>
-                  <WhatsAppIcon className="mr-2 h-4 w-4" />
-                  {t('whatsapp.connectWhatsAppBusiness')}
-                </>
-              )}
-            </Button>
-          ) : (
-            <Button
-              onClick={() => handleDisconnect()}
-              disabled={loading || disconnectWhatsApp.isPending}
-              variant="destructive"
-              className="w-full sm:w-auto"
-            >
-              {disconnectWhatsApp.isPending ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  {t('whatsapp.disconnecting')}
-                </>
-              ) : (
-                <>
-                  <X className="mr-2 h-4 w-4" />
-                  {t('whatsapp.disconnectAll')}
-                </>
-              )}
-            </Button>
-          )}
-          <Button onClick={() => refetch()} disabled={loading} variant="outline" className="w-full sm:w-auto">
-            <RefreshCw
-              className={cn('mr-2 h-4 w-4', loading && 'animate-spin')}
-            />
-            {t('whatsapp.refreshStatus')}
-          </Button>
-        </div>
-
-        {/* Connected Accounts List */}
-        {status && status.accounts.length > 0 && (
-          <div className="space-y-3 pt-4">
-            <h4 className="font-semibold text-sm">{t('whatsapp.connectedAccounts')}</h4>
-            {status.accounts.map((account, index) => (
-              <div key={account.id}>
-                {index > 0 && <Separator className="my-3" />}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-green-100 text-green-600">
-                        <WhatsAppIcon className="h-5 w-5" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{account.business_name}</p>
-                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                        <span>{account.phone_number}</span>
-                        {account.quality_rating && (
-                          <>
-                            <span className="hidden sm:inline">•</span>
-                            <span>{t('whatsapp.quality')}: {account.quality_rating}</span>
-                          </>
-                        )}
-                        <span className="hidden sm:inline">•</span>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{formatDate(account.connected_at)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-                    {account.coex_enabled && (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        {t('whatsapp.coex')}
-                      </Badge>
-                    )}
-                    <Badge
-                      variant={account.is_active ? 'default' : 'secondary'}
-                      className={account.is_active ? 'bg-green-600' : ''}
-                    >
-                      {account.is_active ? t('whatsapp.active') : t('whatsapp.inactive')}
-                    </Badge>
-                    {account.is_active && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDisconnect(account.waba_id)}
-                      >
-                        {t('whatsapp.disconnect')}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                {/* Coexistence Section */}
-                <CoexistenceSection account={account} />
-              </div>
-            ))}
-          </div>
-        )}
-
+    <>
+      <ChannelDetailCard
+        icon={WhatsAppIcon as unknown as LucideIcon}
+        color="#25D366"
+        title={t('whatsapp.title')}
+        status={isConnected && status ? t('whatsapp.accountsConnected', { count: status.accounts_count }) : t('whatsapp.notConnected')}
+        statusIcon={isConnected && status ? Check : X}
+        statusTone={isConnected && status ? 'success' : 'neutral'}
+        badge={{ label: isConnected ? t('whatsapp.badgeConnected') : t('whatsapp.badgeNotConnected'), tone: isConnected ? 'success' : 'neutral' }}
+        actions={[
+          !isConnected
+            ? {
+                label: loading || connectWhatsApp.isPending ? t('whatsapp.connecting') : t('whatsapp.connectWhatsAppBusiness'),
+                icon: loading || connectWhatsApp.isPending ? RefreshCw : (WhatsAppIcon as unknown as LucideIcon),
+                variant: 'primary' as const,
+                onClick: handleConnect,
+                disabled: loading || connectWhatsApp.isPending,
+                testId: 'whatsapp-connect',
+              }
+            : {
+                label: disconnectWhatsApp.isPending ? t('whatsapp.disconnecting') : t('whatsapp.disconnectAll'),
+                icon: disconnectWhatsApp.isPending ? RefreshCw : X,
+                variant: 'danger' as const,
+                onClick: () => handleDisconnect(),
+                disabled: loading || disconnectWhatsApp.isPending,
+                testId: 'whatsapp-disconnect-all',
+              },
+          { label: t('whatsapp.refreshStatus'), icon: RefreshCw, variant: 'outline' as const, onClick: () => refetch(), disabled: loading, testId: 'whatsapp-refresh' },
+        ]}
+        testId="whatsapp-detail"
+      >
         {/* Setup Instructions */}
         {!isConnected && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>{t('whatsapp.setupNote')}</strong> {t('whatsapp.setupDescription')}
-            </AlertDescription>
-          </Alert>
+          <SettingsNote tone="info" icon={AlertCircle}>
+            <strong className="font-semibold">{t('whatsapp.setupNote')}</strong> {t('whatsapp.setupDescription')}
+          </SettingsNote>
         )}
-      </CardContent>
-    </Card>
+      </ChannelDetailCard>
+
+      {/* Connected Accounts List */}
+      {status && status.accounts.length > 0 && (
+        <SettingsSection title={t('whatsapp.connectedAccounts')} testId="whatsapp-accounts">
+          {status.accounts.map((account) => (
+            <AccountRow
+              key={account.id}
+              avatar={<WhatsAppIcon className="h-[18px] w-[18px] text-green-600" />}
+              name={
+                <span className="inline-flex flex-wrap items-center gap-1.5">
+                  {account.business_name}
+                  {account.coex_enabled && <TonePill tone="info">{t('whatsapp.coex')}</TonePill>}
+                </span>
+              }
+              meta={
+                <span className="inline-flex flex-wrap items-center gap-x-2">
+                  <span className="font-mono tabular-nums">{account.phone_number}</span>
+                  {account.quality_rating && (
+                    <span>{t('whatsapp.quality')}: {account.quality_rating}</span>
+                  )}
+                  <span className="inline-flex items-center gap-1">
+                    <Clock className="h-3 w-3" aria-hidden />
+                    {formatDate(account.connected_at)}
+                  </span>
+                </span>
+              }
+              badge={{ label: account.is_active ? t('whatsapp.active') : t('whatsapp.inactive'), tone: account.is_active ? 'success' : 'neutral' }}
+              actions={
+                account.is_active ? (
+                  <AccountRowAction label={t('whatsapp.disconnect')} tone="danger" onClick={() => handleDisconnect(account.waba_id)} testId="whatsapp-disconnect" />
+                ) : undefined
+              }
+              testId="whatsapp-account-row"
+            />
+          ))}
+        </SettingsSection>
+      )}
+
+      {/* Coexistence Section (one per account that uses it) */}
+      {status?.accounts.map((account) => (
+        <CoexistenceSection key={account.id} account={account} />
+      ))}
+    </>
   );
 }

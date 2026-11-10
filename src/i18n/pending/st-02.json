@@ -1,0 +1,290 @@
+{
+  "en": {
+    "social": {
+      "emailConnection": {
+        "title": "Email (IMAP/SMTP)",
+        "accountsConnected": "{count, plural, one {# account connected} other {# accounts connected}}",
+        "noAccounts": "No accounts connected",
+        "badgeConnected": "{count} connected",
+        "badgeNotConnected": "Not connected",
+        "addAccount": "Add email account",
+        "syncAll": "Sync all",
+        "syncingAll": "Syncing all…",
+        "refresh": "Refresh",
+        "connectedAccounts": "Connected accounts",
+        "gmailNote": "<strong>Note:</strong> Gmail accounts need an <link>app password</link> instead of the regular password (requires two-factor authentication).",
+        "statusAutoDisabled": "Auto-disabled",
+        "statusActive": "Active",
+        "statusInactive": "Inactive",
+        "imap": "IMAP",
+        "smtp": "SMTP",
+        "folder": "Folder",
+        "synced": "Synced",
+        "never": "Never",
+        "autoDisabledTitle": "Sync stopped automatically.",
+        "autoDisabledFallback": "A non-transient error occurred.",
+        "autoDisabledHint": "Update the credentials below if needed and click Reactivate. Sync stays off until the connection passes a live IMAP test.",
+        "reactivatePasswordPlaceholder": "New password (optional; leave blank to retry with the stored one)",
+        "testing": "Testing…",
+        "reactivate": "Reactivate",
+        "edit": "Edit",
+        "sync": "Sync",
+        "syncing": "Syncing…",
+        "reactivateBeforeSync": "Reactivate the connection before syncing",
+        "signature": "Signature",
+        "access": "Access",
+        "remove": "Remove",
+        "removing": "Removing…",
+        "reactivated": "Connection reactivated. Sync resumes on the next cycle.",
+        "reactivateFailed": "Reactivation failed. Check the credentials and try again.",
+        "requiredFields": "Please fill in all required fields",
+        "connected": "Email connected",
+        "connectFailed": "Could not connect the email account",
+        "confirmRemove": "Remove {email}? All synced messages from this account will be deleted.",
+        "removed": "Removed {email}",
+        "removeFailed": "Could not remove the email account",
+        "syncedCount": "{count, plural, one {Synced # new message} other {Synced # new messages}}",
+        "syncFailed": "Could not sync the email account",
+        "syncedAllCount": "{count, plural, one {Synced # new message from all accounts} other {Synced # new messages from all accounts}}",
+        "syncAllFailed": "Could not sync the email accounts",
+        "serversRequired": "IMAP and SMTP servers are required",
+        "updated": "Connection updated",
+        "updateFailed": "Could not update the connection",
+        "addTitle": "Add email account",
+        "addDescription": "Enter the mailbox credentials to connect over IMAP/SMTP.",
+        "emailAddress": "Email address *",
+        "displayName": "Display name",
+        "displayNamePlaceholder": "Your name",
+        "passwordRequired": "Password / app password *",
+        "password": "Password / app password",
+        "passwordPlaceholder": "Enter password",
+        "passwordKeepPlaceholder": "Leave blank to keep the current one",
+        "showPassword": "Show password",
+        "hidePassword": "Hide password",
+        "imapServer": "IMAP server *",
+        "imapPort": "IMAP port",
+        "smtpServer": "SMTP server *",
+        "smtpPort": "SMTP port",
+        "advanced": "Advanced settings",
+        "username": "Username (if different from the email)",
+        "usernamePlaceholder": "Username",
+        "imapSsl": "IMAP SSL",
+        "smtpTls": "SMTP TLS/STARTTLS",
+        "smtpSsl": "SMTP SSL (alternative to TLS)",
+        "syncFolder": "Sync folder",
+        "syncDaysBack": "Sync days back",
+        "cancel": "Cancel",
+        "connect": "Connect",
+        "connecting": "Connecting…",
+        "editTitle": "Edit email connection",
+        "editDescription": "Update the settings of {email}",
+        "saveChanges": "Save changes",
+        "saving": "Saving…",
+        "addHint": "IMAP uses SSL and SMTP uses STARTTLS by default. Sync starts from the last 30 days of the folder (Advanced settings change this)."
+      },
+      "settingsPage": {
+        "autoReply": {
+          "welcomePlaceholder": "Hello '{{customer_name}}'! Welcome to our {platform} support. How can we help you today?",
+          "awayPlaceholder": "Hi '{{customer_name}}'! Thanks for reaching out. We're currently away but will respond as soon as we're back. Our business hours are Monday-Friday, 9 AM - 6 PM."
+        },
+        "saveBar": {
+          "unsaved": "You have unsaved changes",
+          "discard": "Discard",
+          "saved": "All changes saved"
+        },
+        "notificationSounds": {
+          "play": "Play the {channel} sound"
+        },
+        "aiCompanion": {
+          "showKey": "Show the key",
+          "hideKey": "Hide the key"
+        },
+        "emailSync": {
+          "refresh": "Refresh"
+        }
+      },
+      "connections": {
+        "channelsLabel": "Channels",
+        "email": "Email",
+        "widget": "Website widget",
+        "dismiss": "Dismiss"
+      },
+      "widget": {
+        "appearance": {
+          "swatches": {
+            "default": "Default navy",
+            "blue": "Blue",
+            "green": "Green",
+            "red": "Red",
+            "purple": "Purple",
+            "orange": "Orange"
+          }
+        }
+      }
+    },
+    "ratingStatistics": {
+      "platforms": {
+        "email": "Email",
+        "widget": "Widget",
+        "phone_sms": "SMS",
+        "phone_callback": "Callback"
+      },
+      "durationMinutes": "{minutes} min",
+      "durationHours": "{hours}h {minutes}m"
+    },
+    "autoPosting": {
+      "languages": {
+        "en": "English",
+        "ka": "Georgian"
+      },
+      "saveBar": {
+        "unsaved": "You have unsaved changes",
+        "discard": "Discard"
+      }
+    }
+  },
+  "ka": {
+    "social": {
+      "emailConnection": {
+        "title": "ელფოსტა (IMAP/SMTP)",
+        "accountsConnected": "{count, plural, other {დაკავშირებულია # ანგარიში}}",
+        "noAccounts": "დაკავშირებული ანგარიში არ არის",
+        "badgeConnected": "დაკავშირებულია: {count}",
+        "badgeNotConnected": "არ არის დაკავშირებული",
+        "addAccount": "ელფოსტის ანგარიშის დამატება",
+        "syncAll": "ყველას სინქრონიზაცია",
+        "syncingAll": "ყველა სინქრონიზდება…",
+        "refresh": "განახლება",
+        "connectedAccounts": "დაკავშირებული ანგარიშები",
+        "gmailNote": "<strong>შენიშვნა:</strong> Gmail-ის ანგარიშს ჩვეულებრივი პაროლის ნაცვლად <link>აპლიკაციის პაროლი</link> სჭირდება (საჭიროა ორსაფეხურიანი ავტორიზაცია).",
+        "statusAutoDisabled": "ავტომატურად გაითიშა",
+        "statusActive": "აქტიური",
+        "statusInactive": "არააქტიური",
+        "imap": "IMAP",
+        "smtp": "SMTP",
+        "folder": "საქაღალდე",
+        "synced": "სინქრონიზდა",
+        "never": "არასდროს",
+        "autoDisabledTitle": "სინქრონიზაცია ავტომატურად შეჩერდა.",
+        "autoDisabledFallback": "მოხდა მუდმივი შეცდომა.",
+        "autoDisabledHint": "საჭიროების შემთხვევაში განაახლეთ მონაცემები ქვემოთ და დააჭირეთ „ხელახლა გააქტიურებას“. სინქრონიზაცია გამორთული დარჩება, სანამ კავშირი IMAP-ის ცოცხალ შემოწმებას არ გაივლის.",
+        "reactivatePasswordPlaceholder": "ახალი პაროლი (არასავალდებულო; ცარიელი დატოვეთ შენახული პაროლით ცდისთვის)",
+        "testing": "მოწმდება…",
+        "reactivate": "ხელახლა გააქტიურება",
+        "edit": "რედაქტირება",
+        "sync": "სინქრონიზაცია",
+        "syncing": "სინქრონიზდება…",
+        "reactivateBeforeSync": "სინქრონიზაციამდე ხელახლა გააქტიურეთ კავშირი",
+        "signature": "ხელმოწერა",
+        "access": "წვდომა",
+        "remove": "წაშლა",
+        "removing": "იშლება…",
+        "reactivated": "კავშირი ხელახლა გააქტიურდა. სინქრონიზაცია შემდეგ ციკლზე განახლდება.",
+        "reactivateFailed": "ხელახლა გააქტიურება ვერ მოხერხდა. შეამოწმეთ მონაცემები და სცადეთ თავიდან.",
+        "requiredFields": "შეავსეთ ყველა სავალდებულო ველი",
+        "connected": "ელფოსტა დაკავშირდა",
+        "connectFailed": "ელფოსტის ანგარიშის დაკავშირება ვერ მოხერხდა",
+        "confirmRemove": "წავშალოთ {email}? ამ ანგარიშიდან სინქრონიზებული ყველა წერილი წაიშლება.",
+        "removed": "{email} წაიშალა",
+        "removeFailed": "ელფოსტის ანგარიშის წაშლა ვერ მოხერხდა",
+        "syncedCount": "{count, plural, other {სინქრონიზდა # ახალი წერილი}}",
+        "syncFailed": "ელფოსტის ანგარიშის სინქრონიზაცია ვერ მოხერხდა",
+        "syncedAllCount": "{count, plural, other {ყველა ანგარიშიდან სინქრონიზდა # ახალი წერილი}}",
+        "syncAllFailed": "ელფოსტის ანგარიშების სინქრონიზაცია ვერ მოხერხდა",
+        "serversRequired": "IMAP და SMTP სერვერები სავალდებულოა",
+        "updated": "კავშირი განახლდა",
+        "updateFailed": "კავშირის განახლება ვერ მოხერხდა",
+        "addTitle": "ელფოსტის ანგარიშის დამატება",
+        "addDescription": "IMAP/SMTP-ით დასაკავშირებლად შეიყვანეთ საფოსტო ყუთის მონაცემები.",
+        "emailAddress": "ელფოსტის მისამართი *",
+        "displayName": "საჩვენებელი სახელი",
+        "displayNamePlaceholder": "თქვენი სახელი",
+        "passwordRequired": "პაროლი / აპლიკაციის პაროლი *",
+        "password": "პაროლი / აპლიკაციის პაროლი",
+        "passwordPlaceholder": "შეიყვანეთ პაროლი",
+        "passwordKeepPlaceholder": "ცარიელი დატოვეთ მიმდინარე პაროლის შესანარჩუნებლად",
+        "showPassword": "პაროლის ჩვენება",
+        "hidePassword": "პაროლის დამალვა",
+        "imapServer": "IMAP სერვერი *",
+        "imapPort": "IMAP პორტი",
+        "smtpServer": "SMTP სერვერი *",
+        "smtpPort": "SMTP პორტი",
+        "advanced": "დამატებითი პარამეტრები",
+        "username": "მომხმარებლის სახელი (თუ ელფოსტისგან განსხვავდება)",
+        "usernamePlaceholder": "მომხმარებლის სახელი",
+        "imapSsl": "IMAP SSL",
+        "smtpTls": "SMTP TLS/STARTTLS",
+        "smtpSsl": "SMTP SSL (TLS-ის ალტერნატივა)",
+        "syncFolder": "სინქრონიზაციის საქაღალდე",
+        "syncDaysBack": "სინქრონიზაციის დღეები უკან",
+        "cancel": "გაუქმება",
+        "connect": "დაკავშირება",
+        "connecting": "უკავშირდება…",
+        "editTitle": "ელფოსტის კავშირის რედაქტირება",
+        "editDescription": "{email}-ის პარამეტრების განახლება",
+        "saveChanges": "ცვლილებების შენახვა",
+        "saving": "ინახება…",
+        "addHint": "ნაგულისხმევად IMAP იყენებს SSL-ს, SMTP კი STARTTLS-ს. სინქრონიზაცია საქაღალდის ბოლო 30 დღიდან იწყება (ცვლილება შესაძლებელია დამატებით პარამეტრებში)."
+      },
+      "settingsPage": {
+        "autoReply": {
+          "welcomePlaceholder": "გამარჯობა '{{customer_name}}'! კეთილი იყოს თქვენი მობრძანება ჩვენს {platform} მხარდაჭერაში. რით შეგვიძლია დაგეხმაროთ?",
+          "awayPlaceholder": "გამარჯობა '{{customer_name}}'! გმადლობთ, რომ დაგვიკავშირდით. ახლა არ ვართ ხელმისაწვდომი, მაგრამ დაბრუნებისთანავე გიპასუხებთ. სამუშაო საათები: ორშაბათი-პარასკევი, 09:00-18:00."
+        },
+        "saveBar": {
+          "unsaved": "გაქვთ შეუნახავი ცვლილებები",
+          "discard": "გაუქმება",
+          "saved": "ყველა ცვლილება შენახულია"
+        },
+        "notificationSounds": {
+          "play": "ხმის მოსმენა: {channel}"
+        },
+        "aiCompanion": {
+          "showKey": "გასაღების ჩვენება",
+          "hideKey": "გასაღების დამალვა"
+        },
+        "emailSync": {
+          "refresh": "განახლება"
+        }
+      },
+      "connections": {
+        "channelsLabel": "არხები",
+        "email": "ელფოსტა",
+        "widget": "საიტის ვიჯეტი",
+        "dismiss": "დახურვა"
+      },
+      "widget": {
+        "appearance": {
+          "swatches": {
+            "default": "ნაგულისხმევი მუქი ლურჯი",
+            "blue": "ლურჯი",
+            "green": "მწვანე",
+            "red": "წითელი",
+            "purple": "იისფერი",
+            "orange": "ნარინჯისფერი"
+          }
+        }
+      }
+    },
+    "ratingStatistics": {
+      "platforms": {
+        "email": "ელფოსტა",
+        "widget": "ვიჯეტი",
+        "phone_sms": "SMS",
+        "phone_callback": "უკუზარი"
+      },
+      "durationMinutes": "{minutes} წთ",
+      "durationHours": "{hours} სთ {minutes} წთ"
+    },
+    "autoPosting": {
+      "languages": {
+        "en": "ინგლისური",
+        "ka": "ქართული"
+      },
+      "saveBar": {
+        "unsaved": "გაქვთ შეუნახავი ცვლილებები",
+        "discard": "გაუქმება"
+      }
+    }
+  }
+}
