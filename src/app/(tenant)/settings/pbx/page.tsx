@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   useCallStatsOverview,
   useTrunks,
@@ -11,9 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDuration } from "@/lib/formatDuration";
-import { answerRateOf, formatRate } from "./_lib/stats";
-
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+import { answerRateOf, formatRate, weekdayName } from "./_lib/stats";
 
 type Range = "today" | "week" | "month";
 
@@ -38,6 +36,7 @@ type OverviewShape = {
 
 export default function PbxOverviewPage() {
   const t = useTranslations("pbxSettings.overview");
+  const locale = useLocale();
   const [range, setRange] = useState<Range>("month");
   const { data, isLoading } = useCallStatsOverview(range);
   const overview = (data ?? {}) as OverviewShape;
@@ -135,7 +134,7 @@ export default function PbxOverviewPage() {
 
       {overview.busiest_weekday != null && (
         <p className="text-xs text-muted-foreground">
-          {t("busiestDay")}: {WEEKDAYS[overview.busiest_weekday] ?? "—"}
+          {t("busiestDay")}: {weekdayName(overview.busiest_weekday, locale)}
         </p>
       )}
     </div>

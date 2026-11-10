@@ -19,3 +19,13 @@ export function formatRate(r: number | null | undefined): string {
   return `${Math.round(r * 100)}%`
 }
 
+/**
+ * Short weekday name for the backend's 0 = Monday .. 6 = Sunday index, in the
+ * UI locale (was a hard-coded English list). Clock- and timezone-independent:
+ * 2024-01-01 was a Monday, formatted in UTC.
+ */
+export function weekdayName(index: number | null | undefined, locale: string): string {
+  if (index == null || index < 0 || index > 6) return "—"
+  const d = new Date(Date.UTC(2024, 0, 1 + index))
+  return new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(d)
+}
