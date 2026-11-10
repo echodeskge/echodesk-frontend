@@ -10,7 +10,9 @@ import { useTenantGroups } from "@/hooks/api/useTenant";
 import { useMyAccess } from "@/hooks/useMyAccess";
 import MultiGroupSelection from "@/components/MultiGroupSelection";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { rdButton } from "@/components/redesign/buttons";
+import { settingsDialogFormClass, settingsDialogSectionTitle } from "./dialog-ui";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -243,15 +245,15 @@ export default function UserForm({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? t("ui.form.createTitle") : t("ui.form.editTitle")}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-[17px]">{mode === "create" ? t("ui.form.createTitle") : t("ui.form.editTitle")}</DialogTitle>
+          <DialogDescription className="text-[13px]">
             {mode === "create"
               ? t("ui.form.createDescription")
               : t("ui.form.editDescription", { email: user?.email ?? "" })}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className={cn("space-y-5", settingsDialogFormClass)}>
           {/* Error Alert */}
           {errors.submit && (
             <Alert variant="destructive">
@@ -273,7 +275,7 @@ export default function UserForm({
                 className={errors.email ? "border-destructive" : ""}
               />
               {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
+                <p className="text-xs text-destructive">{errors.email}</p>
               )}
               {mode === "edit" &&
                 formData.email !== (fullUserData?.email ?? user?.email ?? "") && (
@@ -294,7 +296,7 @@ export default function UserForm({
                 className={errors.first_name ? "border-destructive" : ""}
               />
               {errors.first_name && (
-                <p className="text-sm text-destructive">{errors.first_name}</p>
+                <p className="text-xs text-destructive">{errors.first_name}</p>
               )}
             </div>
 
@@ -309,7 +311,7 @@ export default function UserForm({
                 className={errors.last_name ? "border-destructive" : ""}
               />
               {errors.last_name && (
-                <p className="text-sm text-destructive">{errors.last_name}</p>
+                <p className="text-xs text-destructive">{errors.last_name}</p>
               )}
             </div>
 
@@ -367,7 +369,7 @@ export default function UserForm({
 
           {/* Employment (HR) */}
           <div className="space-y-4 pt-4 border-t">
-            <h3 className="text-sm font-semibold">{t("hrFields.section")}</h3>
+            <h3 className={settingsDialogSectionTitle}>{t("hrFields.section")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="job_title">{t("hrFields.jobTitle")}</Label>
@@ -429,7 +431,7 @@ export default function UserForm({
                   className={errors.employment_end_date ? "border-destructive" : ""}
                 />
                 {errors.employment_end_date ? (
-                  <p className="text-sm text-destructive">{errors.employment_end_date}</p>
+                  <p className="text-xs text-destructive">{errors.employment_end_date}</p>
                 ) : (
                   <p className="text-xs text-muted-foreground">{t("hrFields.employmentHint")}</p>
                 )}
@@ -439,7 +441,7 @@ export default function UserForm({
 
           {/* Group Assignment Section */}
           <div className="space-y-4 pt-4 border-t">
-            <h3 className="text-sm font-semibold">{t("ui.form.groupAssignment")}</h3>
+            <h3 className={settingsDialogSectionTitle}>{t("ui.form.groupAssignment")}</h3>
             <div className="space-y-2">
               <Label htmlFor="tenant-groups">{t("ui.table.groups")}</Label>
               {(loadingGroups || loadingUserDetails) ? (
@@ -479,7 +481,7 @@ export default function UserForm({
           {/* User Active Status (Edit Mode Only) */}
           {mode === "edit" && (
             <div className="space-y-4 pt-4 border-t">
-              <h3 className="text-sm font-semibold">{t("ui.bulk.userStatus")}</h3>
+              <h3 className={settingsDialogSectionTitle}>{t("ui.bulk.userStatus")}</h3>
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="is_active"
@@ -493,23 +495,23 @@ export default function UserForm({
             </div>
           )}
 
-          <DialogFooter>
-            <Button
+          <DialogFooter className="gap-2 border-t pt-4">
+            <button
               type="button"
-              variant="outline"
+              className={rdButton.outline}
               onClick={onClose}
               disabled={isSubmitting}
             >
               {t("cancel")}
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Spinner className="mr-2 h-4 w-4" />}
+            </button>
+            <button type="submit" className={rdButton.primary} disabled={isSubmitting}>
+              {isSubmitting && <Spinner className="h-3.5 w-3.5" />}
               {isSubmitting
                 ? t("ui.form.saving")
                 : mode === "create"
                   ? t("ui.form.create")
                   : t("ui.form.update")}
-            </Button>
+            </button>
           </DialogFooter>
         </form>
       </DialogContent>

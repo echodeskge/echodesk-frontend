@@ -1,8 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useMyAccess, TENANT_ROLE_RANK, type TenantRole } from "@/hooks/useMyAccess";
+import { rdButton } from "@/components/redesign/buttons";
+import { cn } from "@/lib/utils";
+import {
+  ChevronDown,
+  Crown,
+  Eye,
+  Headset,
+  KeyRound,
+  Trash2,
+  UserCheck,
+  UserCog,
+  UserX,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+
+// One action of the bulk menu (30px row, icon + label).
+function ActionItem({
+  icon: Icon,
+  label,
+  onClick,
+  disabled,
+  danger,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  disabled: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "flex h-[30px] w-full items-center gap-2 rounded-md px-2 text-start text-[13px] transition-colors disabled:pointer-events-none disabled:opacity-50",
+        danger ? "text-destructive hover:bg-destructive/10" : "text-foreground hover:bg-accent"
+      )}
+    >
+      <Icon className={cn("h-3.5 w-3.5 shrink-0", danger ? "text-destructive" : "text-muted-foreground")} aria-hidden />
+      <span className="truncate">{label}</span>
+    </button>
+  );
+}
+
+function Section({ title, danger, children }: { title: string; danger?: boolean; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5 border-b px-1.5 py-2 last:border-b-0">
+      <h5
+        className={cn(
+          "px-2 pb-1 text-[11px] font-medium uppercase tracking-[.03em]",
+          danger ? "text-destructive" : "text-muted-foreground"
+        )}
+      >
+        {title}
+      </h5>
+      {children}
+    </div>
+  );
+}
 
 interface UserBulkActionsProps {
   selectedCount: number;
@@ -48,368 +109,96 @@ export default function UserBulkActions({
   };
 
   return (
-    <div className="bulk-actions">
-      <div className="bulk-actions-info">
-        <span className="selected-count">
-          {t("ui.bulk.selected", { count: selectedCount })}
-        </span>
-      </div>
+    <div
+      className="relative flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-primary/30 bg-primary/5 px-3.5 py-2"
+      data-testid="users-bulk-actions"
+    >
+      <span className="text-[13px] font-medium text-primary">
+        {t("ui.bulk.selected", { count: selectedCount })}
+      </span>
 
-      <div className="bulk-actions-controls">
-        <button
-          className="bulk-actions-toggle"
-          onClick={() => setShowActions(!showActions)}
-          disabled={isLoading}
-        >
-          {isLoading ? t("ui.bulk.processing") : t("ui.bulk.title")} ▼
-        </button>
-      </div>
+      <button
+        type="button"
+        className={rdButton.primary}
+        onClick={() => setShowActions(!showActions)}
+        disabled={isLoading}
+        aria-expanded={showActions}
+      >
+        {isLoading ? t("ui.bulk.processing") : t("ui.bulk.title")}
+        <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+      </button>
 
       {showActions && (
-        <div className="bulk-actions-dropdown">
-          <div className="dropdown-header">
-            <h4>{t("ui.bulk.title")}</h4>
+        <div className="absolute inset-x-0 top-full z-50 mt-2 overflow-hidden rounded-[10px] border bg-popover text-popover-foreground shadow-lg sm:left-auto sm:right-0 sm:w-[300px]">
+          <div className="flex items-center justify-between border-b px-3.5 py-2.5">
+            <h4 className="text-[13px] font-semibold">{t("ui.bulk.title")}</h4>
             <button
-              className="close-dropdown"
+              type="button"
+              className={rdButton.ghostIconSm}
               onClick={() => setShowActions(false)}
+              aria-label={t("ui.agents.close")}
+              title={t("ui.agents.close")}
             >
-              ×
+              <X className="h-3.5 w-3.5" aria-hidden />
             </button>
           </div>
 
-          <div className="dropdown-content">
-            <div className="action-section">
-              <h5>{t("ui.bulk.userStatus")}</h5>
-              <div className="action-buttons">
-                <button
-                  className="action-btn action-green"
-                  onClick={() => handleBulkAction("activate")}
-                  disabled={isLoading}
-                >
-                  ✅ {t("ui.bulk.activate")}
-                </button>
-                <button
-                  className="action-btn action-red"
-                  onClick={() => handleBulkAction("deactivate")}
-                  disabled={isLoading}
-                >
-                  ❌ {t("ui.bulk.deactivate")}
-                </button>
-              </div>
-            </div>
+          <div className="max-h-[400px] overflow-y-auto">
+            <Section title={t("ui.bulk.userStatus")}>
+              <ActionItem icon={UserCheck} label={t("ui.bulk.activate")} onClick={() => handleBulkAction("activate")} disabled={isLoading} />
+              <ActionItem icon={UserX} label={t("ui.bulk.deactivate")} onClick={() => handleBulkAction("deactivate")} disabled={isLoading} />
+            </Section>
 
-            <div className="action-section">
-              <h5>{t("ui.bulk.security")}</h5>
-              <div className="action-buttons">
-                <button
-                  className="action-btn action-blue"
-                  onClick={() => handleBulkAction("reset_password")}
-                  disabled={isLoading}
-                >
-                  🔄 {t("ui.bulk.resetPasswords")}
-                </button>
-              </div>
-            </div>
+            <Section title={t("ui.bulk.security")}>
+              <ActionItem
+                icon={KeyRound}
+                label={t("ui.bulk.resetPasswords")}
+                onClick={() => handleBulkAction("reset_password")}
+                disabled={isLoading}
+              />
+            </Section>
 
-            <div className="action-section">
-              <h5>{t("ui.bulk.roleChanges")}</h5>
-              <div className="action-buttons">
-                {canGrantRole("admin") && (
-                  <button
-                    className="action-btn action-purple"
-                    onClick={() =>
-                      handleBulkAction("change_role", { role: "admin" })
-                    }
-                    disabled={isLoading}
-                  >
-                    👑 {t("ui.bulk.makeRole", { role: t("ui.roles.admin") })}
-                  </button>
-                )}
-                {canGrantRole("manager") && (
-                  <button
-                    className="action-btn action-blue"
-                    onClick={() =>
-                      handleBulkAction("change_role", { role: "manager" })
-                    }
-                    disabled={isLoading}
-                  >
-                    👨‍💼 {t("ui.bulk.makeRole", { role: t("ui.roles.manager") })}
-                  </button>
-                )}
-                {canGrantRole("agent") && (
-                  <button
-                    className="action-btn action-green"
-                    onClick={() =>
-                      handleBulkAction("change_role", { role: "agent" })
-                    }
-                    disabled={isLoading}
-                  >
-                    🎧 {t("ui.bulk.makeRole", { role: t("ui.roles.agent") })}
-                  </button>
-                )}
-                {canGrantRole("viewer") && (
-                  <button
-                    className="action-btn action-gray"
-                    onClick={() =>
-                      handleBulkAction("change_role", { role: "viewer" })
-                    }
-                    disabled={isLoading}
-                  >
-                    👁️ {t("ui.bulk.makeRole", { role: t("ui.roles.viewer") })}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="action-section danger-section">
-              <h5>{t("ui.bulk.danger")}</h5>
-              <div className="action-buttons">
-                <button
-                  className="action-btn action-red"
-                  onClick={() => handleBulkAction("delete")}
+            <Section title={t("ui.bulk.roleChanges")}>
+              {canGrantRole("admin") && (
+                <ActionItem
+                  icon={Crown}
+                  label={t("ui.bulk.makeRole", { role: t("ui.roles.admin") })}
+                  onClick={() => handleBulkAction("change_role", { role: "admin" })}
                   disabled={isLoading}
-                >
-                  🗑️ {t("ui.bulk.delete")}
-                </button>
-              </div>
-            </div>
+                />
+              )}
+              {canGrantRole("manager") && (
+                <ActionItem
+                  icon={UserCog}
+                  label={t("ui.bulk.makeRole", { role: t("ui.roles.manager") })}
+                  onClick={() => handleBulkAction("change_role", { role: "manager" })}
+                  disabled={isLoading}
+                />
+              )}
+              {canGrantRole("agent") && (
+                <ActionItem
+                  icon={Headset}
+                  label={t("ui.bulk.makeRole", { role: t("ui.roles.agent") })}
+                  onClick={() => handleBulkAction("change_role", { role: "agent" })}
+                  disabled={isLoading}
+                />
+              )}
+              {canGrantRole("viewer") && (
+                <ActionItem
+                  icon={Eye}
+                  label={t("ui.bulk.makeRole", { role: t("ui.roles.viewer") })}
+                  onClick={() => handleBulkAction("change_role", { role: "viewer" })}
+                  disabled={isLoading}
+                />
+              )}
+            </Section>
+
+            <Section title={t("ui.bulk.danger")} danger>
+              <ActionItem icon={Trash2} label={t("ui.bulk.delete")} onClick={() => handleBulkAction("delete")} disabled={isLoading} danger />
+            </Section>
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        .bulk-actions {
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          padding: 12px 16px;
-          margin-bottom: 16px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          position: relative;
-        }
-
-        .bulk-actions-info {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .selected-count {
-          font-weight: 600;
-          color: #1e40af;
-          font-size: 14px;
-        }
-
-        .bulk-actions-controls {
-          position: relative;
-        }
-
-        .bulk-actions-toggle {
-          background: #3b82f6;
-          color: white;
-          border: none;
-          padding: 8px 16px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 500;
-          transition: background-color 0.2s;
-        }
-
-        .bulk-actions-toggle:hover:not(:disabled) {
-          background: #2563eb;
-        }
-
-        .bulk-actions-toggle:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .bulk-actions-dropdown {
-          position: absolute;
-          top: 100%;
-          right: 0;
-          margin-top: 8px;
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-          z-index: 1000;
-          min-width: 300px;
-          max-width: 400px;
-        }
-
-        .dropdown-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 16px;
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .dropdown-header h4 {
-          margin: 0;
-          font-size: 16px;
-          font-weight: 600;
-          color: #1e293b;
-        }
-
-        .close-dropdown {
-          background: none;
-          border: none;
-          font-size: 20px;
-          cursor: pointer;
-          color: #64748b;
-          padding: 0;
-          width: 24px;
-          height: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 4px;
-        }
-
-        .close-dropdown:hover {
-          background: #f1f5f9;
-          color: #334155;
-        }
-
-        .dropdown-content {
-          padding: 16px;
-          max-height: 400px;
-          overflow-y: auto;
-        }
-
-        .action-section {
-          margin-bottom: 20px;
-        }
-
-        .action-section:last-child {
-          margin-bottom: 0;
-        }
-
-        .action-section h5 {
-          margin: 0 0 8px 0;
-          font-size: 14px;
-          font-weight: 600;
-          color: #374151;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .danger-section h5 {
-          color: #dc2626;
-        }
-
-        .action-buttons {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .action-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 12px;
-          border: 1px solid transparent;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 500;
-          text-align: left;
-          transition: all 0.2s;
-          background: white;
-        }
-
-        .action-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .action-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .action-green {
-          border-color: #d1fae5;
-          color: #065f46;
-        }
-
-        .action-green:hover:not(:disabled) {
-          background: #d1fae5;
-        }
-
-        .action-red {
-          border-color: #fee2e2;
-          color: #dc2626;
-        }
-
-        .action-red:hover:not(:disabled) {
-          background: #fee2e2;
-        }
-
-        .action-blue {
-          border-color: #dbeafe;
-          color: #1e40af;
-        }
-
-        .action-blue:hover:not(:disabled) {
-          background: #dbeafe;
-        }
-
-        .action-purple {
-          border-color: #e9d5ff;
-          color: #7c3aed;
-        }
-
-        .action-purple:hover:not(:disabled) {
-          background: #e9d5ff;
-        }
-
-        .action-gray {
-          border-color: #f3f4f6;
-          color: #4b5563;
-        }
-
-        .action-gray:hover:not(:disabled) {
-          background: #f3f4f6;
-        }
-
-        @media (max-width: 768px) {
-          .bulk-actions {
-            flex-direction: column;
-            gap: 12px;
-            align-items: stretch;
-          }
-
-          .bulk-actions-dropdown {
-            position: fixed;
-            top: 50% !important;
-            left: 50% !important;
-            right: auto !important;
-            transform: translate(-50%, -50%) !important;
-            margin: 0 !important;
-            width: 90vw;
-            max-width: 350px;
-            z-index: 2000;
-          }
-
-          .bulk-actions-dropdown::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: -1;
-          }
-        }
-      `}</style>
     </div>
   );
 }

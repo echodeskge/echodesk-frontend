@@ -11,7 +11,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { NextIntlClientProvider } from "next-intl";
 import UserForm from "@/components/user-management/UserForm";
-import enMessages from "@/i18n/messages/en.json";
+// en catalog plus the settings redesign keys still pending integration (pending/st-*.json).
+import { messages } from "../../settings/st-helpers";
+const enMessages = messages.en;
 import type { User } from "@/api/generated/interfaces";
 
 // Mock useTenantGroups hook

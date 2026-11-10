@@ -8,7 +8,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render as rtlRender, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { NextIntlClientProvider } from "next-intl";
-import en from "@/i18n/messages/en.json";
+// en catalog plus the settings redesign keys still pending integration (pending/st-*.json).
+import { messages } from "../../settings/st-helpers";
+const en = messages.en;
 
 // The components read their labels from the "users" messages (English here).
 const render = (ui: ReactElement) =>
@@ -105,7 +107,7 @@ describe("UserBulkActions", () => {
     await user.click(screen.getByText(/Bulk Actions/));
 
     // Find the activate button in the dropdown (not the toggle)
-    const activateBtn = screen.getByText(/✅ Activate Users/);
+    const activateBtn = screen.getByRole("button", { name: "Activate Users" });
     await user.click(activateBtn);
 
     expect(window.confirm).toHaveBeenCalled();
@@ -118,7 +120,7 @@ describe("UserBulkActions", () => {
 
     await user.click(screen.getByText(/Bulk Actions/));
 
-    const makeAdminBtn = screen.getByText(/👑 Make Admin/);
+    const makeAdminBtn = screen.getByRole("button", { name: "Make Admin" });
     await user.click(makeAdminBtn);
 
     expect(onBulkAction).toHaveBeenCalledWith("change_role", [10, 20], {
@@ -132,7 +134,7 @@ describe("UserBulkActions", () => {
 
     await user.click(screen.getByText(/Bulk Actions/));
 
-    const deleteBtn = screen.getByText(/🗑️ Delete Users/);
+    const deleteBtn = screen.getByRole("button", { name: "Delete Users" });
     await user.click(deleteBtn);
 
     expect(onBulkAction).toHaveBeenCalledWith("delete", [5], undefined);
@@ -144,7 +146,7 @@ describe("UserBulkActions", () => {
     renderComponent();
 
     await user.click(screen.getByText(/Bulk Actions/));
-    await user.click(screen.getByText(/✅ Activate Users/));
+    await user.click(screen.getByRole("button", { name: "Activate Users" }));
 
     expect(onBulkAction).not.toHaveBeenCalled();
   });

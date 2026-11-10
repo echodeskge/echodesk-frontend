@@ -1,7 +1,37 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { User } from "@/api/generated/interfaces";
 import { useLocale, useTranslations } from "next-intl";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TonePill } from "@/components/redesign/pill";
+import type { Tone } from "@/components/redesign/tones";
+import { rdButton } from "@/components/redesign/buttons";
+import { initials } from "@/app/(tenant)/tickets/_components/primitives/initials";
+import { cn } from "@/lib/utils";
+import { Pencil, RotateCw, Trash2, UserCheck, UserX } from "lucide-react";
+
+const ROLE_TONE: Record<string, Tone> = { admin: "danger", manager: "warning", agent: "info", viewer: "success" };
+const STATUS_TONE: Record<string, Tone> = { active: "success", inactive: "danger", pending: "warning", suspended: "danger" };
+
+// Label over value (12px uppercase muted label, 13px value).
+function InfoItem({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <span className="text-[11px] font-medium uppercase tracking-[.03em] text-muted-foreground">{label}</span>
+      <span className={cn("break-words text-[13px] font-medium text-foreground", className)}>{children}</span>
+    </div>
+  );
+}
+
+function InfoSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="overflow-hidden rounded-[10px] border">
+      <h3 className="border-b bg-muted/35 px-4 py-2.5 text-[13px] font-semibold">{title}</h3>
+      <div className="grid grid-cols-1 gap-3.5 p-4 sm:grid-cols-2">{children}</div>
+    </section>
+  );
+}
 
 interface UserDetailsModalProps {
   user: User;
@@ -38,37 +68,13 @@ export default function UserDetailsModal({
     });
   };
 
-  const getRoleColor = (role?: any) => {
-    switch (role?.toString().toLowerCase()) {
-      case "admin":
-        return "#dc2626";
-      case "manager":
-        return "#d97706";
-      case "agent":
-        return "#2563eb";
-      case "viewer":
-        return "#16a34a";
-      default:
-        return "#6b7280";
-    }
-  };
-
-  const getStatusColor = (status?: any, isActive?: boolean) => {
-    if (!isActive) return "#dc2626";
-
-    switch (status?.toString().toLowerCase()) {
-      case "active":
-        return "#16a34a";
-      case "inactive":
-        return "#dc2626";
-      case "pending":
-        return "#d97706";
-      case "suspended":
-        return "#dc2626";
-      default:
-        return "#6b7280";
-    }
-  };
+  const roleTone: Tone = ROLE_TONE[user.role?.toString().toLowerCase() ?? ""] ?? "neutral";
+  const statusTone: Tone = !user.is_active
+    ? "danger"
+    : STATUS_TONE[user.status?.toString().toLowerCase() ?? ""] ?? "neutral";
+  const roleText = user.role ? roleLabel(user.role.toString()) : t("ui.details.user");
+  const statusText = statusLabel(user.is_active ? user.status?.toString() || "active" : "inactive");
+  const name = user.full_name || `${user.first_name} ${user.last_name}`;
 
   const handleAction = (action: () => void) => {
     action();
@@ -76,434 +82,81 @@ export default function UserDetailsModal({
   };
 
   return (
-    <div className="user-details-overlay" onClick={onClose}>
-      <div className="user-details-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="user-header-info">
-            <div className="user-avatar">
-              {user.first_name?.[0] || user.email[0]?.toUpperCase()}
-            </div>
-            <div className="user-basic-info">
-              <h2>
-                {user.full_name || `${user.first_name} ${user.last_name}`}
-              </h2>
-              <p className="user-email">{user.email}</p>
-              <div className="user-badges">
-                <span
-                  className="role-badge"
-                  style={{
-                    backgroundColor: `${getRoleColor(user.role)}15`,
-                    color: getRoleColor(user.role),
-                  }}
-                >
-                  {user.role ? roleLabel(user.role.toString()) : t("ui.details.user")}
-                </span>
-                <span
-                  className="status-badge"
-                  style={{
-                    backgroundColor: `${getStatusColor(user.status, user.is_active)}15`,
-                    color: getStatusColor(user.status, user.is_active),
-                  }}
-                >
-                  {statusLabel(user.is_active ? user.status?.toString() || "active" : "inactive")}
-                </span>
-              </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-[700px] gap-0 overflow-y-auto p-0" data-testid="user-details">
+        <DialogHeader className="flex-row items-start gap-3.5 space-y-0 border-b p-5 text-start">
+          <span
+            aria-hidden
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-semibold text-primary"
+          >
+            {initials(name) || user.email[0]?.toUpperCase()}
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-1 pe-6">
+            <DialogTitle className="truncate text-[17px] font-semibold leading-6">{name}</DialogTitle>
+            <DialogDescription className="truncate text-[13px]">{user.email}</DialogDescription>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              <TonePill tone={roleTone}>{roleText}</TonePill>
+              <TonePill tone={statusTone} dot>
+                {statusText}
+              </TonePill>
             </div>
           </div>
-          <button className="close-btn" onClick={onClose}>
-            ×
-          </button>
-        </div>
+        </DialogHeader>
 
-        <div className="modal-content">
-          <div className="info-section">
-            <h3>{t("ui.details.contact")}</h3>
-            <div className="info-grid">
-              <div className="info-item">
-                <label>{t("ui.table.email")}</label>
-                <span>{user.email}</span>
-              </div>
-              <div className="info-item">
-                <label>{t("ui.details.phone")}</label>
-                <span>{user.phone_number || t("ui.details.notProvided")}</span>
-              </div>
+        <div className="flex flex-col gap-4 p-5">
+          <InfoSection title={t("ui.details.contact")}>
+            <InfoItem label={t("ui.table.email")}>{user.email}</InfoItem>
+            <InfoItem label={t("ui.details.phone")}>{user.phone_number || t("ui.details.notProvided")}</InfoItem>
+            <InfoItem label={t("ui.details.jobTitle")}>{user.job_title || t("ui.details.notSpecified")}</InfoItem>
+          </InfoSection>
 
-              <div className="info-item">
-                <label>{t("ui.details.jobTitle")}</label>
-                <span>{user.job_title || t("ui.details.notSpecified")}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="info-section">
-            <h3>{t("ui.details.account")}</h3>
-            <div className="info-grid">
-              <div className="info-item">
-                <label>{t("role")}</label>
-                <span style={{ color: getRoleColor(user.role) }}>
-                  {user.role ? roleLabel(user.role.toString()) : t("ui.details.user")}
-                </span>
-              </div>
-              <div className="info-item">
-                <label>{t("ui.table.status")}</label>
-                <span
-                  style={{ color: getStatusColor(user.status, user.is_active) }}
-                >
-                  {statusLabel(user.is_active ? user.status?.toString() || "active" : "inactive")}
-                </span>
-              </div>
-              <div className="info-item">
-                <label>{t("ui.details.staffMember")}</label>
-                <span>{user.is_staff ? t("ui.yes") : t("ui.no")}</span>
-              </div>
-              <div className="info-item">
-                <label>{t("ui.details.dateJoined")}</label>
-                <span>{formatDate(user.date_joined)}</span>
-              </div>
-              <div className="info-item">
-                <label>{t("ui.details.lastLogin")}</label>
-                <span>
-                  {user.last_login ? formatDate(user.last_login) : t("ui.details.never")}
-                </span>
-              </div>
-            </div>
-          </div>
+          <InfoSection title={t("ui.details.account")}>
+            <InfoItem label={t("role")}>{roleText}</InfoItem>
+            <InfoItem label={t("ui.table.status")}>{statusText}</InfoItem>
+            <InfoItem label={t("ui.details.staffMember")}>{user.is_staff ? t("ui.yes") : t("ui.no")}</InfoItem>
+            <InfoItem label={t("ui.details.dateJoined")}>{formatDate(user.date_joined)}</InfoItem>
+            <InfoItem label={t("ui.details.lastLogin")}>
+              {user.last_login ? formatDate(user.last_login) : t("ui.details.never")}
+            </InfoItem>
+          </InfoSection>
 
           {user.permissions && (
-            <div className="info-section">
-              <h3>{t("ui.details.permissions")}</h3>
-              <div className="permissions-text">{user.permissions}</div>
-            </div>
+            <section className="overflow-hidden rounded-[10px] border">
+              <h3 className="border-b bg-muted/35 px-4 py-2.5 text-[13px] font-semibold">{t("ui.details.permissions")}</h3>
+              <div className="whitespace-pre-wrap break-words p-4 font-mono text-xs text-muted-foreground">{user.permissions}</div>
+            </section>
           )}
         </div>
 
-        <div className="modal-actions">
-          <div className="action-group">
-            <button
-              className="btn btn-primary"
-              onClick={() => handleAction(() => onEdit(user))}
-            >
-              ✏️ {t("ui.table.edit")}
+        <div className="flex flex-col-reverse gap-2 border-t bg-muted/30 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={rdButton.primary} onClick={() => handleAction(() => onEdit(user))}>
+              <Pencil className="h-3.5 w-3.5" aria-hidden />
+              {t("ui.table.edit")}
             </button>
-
-            <button
-              className="btn btn-secondary"
-              onClick={() => handleAction(() => onSendNewPassword(user))}
-            >
-              🔄 {t("sendNewPassword")}
+            <button type="button" className={rdButton.outline} onClick={() => handleAction(() => onSendNewPassword(user))}>
+              <RotateCw className="h-3.5 w-3.5" aria-hidden />
+              {t("sendNewPassword")}
             </button>
-
             <button
-              className="btn btn-secondary"
-              onClick={() =>
-                handleAction(() =>
-                  onChangeStatus(
-                    user.id,
-                    user.is_active ? "inactive" : "active"
-                  )
-                )
-              }
+              type="button"
+              className={rdButton.outline}
+              onClick={() => handleAction(() => onChangeStatus(user.id, user.is_active ? "inactive" : "active"))}
             >
-              {user.is_active ? `🔒 ${t("ui.table.deactivate")}` : `🔓 ${t("ui.table.activate")}`}
+              {user.is_active ? <UserX className="h-3.5 w-3.5" aria-hidden /> : <UserCheck className="h-3.5 w-3.5" aria-hidden />}
+              {user.is_active ? t("ui.table.deactivate") : t("ui.table.activate")}
             </button>
           </div>
-
-          <div className="danger-actions">
-            <button
-              className="btn btn-danger"
-              onClick={() => handleAction(() => onDelete(user.id))}
-            >
-              🗑️ {t("ui.table.delete")}
-            </button>
-          </div>
+          <button
+            type="button"
+            className={cn(rdButton.outline, "border-destructive/50 text-destructive hover:bg-destructive/10")}
+            onClick={() => handleAction(() => onDelete(user.id))}
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden />
+            {t("ui.table.delete")}
+          </button>
         </div>
-      </div>
-
-      <style jsx>{`
-        .user-details-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-color: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-          padding: 20px;
-        }
-
-        .user-details-modal {
-          background: white;
-          border-radius: 12px;
-          width: 100%;
-          max-width: 700px;
-          max-height: 90vh;
-          overflow-y: auto;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-
-        .modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          padding: 24px;
-          border-bottom: 1px solid #e5e7eb;
-        }
-
-        .user-header-info {
-          display: flex;
-          gap: 16px;
-          align-items: flex-start;
-        }
-
-        .user-avatar {
-          width: 64px;
-          height: 64px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 24px;
-          font-weight: bold;
-          color: white;
-          flex-shrink: 0;
-        }
-
-        .user-basic-info h2 {
-          margin: 0 0 4px 0;
-          font-size: 24px;
-          font-weight: 700;
-          color: #1f2937;
-        }
-
-        .user-email {
-          margin: 0 0 12px 0;
-          color: #6b7280;
-          font-size: 16px;
-        }
-
-        .user-badges {
-          display: flex;
-          gap: 8px;
-        }
-
-        .role-badge,
-        .status-badge {
-          padding: 4px 12px;
-          border-radius: 16px;
-          font-size: 12px;
-          font-weight: 600;
-          text-transform: capitalize;
-        }
-
-        .close-btn {
-          background: none;
-          border: none;
-          font-size: 28px;
-          cursor: pointer;
-          color: #6b7280;
-          padding: 0;
-          width: 40px;
-          height: 40px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 8px;
-          transition: all 0.2s;
-        }
-
-        .close-btn:hover {
-          background-color: #f3f4f6;
-          color: #374151;
-        }
-
-        .modal-content {
-          padding: 24px;
-        }
-
-        .info-section {
-          margin-bottom: 32px;
-        }
-
-        .info-section:last-child {
-          margin-bottom: 0;
-        }
-
-        .info-section h3 {
-          margin: 0 0 16px 0;
-          font-size: 18px;
-          font-weight: 600;
-          color: #374151;
-          border-bottom: 2px solid #e5e7eb;
-          padding-bottom: 8px;
-        }
-
-        .info-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 16px;
-        }
-
-        .info-item {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .info-item label {
-          font-size: 12px;
-          font-weight: 600;
-          color: #6b7280;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .info-item span {
-          font-size: 14px;
-          color: #1f2937;
-          font-weight: 500;
-        }
-
-        .permissions-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 12px;
-        }
-
-        .permission-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px;
-          border-radius: 6px;
-          background-color: #f9fafb;
-        }
-
-        .permission-status {
-          font-size: 16px;
-        }
-
-        .permissions-text {
-          background-color: #f3f4f6;
-          padding: 12px;
-          border-radius: 6px;
-          font-family: monospace;
-          font-size: 12px;
-          color: #374151;
-          white-space: pre-wrap;
-        }
-
-        .modal-actions {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 20px 24px;
-          border-top: 1px solid #e5e7eb;
-          background-color: #f9fafb;
-          gap: 16px;
-        }
-
-        .action-group {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-
-        .danger-actions {
-          display: flex;
-          gap: 8px;
-        }
-
-        .btn {
-          padding: 8px 16px;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 500;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .btn-primary {
-          background-color: #3b82f6;
-          color: white;
-        }
-
-        .btn-primary:hover {
-          background-color: #2563eb;
-        }
-
-        .btn-secondary {
-          background-color: #f3f4f6;
-          color: #374151;
-          border: 1px solid #d1d5db;
-        }
-
-        .btn-secondary:hover {
-          background-color: #e5e7eb;
-        }
-
-        .btn-danger {
-          background-color: #dc2626;
-          color: white;
-        }
-
-        .btn-danger:hover {
-          background-color: #b91c1c;
-        }
-
-        @media (max-width: 768px) {
-          .user-details-modal {
-            margin: 0;
-            border-radius: 0;
-            max-height: 100vh;
-          }
-
-          .modal-header {
-            padding: 16px;
-          }
-
-          .user-header-info {
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-          }
-
-          .modal-content {
-            padding: 16px;
-          }
-
-          .info-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .permissions-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .modal-actions {
-            flex-direction: column;
-            gap: 12px;
-            padding: 16px;
-          }
-
-          .action-group {
-            width: 100%;
-            justify-content: center;
-          }
-
-          .btn {
-            flex: 1;
-            justify-content: center;
-          }
-        }
-      `}</style>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
