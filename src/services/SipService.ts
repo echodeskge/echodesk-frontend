@@ -905,7 +905,15 @@ export class SipService {
     }
   }
 
-  /** Blind transfer (REFER) of the main call. */
+  /**
+   * Blind transfer (REFER) of the main call. Resolves once the PBX accepted
+   * the REFER (202): from then on the customer is in the target's dialplan
+   * and our leg is out of the bridge with no media, and Asterisk does not
+   * BYE the transferor (observed on the local harness), so we hang up
+   * ourselves with reason `transferred`. A refused REFER (4xx/6xx) rejects
+   * with `transferFailed` and the call carries on. The NOTIFYs that report
+   * the target's progress are acknowledged and otherwise ignored.
+   */
   async transferCall(targetNumber: string): Promise<void> {
     const leg = this.main;
     const userAgent = this.userAgent;
@@ -914,11 +922,23 @@ export class SipService {
     }
     const realm = userAgent.configuration.uri?.host;
     if (!realm) throw new SipCallError('configMissing');
-    try {
-      await leg.session.refer(new URI('sip', normalizeDialNumber(targetNumber), realm));
-    } catch (error) {
-      throw new SipCallError('transferFailed', undefined, error);
-    }
+    await new Promise<void>((resolve, reject) => {
+      leg.session
+        .refer(new URI('sip', normalizeDialNumber(targetNumber), realm), {
+          requestDelegate: {
+            onAccept: () => resolve(),
+            onReject: (response) =>
+              reject(new SipCallError('transferFailed', { code: response.message.statusCode ?? 0 })),
+          },
+          onNotify: (notification) => {
+            notification.accept().catch(() => {});
+          },
+        })
+        .catch((error) => reject(new SipCallError('transferFailed', undefined, error)));
+    });
+    if (this.main !== leg || leg.session.state !== SessionState.Established) return;
+    leg.reason = 'transferred';
+    leg.session.bye().catch(() => {});
   }
 
   // -------------------------------------------------------------------------

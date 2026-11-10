@@ -29,6 +29,7 @@ import {
   callLogsUpdateStatusPartialUpdate,
   callLogsInitiateConsultationCreate,
   callLogsCompleteAttendedTransferCreate,
+  callLogsTransferCallCreate,
   callLogsCancelConsultationCreate,
   callLogsMergeConferenceCreate,
 } from '@/api/generated/api';
@@ -1209,8 +1210,11 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } catch (err) {
         failWith(err, 'transferFailed');
       }
+      // The PBX accepted the REFER: settle our leg as transferred (the SIP
+      // leg ends with reason 'transferred', which writes nothing itself).
+      queueLogWrite(current!.id, (logId) => callLogsTransferCallCreate(logId, { transfer_to: targetNumber }), true);
     },
-    [failWith]
+    [failWith, queueLogWrite]
   );
 
   const startAttendedTransfer = useCallback(

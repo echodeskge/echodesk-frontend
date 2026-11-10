@@ -364,7 +364,10 @@ describe("SipService", () => {
     mockCancelFn.mockResolvedValue(undefined);
     mockAcceptFn.mockResolvedValue(undefined);
     mockRejectFn.mockResolvedValue(undefined);
-    mockReferFn.mockResolvedValue(undefined);
+    // A REFER the PBX accepts (202); tests override the delegate for rejections.
+    mockReferFn.mockImplementation(async (_target: unknown, options?: { requestDelegate?: { onAccept?: () => void } }) => {
+      options?.requestDelegate?.onAccept?.();
+    });
     mockInfoFn.mockResolvedValue(undefined);
     sessions.length = 0;
     inviters.length = 0;
@@ -1020,16 +1023,50 @@ describe("SipService", () => {
       await expect(service.transferCall("102")).rejects.toMatchObject({ key: "noActiveCall" });
     });
 
-    it("REFERs to the target on the realm", async () => {
+    it("REFERs to the target on the realm and, once accepted, hangs up as transferred", async () => {
       await establishedOutgoing(service);
+      const onEnded = vi.fn();
+      service.on("onCallEnded", onEnded);
       await service.transferCall("102");
-      expect(mockReferFn).toHaveBeenCalledWith(expect.objectContaining({ user: "102", host: "pbx.example.test" }));
+      expect(mockReferFn).toHaveBeenCalledWith(
+        expect.objectContaining({ user: "102", host: "pbx.example.test" }),
+        expect.objectContaining({ requestDelegate: expect.any(Object), onNotify: expect.any(Function) })
+      );
+      // Asterisk does not BYE the transferor after a blind transfer: we do.
+      expect(mockByeFn).toHaveBeenCalledTimes(1);
+      await flush();
+      expect(onEnded).toHaveBeenCalledTimes(1);
+      expect(onEnded).toHaveBeenCalledWith("transferred");
     });
 
-    it("wraps a failing REFER in transferFailed", async () => {
+    it("acknowledges the REFER progress NOTIFYs", async () => {
+      await establishedOutgoing(service);
+      const accept = vi.fn().mockResolvedValue(undefined);
+      mockReferFn.mockImplementationOnce(async (_t: unknown, options: { onNotify: (n: unknown) => void; requestDelegate: { onAccept: () => void } }) => {
+        options.onNotify({ accept });
+        options.requestDelegate.onAccept();
+      });
+      await service.transferCall("102");
+      expect(accept).toHaveBeenCalledTimes(1);
+    });
+
+    it("a refused REFER rejects with transferFailed and keeps the call", async () => {
+      await establishedOutgoing(service);
+      const onEnded = vi.fn();
+      service.on("onCallEnded", onEnded);
+      mockReferFn.mockImplementationOnce(async (_t: unknown, options: { requestDelegate: { onReject: (r: unknown) => void } }) => {
+        options.requestDelegate.onReject({ message: { statusCode: 603 } });
+      });
+      await expect(service.transferCall("102")).rejects.toMatchObject({ key: "transferFailed", params: { code: 603 } });
+      expect(mockByeFn).not.toHaveBeenCalled();
+      expect(onEnded).not.toHaveBeenCalled();
+    });
+
+    it("wraps a REFER that cannot be sent in transferFailed", async () => {
       await establishedOutgoing(service);
       mockReferFn.mockRejectedValueOnce(new Error("no"));
       await expect(service.transferCall("102")).rejects.toMatchObject({ key: "transferFailed" });
+      expect(mockByeFn).not.toHaveBeenCalled();
     });
   });
 

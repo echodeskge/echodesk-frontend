@@ -55,6 +55,7 @@ const mockSipToggleHold = vi.fn();
 const mockSipToggleMute = vi.fn();
 const mockSipSendDTMF = vi.fn();
 const mockSipTransferCall = vi.fn();
+const mockTransferCall = vi.fn();
 const mockSipStartConsultation = vi.fn();
 const mockSipCompleteAttendedTransfer = vi.fn();
 const mockSipCancelConsultation = vi.fn();
@@ -119,6 +120,7 @@ vi.mock("@/api/generated/api", () => ({
   callLogsUpdateStatusPartialUpdate: (...a: unknown[]) => mockUpdateStatus(...a),
   callLogsInitiateConsultationCreate: (...a: unknown[]) => mockInitiateConsultation(...a),
   callLogsCompleteAttendedTransferCreate: (...a: unknown[]) => mockCompleteTransfer(...a),
+  callLogsTransferCallCreate: (...a: unknown[]) => mockTransferCall(...a),
   callLogsCancelConsultationCreate: (...a: unknown[]) => mockCancelConsultation(...a),
   callLogsMergeConferenceCreate: (...a: unknown[]) => mockMergeConference(...a),
 }));
@@ -857,13 +859,16 @@ describe("CallContext flows", () => {
       expect(result.current.state.error).toEqual({ key: "transferFailed" });
     });
 
-    it("blind transfer succeeds silently", async () => {
+    it("blind transfer succeeds silently and settles the row as transferred", async () => {
       const { result } = await answered(await ringIn());
+      mockTransferCall.mockResolvedValue({});
       await act(async () => {
         await result.current.actions.transferCall("102");
       });
       expect(mockSipTransferCall).toHaveBeenCalledWith("102");
       expect(result.current.state.error).toBeNull();
+      await waitFor(() => expect(mockTransferCall).toHaveBeenCalledWith(42, { transfer_to: "102" }));
+      expect(mockEndCall).not.toHaveBeenCalled();
     });
 
     it("attended transfer uses the generated consultation endpoints end to end", async () => {
