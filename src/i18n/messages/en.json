@@ -1160,7 +1160,8 @@
       "trunkCredentials": "Trunk Credentials",
       "trunkCredentialsDesc": "Server-level SIP credentials for the provider connection. Users connect with their own extension credentials assigned below.",
       "trunkUsername": "SIP Username",
-      "trunkPassword": "SIP Password"
+      "trunkPassword": "SIP Password",
+      "saveAssignmentFailed": "Failed to save assignment"
     },
     "logs": {
       "title": "Call Logs",
@@ -1490,7 +1491,37 @@
     "reviewDelay": "Delay (hours)",
     "reviewDelayDesc": "Wait this many hours after the last call before sending",
     "reviewCooldown": "Cooldown (hours)",
-    "reviewCooldownDesc": "Minimum hours between review requests per caller"
+    "reviewCooldownDesc": "Minimum hours between review requests per caller",
+    "sip": {
+      "loadFailed": "Failed to load SIP configurations",
+      "loadOneFailed": "Failed to load SIP configuration",
+      "created": "SIP configuration created successfully",
+      "updated": "SIP configuration updated successfully",
+      "saveFailed": "Failed to save SIP configuration",
+      "deleteConfirm": "Are you sure you want to delete this SIP configuration?",
+      "deleted": "SIP configuration deleted successfully",
+      "deleteFailed": "Failed to delete SIP configuration",
+      "defaultUpdated": "Default SIP configuration updated",
+      "defaultFailed": "Failed to set default SIP configuration",
+      "testOk": "Connection successful",
+      "testFailed": "Connection failed",
+      "testError": "Connection test failed",
+      "defaultSuffix": "(Default)",
+      "hourRange": "{day} {from}:00 – {to}:00"
+    },
+    "fileTooLarge": "This file is larger than 10 MB. Choose a smaller one.",
+    "tabsLabel": "Calls settings sections",
+    "upgradePlan": "Upgrade plan",
+    "configsTitle": "SIP configurations",
+    "configTitle": "Configuration",
+    "scheduleTitle": "Weekly schedule",
+    "scheduleHint": "Drag across the grid to mark working hours",
+    "soundsTitle": "Call sounds",
+    "saveBar": {
+      "unsaved": "You have unsaved changes",
+      "discard": "Discard",
+      "saved": "All changes saved"
+    }
   },
   "chat": {
     "history": "History",
@@ -1635,7 +1666,15 @@
     "reviewMethod": "Method",
     "socialCount": "Social: {count}",
     "callbackCount": "Callback: {count}",
-    "smsCount": "SMS: {count}"
+    "smsCount": "SMS: {count}",
+    "platforms": {
+      "email": "Email",
+      "widget": "Widget",
+      "phone_sms": "SMS",
+      "phone_callback": "Callback"
+    },
+    "durationMinutes": "{minutes} min",
+    "durationHours": "{hours}h {minutes}m"
   },
   "settings": {
     "title": "Settings",
@@ -1657,7 +1696,20 @@
       "languageTitle": "Language",
       "languageDescription": "Choose your preferred display language",
       "languageSelect": "Display language",
-      "languageSelectDescription": "This will change the language across the entire application"
+      "languageSelectDescription": "This will change the language across the entire application",
+      "toasts": {
+        "invalidImage": "Please select an image file",
+        "tooLarge": "File size must be less than 2MB",
+        "logoUploaded": "Logo uploaded successfully",
+        "logoUploadFailed": "Failed to upload logo",
+        "logoRemoved": "Logo removed successfully",
+        "logoRemoveFailed": "Failed to remove logo",
+        "ticketSaved": "Ticket settings saved successfully",
+        "ticketSaveFailed": "Failed to save ticket settings"
+      },
+      "sections": {
+        "branding": "Branding"
+      }
     },
     "security": {
       "title": "Security Settings",
@@ -1787,7 +1839,35 @@
       "saveSuccess": "Appearance settings saved successfully",
       "saveError": "Failed to save appearance settings",
       "resetSuccess": "Appearance settings reset to defaults",
-      "resetError": "Failed to reset appearance settings"
+      "resetError": "Failed to reset appearance settings",
+      "radius": {
+        "sharp": "Sharp",
+        "subtle": "Subtle",
+        "default": "Default",
+        "rounded": "Rounded",
+        "pill": "Pill"
+      },
+      "presets": {
+        "zinc": "Zinc",
+        "slate": "Slate",
+        "blue": "Blue",
+        "green": "Green",
+        "orange": "Orange",
+        "rose": "Rose",
+        "violet": "Violet",
+        "red": "Red"
+      },
+      "previewPrimary": "Primary Button",
+      "previewSecondary": "Secondary",
+      "previewOutline": "Outline",
+      "previewDestructive": "Destructive",
+      "previewCardTitle": "Card Preview",
+      "previewCardText": "This is how cards will look with the current theme settings.",
+      "sections": {
+        "display": "Display"
+      },
+      "resetHelp": "Restores the default colours, corner radius and sidebar order for all users.",
+      "resetTitle": "Reset appearance"
     },
     "ticketFormsPage": {
       "title": "Ticket Forms",
@@ -1825,7 +1905,41 @@
         "save": "Failed to save ticket form",
         "delete": "Failed to delete ticket form",
         "setDefault": "Failed to set default form"
-      }
+      },
+      "childOf": "Child of: {title}",
+      "childCount": "{count, plural, one {Has # child form} other {Has # child forms}}",
+      "parentFormLabel": "Parent form (optional)",
+      "parentFormPlaceholder": "Select parent form (optional)",
+      "parentFormNone": "No parent (root form)",
+      "parentFormHint": "If set, this form will be a child form that assigned users need to fill after the parent form is completed.",
+      "customFields": {
+        "title": "Custom fields",
+        "add": "Add Field",
+        "empty": "No custom fields defined. Click \"Add Field\" to create one.",
+        "name": "Field name (ID)",
+        "namePlaceholder": "e.g., delivery_address",
+        "label": "Label",
+        "labelPlaceholder": "e.g., Delivery Address",
+        "type": "Type",
+        "required": "Required",
+        "types": {
+          "string": "Text (single line)",
+          "text": "Text (multi line)",
+          "number": "Number",
+          "date": "Date",
+          "signature": "Signature (image upload)"
+        }
+      },
+      "pageDescription": "Forms that agents and customers fill in on tickets, with attached item lists and custom fields.",
+      "columns": {
+        "form": "Form",
+        "status": "Status",
+        "lists": "Item lists",
+        "submissions": "Submissions",
+        "created": "Created"
+      },
+      "count": "{count, plural, one {# form} other {# forms}}",
+      "clickToEdit": "click a row to edit"
     },
     "itemListsPage": {
       "title": "Item Lists",
@@ -1919,8 +2033,25 @@
         "itemDeleted": "Item deleted successfully",
         "failedToSaveItem": "Failed to save item",
         "failedToDeleteItem": "Failed to delete item",
-        "fieldRequired": "{field} is required"
-      }
+        "fieldRequired": "{field} is required",
+        "inactive": "Inactive",
+        "failedToLoad": "Failed to load the item list",
+        "back": "Item lists",
+        "count": "{count, plural, one {# item} other {# items}}",
+        "clickToEdit": "click a row to edit"
+      },
+      "public": "Public",
+      "publicLabel": "Public (visible to ecommerce clients)",
+      "pageDescription": "Reusable lists (categories, branches, clients…) for ticket forms, invoices and the store.",
+      "columns": {
+        "list": "List",
+        "status": "Status",
+        "items": "Items",
+        "fields": "Custom fields",
+        "created": "Created"
+      },
+      "count": "{count, plural, one {# list} other {# lists}}",
+      "clickToOpen": "click a row to manage its items"
     },
     "subscription": {
       "title": "Subscription & Billing",
@@ -1996,6 +2127,60 @@
         "footer": "{count, plural, one {# reply} other {# replies}} · click a row to edit",
         "deleteTitle": "Delete this saved reply?",
         "deleteBody": "\"{title}\" will no longer be offered in the composers."
+      }
+    },
+    "navGroups": {
+      "workspace": "Workspace",
+      "channels": "Channels",
+      "calls": "Calls",
+      "business": "Business modules",
+      "team": "Team",
+      "account": "Account"
+    },
+    "navDesc": {
+      "general": "Logo, language and ticket defaults",
+      "appearance": "Theme, colours and sidebar order",
+      "notifications": "Alerts, sounds and delivery channels",
+      "social": "Inbox behaviour, assignment and ratings",
+      "socialConnections": "Facebook, Instagram, WhatsApp, email and more",
+      "autoPosting": "Scheduled posts to your social pages",
+      "templates": "WhatsApp templates and saved replies",
+      "ratingStatistics": "Customer ratings per agent",
+      "calls": "SIP accounts, working hours and sounds",
+      "pbx": "Phone system: trunks, queues and routes",
+      "ecommerce": "Store, payments and delivery",
+      "invoices": "Company details, branding and defaults",
+      "bookings": "Booking page, payments and rules",
+      "leave": "Approvals, balances and HR tools",
+      "itemLists": "Reusable lists for forms and the store",
+      "ticketForms": "Forms customers and agents fill in",
+      "users": "Team members, roles and access",
+      "groups": "Groups, permissions and features",
+      "subscription": "Plan, usage and billing",
+      "security": "Sign-in history and IP allow list"
+    },
+    "shell": {
+      "searchPlaceholder": "Search settings…",
+      "clearSearch": "Clear search",
+      "back": "Back to settings",
+      "noResults": "No settings match \"{query}\"",
+      "homeTitle": "Workspace settings",
+      "homeDescription": "Configure {name} for your team.",
+      "homeDescriptionNoName": "Configure your workspace for your team."
+    },
+    "ui": {
+      "errorTitle": "Couldn't load these settings",
+      "errorHint": "Check your connection and try again.",
+      "noAccessTitle": "No access",
+      "noAccessHint": "You don't have permission to view these settings. Ask an administrator.",
+      "retry": "Try again",
+      "loading": "Loading…",
+      "saveBar": {
+        "unsaved": "You have unsaved changes",
+        "discard": "Discard",
+        "save": "Save changes",
+        "saving": "Saving…",
+        "saved": "All changes saved"
       }
     }
   },
@@ -2159,7 +2344,28 @@
         "isActive": "User is active",
         "saving": "Saving...",
         "create": "Create User",
-        "update": "Update User"
+        "update": "Update User",
+        "emailChangeHint": "Changing the email generates a new password and emails it to the new address.",
+        "firstNamePlaceholder": "John",
+        "lastNamePlaceholder": "Doe"
+      },
+      "groupPicker": {
+        "remove": "Remove group",
+        "unknown": "Unknown group",
+        "selected": "{count} groups selected",
+        "search": "Search groups...",
+        "noMatch": "No groups found",
+        "none": "No groups available"
+      },
+      "agents": {
+        "statTotal": "Users",
+        "statActive": "Active",
+        "statInactive": "Inactive",
+        "onThisPage": "on this page",
+        "countLine": "{count, plural, one {# user} other {# users}} · click a row to view details",
+        "moreFilters": "More filters",
+        "removeFilter": "Remove filter",
+        "close": "Close"
       }
     }
   },
@@ -2577,6 +2783,36 @@
       "failedToDeleteGroup": "Failed to delete group",
       "failedToAddUsers": "Failed to add users to group",
       "failedToRemoveUsers": "Failed to remove users from group"
+    },
+    "ui": {
+      "subtitle": "Manage groups and their features",
+      "createDescription": "Create a new group and attach features",
+      "editDescription": "Edit the group \"{name}\" and manage its features",
+      "namePlaceholder": "Enter the group name",
+      "descriptionPlaceholder": "Enter the group description",
+      "features": "Features",
+      "featuresHint": "Choose the features from your subscription that members of this group can use",
+      "loadingFeatures": "Loading features...",
+      "noFeatures": "No features available in your subscription",
+      "featureCount": "{count, plural, one {# feature} other {# features}}",
+      "moreFeatures": "+{count} more",
+      "errors": {
+        "load": "Failed to load groups",
+        "loadFeatures": "Failed to load available features",
+        "save": "Failed to save group",
+        "delete": "Failed to delete group"
+      },
+      "columns": {
+        "group": "Group",
+        "members": "Members",
+        "features": "Features",
+        "created": "Created"
+      },
+      "membersCount": "{count, plural, one {# member} other {# members}}",
+      "bookingStaff": "Booking staff",
+      "inactive": "Inactive",
+      "countLine": "{count, plural, one {# group} other {# groups}} · click a row to edit",
+      "clearSearch": "Clear search"
     }
   },
   "social": {
@@ -2690,7 +2926,8 @@
         "widget": "Website widget",
         "teamChat": "Team Chat",
         "system": "System",
-        "telegram": "Telegram"
+        "telegram": "Telegram",
+        "play": "Play the {channel} sound"
       },
       "tabs": {
         "notifications": "Notifications",
@@ -2738,7 +2975,8 @@
         "invalidValueDescription": "Please enter 0 or a positive number",
         "settingsUpdated": "Settings updated",
         "syncDaysSet": "Sync days set to {meaning}",
-        "updateFailed": "Update failed"
+        "updateFailed": "Update failed",
+        "refresh": "Refresh"
       },
       "autoReply": {
         "title": "Auto-Reply Settings",
@@ -2766,7 +3004,9 @@
           "friday": "Fri",
           "saturday": "Sat",
           "sunday": "Sun"
-        }
+        },
+        "welcomePlaceholder": "Hello '{{customer_name}}'! Welcome to our {platform} support. How can we help you today?",
+        "awayPlaceholder": "Hi '{{customer_name}}'! Thanks for reaching out. We're currently away but will respond as soon as we're back. Our business hours are Monday-Friday, 9 AM - 6 PM."
       },
       "clearHistory": {
         "title": "Clear Message History",
@@ -2820,7 +3060,14 @@
         },
         "save": "Save AI settings",
         "saved": "AI companion settings saved",
-        "saveError": "Failed to save AI companion settings"
+        "saveError": "Failed to save AI companion settings",
+        "showKey": "Show the key",
+        "hideKey": "Hide the key"
+      },
+      "saveBar": {
+        "unsaved": "You have unsaved changes",
+        "discard": "Discard",
+        "saved": "All changes saved"
       }
     },
     "tiktok": {
@@ -2965,7 +3212,15 @@
         "positionHint": "Where the floating button appears on your website.",
         "bottomRight": "Bottom right",
         "bottomLeft": "Bottom left",
-        "saving": "Saving..."
+        "saving": "Saving...",
+        "swatches": {
+          "default": "Default navy",
+          "blue": "Blue",
+          "green": "Green",
+          "red": "Red",
+          "purple": "Purple",
+          "orange": "Orange"
+        }
       },
       "messages": {
         "title": "Messages",
@@ -3184,6 +3439,93 @@
       "wsSenderNameHint": "Name shown as the sender (e.g. \"John Doe\" or \"Support Team\")",
       "wsPreviewPlaceholder": "Your message will appear here...",
       "wsSave": "Save workspace signature"
+    },
+    "emailConnection": {
+      "title": "Email (IMAP/SMTP)",
+      "accountsConnected": "{count, plural, one {# account connected} other {# accounts connected}}",
+      "noAccounts": "No accounts connected",
+      "badgeConnected": "{count} connected",
+      "badgeNotConnected": "Not connected",
+      "addAccount": "Add email account",
+      "syncAll": "Sync all",
+      "syncingAll": "Syncing all…",
+      "refresh": "Refresh",
+      "connectedAccounts": "Connected accounts",
+      "gmailNote": "<strong>Note:</strong> Gmail accounts need an <link>app password</link> instead of the regular password (requires two-factor authentication).",
+      "statusAutoDisabled": "Auto-disabled",
+      "statusActive": "Active",
+      "statusInactive": "Inactive",
+      "imap": "IMAP",
+      "smtp": "SMTP",
+      "folder": "Folder",
+      "synced": "Synced",
+      "never": "Never",
+      "autoDisabledTitle": "Sync stopped automatically.",
+      "autoDisabledFallback": "A non-transient error occurred.",
+      "autoDisabledHint": "Update the credentials below if needed and click Reactivate. Sync stays off until the connection passes a live IMAP test.",
+      "reactivatePasswordPlaceholder": "New password (optional; leave blank to retry with the stored one)",
+      "testing": "Testing…",
+      "reactivate": "Reactivate",
+      "edit": "Edit",
+      "sync": "Sync",
+      "syncing": "Syncing…",
+      "reactivateBeforeSync": "Reactivate the connection before syncing",
+      "signature": "Signature",
+      "access": "Access",
+      "remove": "Remove",
+      "removing": "Removing…",
+      "reactivated": "Connection reactivated. Sync resumes on the next cycle.",
+      "reactivateFailed": "Reactivation failed. Check the credentials and try again.",
+      "requiredFields": "Please fill in all required fields",
+      "connected": "Email connected",
+      "connectFailed": "Could not connect the email account",
+      "confirmRemove": "Remove {email}? All synced messages from this account will be deleted.",
+      "removed": "Removed {email}",
+      "removeFailed": "Could not remove the email account",
+      "syncedCount": "{count, plural, one {Synced # new message} other {Synced # new messages}}",
+      "syncFailed": "Could not sync the email account",
+      "syncedAllCount": "{count, plural, one {Synced # new message from all accounts} other {Synced # new messages from all accounts}}",
+      "syncAllFailed": "Could not sync the email accounts",
+      "serversRequired": "IMAP and SMTP servers are required",
+      "updated": "Connection updated",
+      "updateFailed": "Could not update the connection",
+      "addTitle": "Add email account",
+      "addDescription": "Enter the mailbox credentials to connect over IMAP/SMTP.",
+      "emailAddress": "Email address *",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "Your name",
+      "passwordRequired": "Password / app password *",
+      "password": "Password / app password",
+      "passwordPlaceholder": "Enter password",
+      "passwordKeepPlaceholder": "Leave blank to keep the current one",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "imapServer": "IMAP server *",
+      "imapPort": "IMAP port",
+      "smtpServer": "SMTP server *",
+      "smtpPort": "SMTP port",
+      "advanced": "Advanced settings",
+      "username": "Username (if different from the email)",
+      "usernamePlaceholder": "Username",
+      "imapSsl": "IMAP SSL",
+      "smtpTls": "SMTP TLS/STARTTLS",
+      "smtpSsl": "SMTP SSL (alternative to TLS)",
+      "syncFolder": "Sync folder",
+      "syncDaysBack": "Sync days back",
+      "cancel": "Cancel",
+      "connect": "Connect",
+      "connecting": "Connecting…",
+      "editTitle": "Edit email connection",
+      "editDescription": "Update the settings of {email}",
+      "saveChanges": "Save changes",
+      "saving": "Saving…",
+      "addHint": "IMAP uses SSL and SMTP uses STARTTLS by default. Sync starts from the last 30 days of the folder (Advanced settings change this)."
+    },
+    "connections": {
+      "channelsLabel": "Channels",
+      "email": "Email",
+      "widget": "Website widget",
+      "dismiss": "Dismiss"
     }
   },
   "timeTracking": {
@@ -4518,7 +4860,40 @@
     "paddle": "International Payment",
     "paddleDescription": "Pay with an international card in USD/EUR. Recurring billing managed by Paddle.",
     "managedByPaddle": "Your billing is managed by Paddle. Payment methods and invoices are handled automatically.",
-    "paddleBillingInfo": "Paddle manages your recurring payments automatically. You will receive payment receipts via email from Paddle. To update your payment method or cancel, contact support."
+    "paddleBillingInfo": "Paddle manages your recurring payments automatically. You will receive payment receipts via email from Paddle. To update your payment method or cancel, contact support.",
+    "featureManagement": {
+      "title": "Feature Management",
+      "loading": "Loading available features...",
+      "loadFailed": "Unable to load features",
+      "agents": "{count, plural, one {# Agent} other {# Agents}}",
+      "description": "Add or remove features from your subscription. Prices shown are monthly costs for your current agent count.",
+      "active": "Active",
+      "pricePerAgent": "{price} GEL / agent / month",
+      "total": "Total: {price} GEL / month",
+      "add": "Add",
+      "remove": "Remove",
+      "dialog": {
+        "addTitle": "Add Feature",
+        "removeTitle": "Remove Feature",
+        "addIntro": "You are about to add <b>{name}</b> to your subscription.",
+        "costBreakdown": "Cost Breakdown:",
+        "monthlyCost": "Monthly cost: {price} GEL",
+        "proratedNow": "Prorated cost will be charged immediately based on remaining days in your billing cycle",
+        "cardCharged": "Your saved card will be charged for the prorated amount",
+        "removeIntro": "You are about to remove <b>{name}</b> from your subscription.",
+        "note": "Note:",
+        "costReduced": "Your monthly cost will be reduced by {price} GEL",
+        "nextCycle": "The reduction will take effect on your next billing cycle",
+        "loseAccess": "You will lose access to this feature immediately"
+      },
+      "toasts": {
+        "redirecting": "Redirecting to payment...",
+        "charged": "Charged {amount} GEL for prorated cost",
+        "reduced": "Monthly cost reduced by {amount} GEL",
+        "addFailed": "Failed to add feature",
+        "removeFailed": "Failed to remove feature"
+      }
+    }
   },
   "invoices": {
     "title": "Invoices",
@@ -4752,6 +5127,11 @@
         "dueDaysPositive": "Due days must be positive",
         "bankNameRequired": "Bank name is required",
         "accountNumberRequired": "Account number is required"
+      },
+      "saveBar": {
+        "unsaved": "You have unsaved changes",
+        "discard": "Discard",
+        "saved": "All changes saved"
       }
     },
     "deleteDialog": {
@@ -4932,7 +5312,9 @@
       "clientSecretHelp": "Leave empty to keep existing secret",
       "productionMode": "Production Mode",
       "productionModeDesc": "Use production BOG API (uncheck for test environment)",
-      "savedPlaceholder": "Saved — type to replace"
+      "savedPlaceholder": "Saved — type to replace",
+      "showSecret": "Show secret",
+      "hideSecret": "Hide secret"
     },
     "bookingRules": {
       "title": "Booking Rules",
@@ -5051,6 +5433,13 @@
         "sent": "Test SMS sent",
         "failed": "The test SMS was not sent"
       }
+    },
+    "loading": "Loading booking settings…",
+    "saveBar": {
+      "unsaved": "You have unsaved changes",
+      "discard": "Discard",
+      "saving": "Saving…",
+      "saved": "All changes saved"
     }
   },
   "bookingsDashboard": {
@@ -5467,7 +5856,15 @@
     "fbMissing": "Facebook Page \"{name}\" needs publishing permission",
     "igMissing": "Instagram @{name} needs publishing permission",
     "enablePublishing": "Enable Publishing",
-    "oauthError": "Failed to start publishing authorization"
+    "oauthError": "Failed to start publishing authorization",
+    "languages": {
+      "en": "English",
+      "ka": "Georgian"
+    },
+    "saveBar": {
+      "unsaved": "You have unsaved changes",
+      "discard": "Discard"
+    }
   },
   "notificationList": {
     "bugReport": {
@@ -5535,6 +5932,43 @@
       "testPush": "Send Test Push Notification",
       "testPushSent": "Test notification sent. It should appear in a few seconds.",
       "testPushFailed": "Could not send the test notification. Turn push notifications off and on again, then retry."
+    },
+    "types": {
+      "tickets": {
+        "assigned": "Assigned",
+        "commented": "Commented",
+        "mentioned": "Mentioned",
+        "status_changed": "Status Changed"
+      },
+      "messages": {
+        "new_message": "New Message",
+        "message_assigned": "Message Assigned",
+        "team_chat": "Team Chat",
+        "social_admin": "Auto-posts & Templates"
+      },
+      "invoices": {
+        "created": "Created",
+        "paid": "Paid",
+        "overdue": "Overdue"
+      },
+      "leave": {
+        "submitted": "Submitted",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "progress": "Partially Approved",
+        "awaiting_approval": "Awaiting My Approval",
+        "cancelled": "Cancelled"
+      },
+      "bookings": {
+        "confirmed": "Confirmed",
+        "cancelled": "Cancelled",
+        "reminder": "Reminder",
+        "assigned": "Assigned to Me"
+      },
+      "calls": {
+        "missed": "Missed",
+        "voicemail": "Voicemail"
+      }
     }
   },
   "leave": {
@@ -6840,7 +7274,8 @@
       "upgradeTitle": "Upgrade required",
       "upgradeDescription": "PBX management is included in the IP calling add-on. Upgrade your plan to unlock this feature.",
       "noAccessTitle": "No access",
-      "noAccessDescription": "Only PBX administrators can open this page."
+      "noAccessDescription": "Only PBX administrators can open this page.",
+      "tabsLabel": "PBX sections"
     },
     "tabs": {
       "overview": "Overview",
@@ -6957,6 +7392,14 @@
         "random": "Random",
         "linear": "Linear",
         "wrandom": "Weighted random"
+      },
+      "ext": "ext {extension}",
+      "paused": "paused",
+      "emptyModes": {
+        "yes": "Yes",
+        "no": "No",
+        "strict": "Strict",
+        "loose": "Loose"
       }
     },
     "inbound": {
@@ -6996,9 +7439,11 @@
         "errors": {
           "queueRequired": "Select a destination queue.",
           "extensionRequired": "Select a destination extension.",
-          "ivrContextRequired": "Enter the custom IVR context name."
+          "ivrContextRequired": "Enter the custom IVR context name.",
+          "didRequired": "Enter the DID or pattern."
         }
-      }
+      },
+      "extOption": "ext {extension} — {name}"
     },
     "statistics": {
       "title": "Call Statistics",
@@ -7020,7 +7465,9 @@
         "backToList": "Back to all agents",
         "dailyCalls": "Calls per day",
         "dailyTalk": "Talk time per day",
-        "day": "Day"
+        "day": "Day",
+        "title": "Agent call activity",
+        "agentFallback": "Agent"
       }
     },
     "form": {
@@ -7072,7 +7519,33 @@
       "lastSeenNever": "Never",
       "asteriskVersion": "Asterisk version",
       "advancedTitle": "Advanced",
-      "installBlocked": "Install endpoint is not available until the form is saved."
+      "installBlocked": "Install endpoint is not available until the form is saved.",
+      "detailsTitle": "Server",
+      "installTitle": "Install",
+      "deleteLabel": "Delete PBX server"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "ui": {
+      "errorTitle": "Could not load this",
+      "errorHint": "Check your connection and try again.",
+      "noAccessTitle": "No access",
+      "noAccessHint": "You do not have permission to view this.",
+      "retry": "Try again",
+      "loading": "Loading…"
+    },
+    "list": {
+      "trunks": "{count, plural, one {# trunk} other {# trunks}} · click a row to edit",
+      "queues": "{count, plural, one {# queue} other {# queues}} · click a row to edit",
+      "routes": "{count, plural, one {# route} other {# routes}} · click a row to edit",
+      "actions": "Actions",
+      "removeNumber": "Remove {number}"
+    },
+    "secret": {
+      "show": "Show password",
+      "hide": "Hide password"
     }
   },
   "staleReminder": {

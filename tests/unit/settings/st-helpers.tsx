@@ -2,6 +2,9 @@
  * Shared helpers for the settings redesign tests (ST-00..05).
  * `messages`: the en/ka catalogs plus any src/i18n/pending/st-*.json still
  * waiting to be merged by the integration.
+ * `pending[pkg]`: a package's keys. Before integration it is the pending file;
+ * after it, the same keys (fixtures/st-pending-keys.json) read back from the
+ * merged catalogs, so the package i18n tests keep checking the real catalogs.
  */
 import React from "react"
 import fs from "node:fs"
@@ -11,6 +14,7 @@ import { NextIntlClientProvider } from "next-intl"
 import en from "@/i18n/messages/en.json"
 import ka from "@/i18n/messages/ka.json"
 import { HeaderActionsProvider, useHeaderSlot } from "@/contexts/HeaderActionsContext"
+import pendingKeys from "./fixtures/st-pending-keys.json"
 
 type Json = Record<string, unknown>
 
@@ -30,13 +34,35 @@ const PENDING_DIR = path.resolve(__dirname, "../../../src/i18n/pending")
 export const pendingFiles = fs.existsSync(PENDING_DIR)
   ? fs.readdirSync(PENDING_DIR).filter((f) => /^st-.*\.json$/.test(f)).sort()
   : []
-export const pending = Object.fromEntries(
+const fromFiles = Object.fromEntries(
   pendingFiles.map((f) => [f.replace(/\.json$/, ""), JSON.parse(fs.readFileSync(path.join(PENDING_DIR, f), "utf8")) as { en: Json; ka: Json }])
 )
 
+/** Rebuild a nested catalog part holding only `keys`, read from `cat` (missing keys stay missing). */
+function pick(cat: Json, keys: string[]): Json {
+  const out: Json = {}
+  for (const key of keys) {
+    const value = key.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Json)[k] : undefined), cat)
+    if (value === undefined) continue
+    const parts = key.split(".")
+    let node = out
+    for (const part of parts.slice(0, -1)) node = (node[part] ??= {}) as Json
+    node[parts[parts.length - 1]] = value
+  }
+  return out
+}
+
+const fromCatalogs = Object.fromEntries(
+  Object.entries(pendingKeys as Record<string, { en: string[]; ka: string[] }>)
+    .filter(([pkg]) => !(pkg in fromFiles))
+    .map(([pkg, k]) => [pkg, { en: pick(en as Json, k.en), ka: pick(ka as Json, k.ka) }])
+)
+
+export const pending: Record<string, { en: Json; ka: Json }> = { ...fromCatalogs, ...fromFiles }
+
 export const messages = {
-  en: Object.values(pending).reduce((acc, p) => deepMerge(acc, p.en ?? {}), en as Json),
-  ka: Object.values(pending).reduce((acc, p) => deepMerge(acc, p.ka ?? {}), ka as Json),
+  en: Object.values(fromFiles).reduce((acc, p) => deepMerge(acc, p.en ?? {}), en as Json),
+  ka: Object.values(fromFiles).reduce((acc, p) => deepMerge(acc, p.ka ?? {}), ka as Json),
 }
 
 /** `a.b.c` lookup in a catalog (undefined when missing). */

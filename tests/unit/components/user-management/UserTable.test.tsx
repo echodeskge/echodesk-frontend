@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render as rtlRender, screen, within } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { NextIntlClientProvider } from "next-intl";
-// en catalog plus the settings redesign keys still pending integration (pending/st-*.json).
+// en catalog (plus any settings redesign keys still in pending/st-*.json).
 import { messages } from "../../settings/st-helpers";
 const en = messages.en;
 

@@ -11,7 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { NextIntlClientProvider } from "next-intl";
 import UserForm from "@/components/user-management/UserForm";
-// en catalog plus the settings redesign keys still pending integration (pending/st-*.json).
+// en catalog (plus any settings redesign keys still in pending/st-*.json).
 import { messages } from "../../settings/st-helpers";
 const enMessages = messages.en;
 import type { User } from "@/api/generated/interfaces";
