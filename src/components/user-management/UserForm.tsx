@@ -334,7 +334,7 @@ export default function UserForm({
                   <SelectTrigger>
                     <SelectValue placeholder={t("ui.form.selectStatus")} />
                   </SelectTrigger>
-                  <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+                  <SelectContent>
                     {statusOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
@@ -355,7 +355,7 @@ export default function UserForm({
                   <SelectTrigger id="preferred_language">
                     <SelectValue placeholder={t("ui.form.selectLanguage")} />
                   </SelectTrigger>
-                  <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+                  <SelectContent>
                     <SelectItem value={TENANT_LANGUAGE}>{t("ui.form.tenantDefault")}</SelectItem>
                     <SelectItem value="en">English</SelectItem>
                     <SelectItem value="ka">ქართული</SelectItem>

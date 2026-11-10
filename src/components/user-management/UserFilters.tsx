@@ -106,7 +106,7 @@ export default function UserFilters({
               <SelectTrigger className="w-[170px]">
                 <SelectValue placeholder={t("ui.filters.allRoles")} />
               </SelectTrigger>
-              <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+              <SelectContent>
                 {roleOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
@@ -125,7 +125,7 @@ export default function UserFilters({
               <SelectTrigger className="w-[170px]">
                 <SelectValue placeholder={t("ui.filters.allStatus")} />
               </SelectTrigger>
-              <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+              <SelectContent>
                 {statusOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
@@ -201,7 +201,7 @@ export default function UserFilters({
                   <SelectTrigger id="isActive">
                     <SelectValue placeholder={t("ui.filters.allAccounts")} />
                   </SelectTrigger>
-                  <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+                  <SelectContent>
                     <SelectItem value="all">{t("ui.filters.allAccounts")}</SelectItem>
                     <SelectItem value="true">{t("ui.filters.activeAccounts")}</SelectItem>
                     <SelectItem value="false">{t("ui.filters.inactiveAccounts")}</SelectItem>
@@ -224,7 +224,7 @@ export default function UserFilters({
                   <SelectTrigger id="isStaff">
                     <SelectValue placeholder={t("ui.filters.allUsers")} />
                   </SelectTrigger>
-                  <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+                  <SelectContent>
                     <SelectItem value="all">{t("ui.filters.allUsers")}</SelectItem>
                     <SelectItem value="true">{t("ui.filters.staffMembers")}</SelectItem>
                     <SelectItem value="false">{t("ui.filters.regularUsers")}</SelectItem>

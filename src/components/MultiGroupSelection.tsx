@@ -122,7 +122,7 @@ export default function MultiGroupSelection({
               return (
                 <div
                   key={groupId}
-                  className="flex items-center bg-white border-2 border-gray-200 rounded-full px-3 py-1.5 text-sm gap-2"
+                  className="flex items-center gap-1.5 rounded-full border bg-background px-2.5 py-1 text-xs"
                 >
                   <span className="font-medium">
                     {group.name}
@@ -134,7 +134,7 @@ export default function MultiGroupSelection({
                     disabled={disabled}
                     variant="ghost"
                     size="icon-sm"
-                    className="h-4 w-4 p-0 text-red-500 hover:text-red-700"
+                    className="h-4 w-4 p-0 text-muted-foreground hover:text-destructive"
                     title={labels.remove}
                     aria-label={labels.remove}
                   >
@@ -153,7 +153,7 @@ export default function MultiGroupSelection({
           <Button
             variant="outline"
             disabled={disabled}
-            className="w-full justify-between bg-white border-2 border-gray-200 hover:border-gray-300"
+            className="h-[34px] w-full justify-between bg-background px-2.5 text-[13px] font-normal"
           >
             <span className={isPlaceholderShown() ? "text-muted-foreground" : ""}>
               {getSelectedGroupsDisplay()}
@@ -163,17 +163,17 @@ export default function MultiGroupSelection({
         </DropdownMenuTrigger>
 
         {/* Dropdown Menu */}
-        <DropdownMenuContent className="w-full bg-white border-2 border-gray-200 shadow-lg p-0" align="start" style={{ backgroundColor: 'white' }}>
+        <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] p-0" align="start">
           {/* Search Input */}
-          <div className="p-3 border-b border-gray-200">
+          <div className="border-b p-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder={labels.search}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 bg-white border-gray-200"
+                className="h-8 pl-8 text-[13px]"
               />
             </div>
           </div>
@@ -191,8 +191,8 @@ export default function MultiGroupSelection({
                   <div
                     key={group.id}
                     onClick={() => handleGroupToggle(group.id)}
-                    className={`p-3 cursor-pointer border-b border-gray-100 flex items-center justify-between transition-colors hover:bg-gray-100 ${
-                      selected ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50'
+                    className={`flex cursor-pointer items-center justify-between border-b px-3 py-2 transition-colors last:border-b-0 hover:bg-muted/60 ${
+                      selected ? 'bg-primary/5' : ''
                     }`}
                   >
                     <div className="flex items-center gap-2 flex-1">
@@ -201,7 +201,7 @@ export default function MultiGroupSelection({
                         onCheckedChange={() => {}} // Handled by parent div click
                       />
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium">
+                        <span className="text-[13px] font-medium">
                           {group.name}
                         </span>
                         {group.description && (
