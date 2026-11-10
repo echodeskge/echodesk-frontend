@@ -1,0 +1,34 @@
+{
+  "en": {
+    "settings": {
+      "general": {
+        "toasts": {
+          "invalidImage": "Please select an image file",
+          "tooLarge": "File size must be less than 2MB",
+          "logoUploaded": "Logo uploaded successfully",
+          "logoUploadFailed": "Failed to upload logo",
+          "logoRemoved": "Logo removed successfully",
+          "logoRemoveFailed": "Failed to remove logo",
+          "ticketSaved": "Ticket settings saved successfully",
+          "ticketSaveFailed": "Failed to save ticket settings"
+        }
+      }
+    }
+  },
+  "ka": {
+    "settings": {
+      "general": {
+        "toasts": {
+          "invalidImage": "აირჩიეთ სურათის ფაილი",
+          "tooLarge": "ფაილის ზომა 2 მბ-ზე ნაკლები უნდა იყოს",
+          "logoUploaded": "ლოგო აიტვირთა",
+          "logoUploadFailed": "ლოგოს ატვირთვა ვერ მოხერხდა",
+          "logoRemoved": "ლოგო წაიშალა",
+          "logoRemoveFailed": "ლოგოს წაშლა ვერ მოხერხდა",
+          "ticketSaved": "ტიკეტების პარამეტრები შენახულია",
+          "ticketSaveFailed": "ტიკეტების პარამეტრების შენახვა ვერ მოხერხდა"
+        }
+      }
+    }
+  }
+}

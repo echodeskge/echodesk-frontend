@@ -62,13 +62,13 @@ export default function GeneralSettingsPage() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+      toast.error(t('toasts.invalidImage'));
       return;
     }
 
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('File size must be less than 2MB');
+      toast.error(t('toasts.tooLarge'));
       return;
     }
 
@@ -77,7 +77,7 @@ export default function GeneralSettingsPage() {
       formData.append('logo', file);
       const response = await uploadLogo.mutateAsync(formData);
       setLogoPreview(response.logo_url);
-      toast.success('Logo uploaded successfully');
+      toast.success(t('toasts.logoUploaded'));
 
       // Reload the page after a short delay to refresh tenant info (including logo in sidebar)
       setTimeout(() => {
@@ -85,7 +85,7 @@ export default function GeneralSettingsPage() {
       }, 1500);
     } catch (err: any) {
       console.error('Failed to upload logo:', err);
-      toast.error(err.response?.data?.error || 'Failed to upload logo');
+      toast.error(err.response?.data?.error || t('toasts.logoUploadFailed'));
     }
   };
 
@@ -93,7 +93,7 @@ export default function GeneralSettingsPage() {
     try {
       await removeLogo.mutateAsync();
       setLogoPreview(null);
-      toast.success('Logo removed successfully');
+      toast.success(t('toasts.logoRemoved'));
 
       // Reload the page after a short delay to refresh tenant info (including logo in sidebar)
       setTimeout(() => {
@@ -101,7 +101,7 @@ export default function GeneralSettingsPage() {
       }, 1500);
     } catch (err: any) {
       console.error('Failed to remove logo:', err);
-      toast.error(err.response?.data?.error || 'Failed to remove logo');
+      toast.error(err.response?.data?.error || t('toasts.logoRemoveFailed'));
     }
   };
 
@@ -111,13 +111,13 @@ export default function GeneralSettingsPage() {
         min_users_per_ticket: formSettings.min_users_per_ticket || 0,
         only_superadmin_can_delete_tickets: formSettings.only_superadmin_can_delete_tickets || false,
       });
-      toast.success('Ticket settings saved successfully');
+      toast.success(t('toasts.ticketSaved'));
     } catch (err: any) {
       console.error('Failed to save ticket settings:', err);
       const errorMessage = err.response?.data?.error ||
                            err.response?.data?.detail ||
                            err.response?.data?.message ||
-                           'Failed to save ticket settings';
+                           t('toasts.ticketSaveFailed');
       toast.error(errorMessage);
     }
   };
@@ -170,7 +170,7 @@ export default function GeneralSettingsPage() {
                     <div className="w-32 h-32 border-2 border-dashed rounded-lg overflow-hidden bg-muted flex items-center justify-center">
                       <img
                         src={logoPreview}
-                        alt="Company Logo"
+                        alt={t('logoLabel')}
                         className="max-w-full max-h-full object-contain"
                       />
                     </div>
