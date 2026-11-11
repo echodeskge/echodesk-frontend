@@ -80,6 +80,7 @@ export default async function Home() {
   // Resolve the FAQ translator eagerly so FAQPageSchema can render
   // synchronously — preserves head-positioning of <title>/<meta>.
   const tFaq = tenantSubdomain ? null : await getTranslations('landing.faq');
+  const tPricing = tenantSubdomain ? null : await getTranslations('landing.pricing');
   // Resolve locale for testimonials from the NEXT_LOCALE cookie (set by
   // the language switcher in the header). Falls back to Georgian.
   const cookieStore = await cookies();
@@ -90,7 +91,7 @@ export default async function Home() {
     <NextIntlClientProvider messages={pickRouteMessages(messages as Record<string, unknown>, ['auth', 'landing', 'testimonials'])}>
       {!tenantSubdomain && tFaq && (
         <>
-          <SoftwareApplicationSchema features={initialFeatures} />
+          <SoftwareApplicationSchema features={initialFeatures} t={tPricing ?? undefined} />
           <FAQPageSchema t={tFaq} />
         </>
       )}

@@ -1,26 +1,40 @@
 import { JsonLd } from './JsonLd';
 import type { Feature } from '@/types/package';
+import { EVERYTHING_SLUG, PACKS } from '@/data/packs';
+import { MIN_EMPLOYEES, packModuleKeys, packPerEmployee } from '@/lib/pricing';
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   `https://${process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge'}`;
 
-/**
- * Homepage SoftwareApplication schema. The Offer block uses real GEL
- * prices computed from the feature catalogue so the range Google sees in
- * rich snippets matches the pricing table below.
- */
-export function SoftwareApplicationSchema({ features }: { features: Feature[] }) {
-  const perUserPrices = features
-    .map((f) => parseFloat(f.price_per_user_gel || '0'))
-    .filter((n) => Number.isFinite(n) && n > 0);
+type Translator = (key: string) => string;
 
-  const lowPrice = perUserPrices.length > 0 ? Math.min(...perUserPrices) : 8;
-  // A realistic "growth team" upper bound: all paid features × 5 agents.
-  const highPrice =
-    perUserPrices.length > 0
-      ? perUserPrices.reduce((sum, p) => sum + p, 0) * 5
-      : 200;
+/**
+ * Homepage SoftwareApplication schema. One `Offer` per pack, priced from
+ * the live feature catalogue (per-employee price × the 5-employee floor),
+ * so the numbers Google sees match the pack cards below.
+ */
+export function SoftwareApplicationSchema({ features, t }: { features: Feature[]; t?: Translator }) {
+  const slugs = [...PACKS.map((p) => p.slug), EVERYTHING_SLUG];
+  const offers = slugs
+    .filter((slug) => packModuleKeys(slug, features).length > 0)
+    .map((slug) => {
+      const perEmployee = packPerEmployee(slug, features);
+      return {
+        '@type': 'Offer',
+        name: t ? t(`packs.${slug}.name`) : slug,
+        priceCurrency: 'GEL',
+        price: (perEmployee * MIN_EMPLOYEES).toFixed(2),
+        priceSpecification: {
+          '@type': 'UnitPriceSpecification',
+          priceCurrency: 'GEL',
+          price: perEmployee.toFixed(2),
+          unitText: 'employee / month',
+        },
+        availability: 'https://schema.org/InStock',
+        url: `${SITE_URL}/registration?pack=${slug}&employees=${MIN_EMPLOYEES}`,
+      };
+    });
 
   return (
     <JsonLd
@@ -34,16 +48,8 @@ export function SoftwareApplicationSchema({ features }: { features: Feature[] })
         operatingSystem: 'Web',
         inLanguage: ['ka', 'en'],
         description:
-          'All-in-one CRM for Georgian businesses: tickets, WhatsApp, email, Messenger, Instagram, and SIP PBX calling — billed in Georgian Lari.',
-        offers: {
-          '@type': 'AggregateOffer',
-          priceCurrency: 'GEL',
-          lowPrice: lowPrice.toFixed(2),
-          highPrice: highPrice.toFixed(2),
-          offerCount: features.length,
-          availability: 'https://schema.org/InStock',
-          url: `${SITE_URL}/#pricing`,
-        },
+          'All-in-one business platform for Georgian SMBs: tickets, unified inbox (WhatsApp, Messenger, Instagram, email), calls & PBX, bookings, online shop, invoices and leave management — priced per employee in Georgian Lari.',
+        offers,
         featureList: features.map((f) => f.name).join(', '),
       }}
     />
