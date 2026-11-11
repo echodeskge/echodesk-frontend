@@ -1,352 +1,348 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useTranslations } from "next-intl"
-import { bookingsAdminServicesList, bookingsAdminServicesCreate, bookingsAdminServicesPartialUpdate, bookingsAdminServicesDestroy } from "@/api/generated"
-import { ServiceList } from "@/api/generated/interfaces"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Briefcase, Plus, Edit, Trash2, Clock } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useLocale, useTranslations } from "next-intl"
+import { toast } from "sonner"
+import { Briefcase, Clock, Plus, SearchX } from "lucide-react"
+import type { BookingStaff, ServiceCategory, ServiceList } from "@/api/generated/interfaces"
 import { useMyAccess } from "@/hooks/useMyAccess"
 import { getApiErrorMessage } from "@/lib/utils"
+import {
+  activateService,
+  createService,
+  deactivateService,
+  deleteService,
+  fetchAllCategories,
+  fetchAllServices,
+  fetchAllStaff,
+  isConflictError,
+  updateService,
+} from "../_lib/bookings-api"
+import {
+  BookingsEmptyState,
+  BookingsHeaderBridge,
+  BookingsPage,
+  BookingsTable,
+  SectionCard,
+  TonePill,
+  ToolbarSearch,
+  displayName,
+  formatMoney,
+  rdButton,
+  type BookingsColumn,
+} from "../_components/ui"
+import { ActivePill, DeleteDialog, RowActions, asBilingual, matchesSearch } from "../_components/catalog"
+import { ServiceFormSheet, type ServicePayload, type ServiceStatus } from "./_components/service-form"
 
 export default function ServicesPage() {
   const t = useTranslations("bookingsServices")
-  const { toast } = useToast()
-  // Service writes are limited to booking admins (staff, admin or manager role).
+  const tUi = useTranslations("bookingsUi")
+  const locale = useLocale()
   const { isBookingAdmin } = useMyAccess()
-  const [services, setServices] = useState<ServiceList[]>([])
+
+  const [services, setServices] = useState<ServiceList[] | undefined>(undefined)
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingService, setEditingService] = useState<ServiceList | null>(null)
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    duration_minutes: "60",
-    base_price: "",
-    booking_type: "duration_based" as "duration_based" | "fixed_slots",
-    status: "active" as "active" | "inactive",
-  })
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [error, setError] = useState<unknown>(null)
+  const [search, setSearch] = useState("")
 
-  useEffect(() => {
-    fetchServices()
-  }, [])
+  const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState<ServiceList | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [categories, setCategories] = useState<ServiceCategory[]>([])
+  const [staff, setStaff] = useState<BookingStaff[]>([])
+  const [optionsLoaded, setOptionsLoaded] = useState(false)
+  const [optionsLoading, setOptionsLoading] = useState(false)
 
-  const fetchServices = async () => {
+  const [deleting, setDeleting] = useState<ServiceList | null>(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [togglingId, setTogglingId] = useState<number | null>(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
     try {
-      setLoading(true)
-      const response = await bookingsAdminServicesList()
-      setServices((response.results || response) as ServiceList[])
-    } catch (error) {
-      console.error("Failed to fetch services:", error)
-      toast({ title: t("error"), description: t("fetchFailed"), variant: "destructive" })
+      setServices(await fetchAllServices())
+    } catch (e) {
+      setError(e)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const handleOpenDialog = (service?: ServiceList) => {
-    if (service) {
-      setEditingService(service)
-      setFormData({
-        name: typeof service.name === 'string' ? service.name : service.name.en || "",
-        description: typeof service.description === 'string' ? service.description : service.description?.en || "",
-        duration_minutes: service.duration_minutes?.toString() || "60",
-        base_price: service.base_price || "",
-        booking_type: (service.booking_type || "duration_based") as "duration_based" | "fixed_slots",
-        status: (service.status || "active") as "active" | "inactive",
-      })
-    } else {
-      setEditingService(null)
-      setFormData({
-        name: "",
-        description: "",
-        duration_minutes: "60",
-        base_price: "",
-        booking_type: "duration_based",
-        status: "active",
-      })
-    }
-    setIsDialogOpen(true)
-  }
+  useEffect(() => {
+    load()
+  }, [load])
 
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {}
-    if (!formData.name.trim()) errors.name = t("nameRequired")
-    if (!formData.base_price) {
-      errors.base_price = t("priceRequired")
-    } else if (parseFloat(formData.base_price) <= 0) {
-      errors.base_price = t("pricePositive")
-    }
-    if (!formData.duration_minutes) {
-      errors.duration_minutes = t("durationRequired")
-    } else if (parseInt(formData.duration_minutes) <= 0) {
-      errors.duration_minutes = t("durationPositive")
-    }
-    setFormErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
-  const handleSave = async () => {
-    if (!validateForm()) return
+  // Categories and staff are only needed by the form: loaded once, when it first opens.
+  const loadOptions = useCallback(async () => {
+    if (optionsLoaded || optionsLoading) return
+    setOptionsLoading(true)
     try {
-      if (editingService) {
-        await bookingsAdminServicesPartialUpdate(editingService.id, formData as any)
-        toast({ title: t("success"), description: t("serviceUpdated") })
+      const [cats, people] = await Promise.all([fetchAllCategories(), fetchAllStaff()])
+      setCategories(cats)
+      setStaff(people)
+      setOptionsLoaded(true)
+    } catch (e) {
+      toast.error(getApiErrorMessage(e, t("form.optionsFailed")))
+    } finally {
+      setOptionsLoading(false)
+    }
+  }, [optionsLoaded, optionsLoading, t])
+
+  const openForm = (service: ServiceList | null) => {
+    setEditing(service)
+    setFormOpen(true)
+    loadOptions()
+  }
+
+  const submit = async (payload: ServicePayload) => {
+    setSaving(true)
+    // `category_id: null` clears the category (the backend accepts it; the generated type only knows numbers).
+    const body = payload as unknown as Parameters<typeof createService>[0]
+    try {
+      if (editing) {
+        await updateService(editing.id, body)
+        toast.success(t("serviceUpdated"))
       } else {
-        await bookingsAdminServicesCreate(formData as any)
-        toast({ title: t("success"), description: t("serviceCreated") })
+        await createService(body)
+        toast.success(t("serviceCreated"))
       }
-      setIsDialogOpen(false)
-      fetchServices()
-    } catch (error) {
-      console.error("Failed to save service:", error)
-      toast({ title: t("error"), description: getApiErrorMessage(error, t("saveFailed")), variant: "destructive" })
+      setFormOpen(false)
+      await load()
+    } catch (e) {
+      toast.error(getApiErrorMessage(e, t("saveFailed")))
+    } finally {
+      setSaving(false)
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t("confirmDelete"))) return
-
+  const confirmDelete = async () => {
+    if (!deleting) return
+    setDeleteBusy(true)
     try {
-      await bookingsAdminServicesDestroy(id)
-      toast({ title: t("success"), description: t("serviceDeleted") })
-      fetchServices()
-    } catch (error) {
-      console.error("Failed to delete service:", error)
-      toast({ title: t("error"), description: getApiErrorMessage(error, t("deleteFailed")), variant: "destructive" })
+      await deleteService(deleting.id)
+      toast.success(t("serviceDeleted"))
+      setDeleting(null)
+      await load()
+    } catch (e) {
+      // The backend keeps a service that bookings still reference (PROTECT) and answers 409.
+      toast.error(isConflictError(e) ? t("deleteHasBookings") : getApiErrorMessage(e, t("deleteFailed")))
+    } finally {
+      setDeleteBusy(false)
     }
   }
 
-  const filteredServices = services.filter((service) => {
-    const serviceName = typeof service.name === 'string' ? service.name : service.name.en || ""
-    return serviceName.toLowerCase().includes(searchQuery.toLowerCase())
-  })
-
-  const formatCurrency = (amount: string) => {
-    return `₾${parseFloat(amount).toFixed(2)}`
+  /** Row status toggle: active ↔ inactive through the `activate` / `deactivate` actions (coming soon → active). */
+  const toggleStatus = async (service: ServiceList) => {
+    setTogglingId(service.id)
+    try {
+      const updated =
+        (service.status as ServiceStatus) === "active" ? await deactivateService(service.id) : await activateService(service.id)
+      setServices((list) => list?.map((s) => (s.id === service.id ? { ...s, status: updated.status ?? s.status } : s)))
+      toast.success(updated.status === "active" ? t("serviceActivated") : t("serviceDeactivated"))
+    } catch (e) {
+      toast.error(getApiErrorMessage(e, t("saveFailed")))
+    } finally {
+      setTogglingId(null)
+    }
   }
 
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-96 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    )
-  }
+  const filtered = useMemo(
+    () => (services ?? []).filter((s) => matchesSearch(search, s.name_display, asBilingual(s.name))),
+    [services, search]
+  )
+
+  const statusLabel = (status: string | undefined) =>
+    status === "inactive" ? t("inactive") : status === "coming_soon" ? t("comingSoon") : t("active")
+
+  const columns: BookingsColumn<ServiceList>[] = useMemo(
+    () => [
+      {
+        id: "name",
+        header: t("serviceName"),
+        width: "minmax(0,1.8fr)",
+        mobile: "title",
+        cell: (s) => {
+          const category = s.category ? displayName(s.category, locale, "") : ""
+          return (
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate font-medium">{displayName(s, locale)}</span>
+              {category && <span className="hidden truncate text-[11px] text-muted-foreground @3xl:block">{category}</span>}
+            </span>
+          )
+        },
+      },
+      {
+        id: "duration",
+        header: t("duration"),
+        width: "110px",
+        mobile: "meta",
+        cell: (s) => (
+          <span className="inline-flex items-center gap-1 tabular-nums">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+            {t("minutes", { count: s.duration_minutes })}
+          </span>
+        ),
+      },
+      {
+        id: "price",
+        header: t("price"),
+        width: "100px",
+        mobile: "meta",
+        cell: (s) => <span className="tabular-nums">{formatMoney(s.base_price)}</span>,
+      },
+      {
+        id: "type",
+        header: t("type"),
+        width: "150px",
+        mobile: "hidden",
+        cell: (s) => (
+          <TonePill tone="neutral" testId="bkg-service-type-pill">
+            {(s.booking_type as string) === "fixed_slots" ? t("fixedSlots") : t("durationBased")}
+          </TonePill>
+        ),
+      },
+      {
+        id: "status",
+        header: t("status"),
+        width: "110px",
+        mobile: "end",
+        cell: (s) => {
+          const status = (s.status as ServiceStatus) || "active"
+          const pill = (
+            <ActivePill
+              active={status === "active"}
+              tone={status === "coming_soon" ? "warning" : status === "active" ? "solid" : "outline"}
+              label={statusLabel(status)}
+              testId="bkg-service-status-pill"
+            />
+          )
+          if (!isBookingAdmin) return pill
+          const title = status === "active" ? t("deactivate") : t("activate")
+          return (
+            <button
+              type="button"
+              onClick={() => toggleStatus(s)}
+              disabled={togglingId === s.id}
+              className="inline-flex rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+              aria-label={`${title}: ${displayName(s, locale)}`}
+              title={title}
+              data-testid="bkg-service-status-toggle"
+            >
+              {pill}
+            </button>
+          )
+        },
+      },
+      // Only booking admins may change the catalog: no action column for anyone else.
+      ...(isBookingAdmin
+        ? [
+            {
+              id: "actions",
+              header: <span className="sr-only">{t("actions")}</span>,
+              width: "64px",
+              align: "end",
+              mobile: "actions",
+              cell: (s) => (
+                <RowActions
+                  onEdit={() => openForm(s)}
+                  onDelete={() => setDeleting(s)}
+                  editLabel={t("editAria", { name: displayName(s, locale) })}
+                  deleteLabel={t("deleteAria", { name: displayName(s, locale) })}
+                  testId="bkg-service-actions"
+                />
+              ),
+            } satisfies BookingsColumn<ServiceList>,
+          ]
+        : []),
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, locale, isBookingAdmin, togglingId]
+  )
+
+  const count = services && !error ? t("servicesFound", { count: filtered.length }) : null
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{t("title")}</h1>
-        <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div>
-              <CardTitle>{t("allServices")}</CardTitle>
-              <CardDescription>{t("servicesFound", { count: filteredServices.length })}</CardDescription>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t("searchServices")}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-              {isBookingAdmin && (
-                <Button onClick={() => handleOpenDialog()}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t("addService")}
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {filteredServices.length === 0 ? (
-            <div className="text-center py-12">
-              <Briefcase className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">{t("noServicesFound")}</h3>
-              <p className="text-muted-foreground mt-2">{t("getStartedServices")}</p>
-              {isBookingAdmin && (
-                <Button className="mt-4" onClick={() => handleOpenDialog()}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t("createService")}
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("serviceName")}</TableHead>
-                    <TableHead>{t("duration")}</TableHead>
-                    <TableHead>{t("price")}</TableHead>
-                    <TableHead>{t("type")}</TableHead>
-                    <TableHead>{t("status")}</TableHead>
-                    <TableHead className="text-right">{t("actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredServices.map((service) => {
-                    const serviceName = typeof service.name === 'string' ? service.name : service.name.en || ""
-                    return (
-                      <TableRow key={service.id}>
-                        <TableCell>
-                          <div className="font-medium">{serviceName}</div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span>{service.duration_minutes} {t("min")}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium">{formatCurrency(service.base_price)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {(service.booking_type as unknown as string) === "duration_based" ? t("durationBased") : t("fixedSlots")}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={(service.status as unknown as string) === "active" ? "default" : "secondary"}>
-                            {(service.status as unknown as string) === "active" ? t("active") : t("inactive")}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {isBookingAdmin && (
-                            <div className="flex justify-end gap-2">
-                              <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(service)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDelete(service.id)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>{editingService ? t("editService") : t("createService")}</DialogTitle>
-            <DialogDescription>
-              {editingService ? t("updateServiceDetails") : t("addNewService")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">{t("serviceNameLabel")}</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => { setFormData({ ...formData, name: e.target.value }); setFormErrors(prev => ({ ...prev, name: "" })) }}
-                placeholder={t("serviceNamePlaceholder")}
-                className={formErrors.name ? "border-destructive" : ""}
+    <BookingsPage testId="bkg-services">
+      <BookingsHeaderBridge
+        sub={count}
+        primary={isBookingAdmin ? { label: t("addService"), icon: Plus, onClick: () => openForm(null), testId: "bkg-services-add" } : null}
+      />
+      <SectionCard
+        title={t("allServices")}
+        hint={count ?? undefined}
+        actions={<ToolbarSearch value={search} onChange={setSearch} placeholder={t("searchServices")} clearLabel={tUi("clearSearch")} testId="bkg-services-search" />}
+        testId="bkg-services-card"
+      >
+        <BookingsTable
+          variant="flush"
+          density="comfortable"
+          columns={columns}
+          rows={services ? filtered : undefined}
+          rowKey={(s) => s.id}
+          loading={loading}
+          error={error}
+          onRetry={load}
+          onRowClick={isBookingAdmin ? (s) => openForm(s) : undefined}
+          ariaLabel={t("allServices")}
+          skeletonRows={5}
+          testId="bkg-services-table"
+          empty={
+            search ? (
+              <BookingsEmptyState
+                icon={SearchX}
+                title={tUi("noMatches")}
+                description={tUi("noMatchesHint")}
+                action={
+                  <button type="button" className={rdButton.outlineSm} onClick={() => setSearch("")}>
+                    {tUi("clearFilters")}
+                  </button>
+                }
               />
-              {formErrors.name && <p className="text-sm text-destructive">{formErrors.name}</p>}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">{t("description")}</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder={t("descriptionPlaceholder")}
+            ) : (
+              <BookingsEmptyState
+                icon={Briefcase}
+                title={t("noServicesFound")}
+                description={t("getStartedServices")}
+                action={
+                  isBookingAdmin ? (
+                    <button type="button" className={rdButton.primary} onClick={() => openForm(null)}>
+                      <Plus className="h-3.5 w-3.5" aria-hidden />
+                      {t("createService")}
+                    </button>
+                  ) : undefined
+                }
               />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="duration">{t("durationMinutes")}</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  value={formData.duration_minutes}
-                  onChange={(e) => { setFormData({ ...formData, duration_minutes: e.target.value }); setFormErrors(prev => ({ ...prev, duration_minutes: "" })) }}
-                  className={formErrors.duration_minutes ? "border-destructive" : ""}
-                />
-                {formErrors.duration_minutes && <p className="text-sm text-destructive">{formErrors.duration_minutes}</p>}
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="base_price">{t("priceLabel")}</Label>
-                <Input
-                  id="base_price"
-                  type="number"
-                  step="0.01"
-                  value={formData.base_price}
-                  onChange={(e) => { setFormData({ ...formData, base_price: e.target.value }); setFormErrors(prev => ({ ...prev, base_price: "" })) }}
-                  className={formErrors.base_price ? "border-destructive" : ""}
-                />
-                {formErrors.base_price && <p className="text-sm text-destructive">{formErrors.base_price}</p>}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid min-w-0 grid-cols-1 gap-2">
-                <Label htmlFor="type">{t("bookingType")}</Label>
-                <Select
-                  value={formData.booking_type}
-                  onValueChange={(value) => setFormData({ ...formData, booking_type: value as any })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="duration_based">{t("durationBased")}</SelectItem>
-                    <SelectItem value="fixed_slots">{t("fixedSlots")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid min-w-0 grid-cols-1 gap-2">
-                <Label htmlFor="status">{t("statusLabel")}</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value as any })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">{t("active")}</SelectItem>
-                    <SelectItem value="inactive">{t("inactive")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t("cancel")}</Button>
-            <Button onClick={handleSave}>{editingService ? t("update") : t("create")}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+            )
+          }
+        />
+      </SectionCard>
+
+      {isBookingAdmin && (
+        <>
+          <ServiceFormSheet
+            open={formOpen}
+            onOpenChange={setFormOpen}
+            service={editing}
+            categories={categories}
+            staff={staff}
+            optionsLoading={optionsLoading}
+            onSubmit={submit}
+            submitting={saving}
+          />
+          <DeleteDialog
+            open={!!deleting}
+            onOpenChange={(o) => !o && setDeleting(null)}
+            title={t("deleteDialog.title")}
+            description={t("deleteDialog.description", { name: deleting ? displayName(deleting, locale) : "" })}
+            cancelLabel={t("cancel")}
+            confirmLabel={t("deleteDialog.confirm")}
+            onConfirm={confirmDelete}
+            busy={deleteBusy}
+            testId="bkg-service-delete"
+          />
+        </>
+      )}
+    </BookingsPage>
   )
 }
