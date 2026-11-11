@@ -401,3 +401,27 @@
   overflow-x: auto;
   white-space: pre;
 }
+
+/* =====================================================================
+   Marketing landing shell (`.lp`) — "Landing – Redesign" design file.
+   Scoped: the typeface, base text size and the dark-mode variants of a
+   few tokens apply only under `.lp`; the app's own tokens are untouched.
+   ===================================================================== */
+.lp {
+  font-family: var(--font-landing), ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 22px;
+  -webkit-font-smoothing: antialiased;
+  text-wrap: pretty;
+}
+.lp input[type="range"] {
+  accent-color: hsl(var(--secondary));
+}
+/* The design's `.lp.dark` set: lighter indigo so the accent still reads on
+   near-black, a slightly raised card surface, brighter green. */
+.dark .lp {
+  --card: 240 10% 6%;
+  --secondary: 234 70% 72%;
+  --secondary-foreground: 240 10% 3.9%;
+  --green: 142.4 71.8% 45%;
+}

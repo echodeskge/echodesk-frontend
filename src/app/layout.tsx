@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from 'next/headers';
 import "./globals.css";
+import { landingFont } from '@/components/landing/landing-font';
 import { TenantProvider } from '@/contexts/TenantContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
@@ -212,7 +213,7 @@ export default async function RootLayout({
             crashes (facebook/react#11538). Skip those calls instead of throwing. */}
         <script dangerouslySetInnerHTML={{ __html: TRANSLATE_DOM_GUARD }} />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} bg-background`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${landingFont.variable} bg-background`}>
         <OrganizationSchema />
         <DevTenantLoader />
         <NextIntlClientProvider messages={messages}>
