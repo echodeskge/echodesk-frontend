@@ -150,6 +150,12 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         requiredFeatureKey: "booking_management",
         isPremium: true,
       },
+      {
+        id: "bookings/clients",
+        icon: "Users",
+        requiredFeatureKey: "booking_management",
+        isPremium: true,
+      },
     ],
   },
   {
