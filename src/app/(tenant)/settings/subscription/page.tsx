@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import React, { useEffect, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { useTenantSubscription } from '@/hooks/api/useTenant';
 import { useTenant } from '@/contexts/TenantContext';
 import {
@@ -15,11 +15,13 @@ import { UsageStatsCard } from '@/components/subscription/UsageStatsCard';
 import { PaymentMethodCard } from '@/components/subscription/PaymentMethodCard';
 import { InvoiceHistoryTable } from '@/components/subscription/InvoiceHistoryTable';
 import { FeatureManagementCard } from '@/components/subscription/FeatureManagementCard';
-import { Globe, CreditCard } from 'lucide-react';
+import { Globe, CreditCard, CalendarClock } from 'lucide-react';
 import { Segmented } from '@/components/redesign/segmented';
 import { StatGrid } from '@/components/redesign/stats';
 import { TonePill } from '@/components/redesign/pill';
-import { SettingsPage, SettingsSection } from '@/components/redesign/settings';
+import { ActionButton, SettingsNote, SettingsPage, SettingsSection } from '@/components/redesign/settings';
+import { readTrialStatus } from '@/lib/subscription-trial';
+import { formatTrialDate } from '@/lib/registration-result';
 import { toast } from 'sonner';
 import { useMyAccess } from '@/hooks/useMyAccess';
 import { getApiErrorMessage } from '@/lib/utils';
@@ -29,11 +31,24 @@ type SubscriptionTab = 'features' | 'usage' | 'billing';
 export default function SubscriptionPage() {
   const t = useTranslations('settings.subscription');
   const tSub = useTranslations('subscription');
+  const locale = useLocale();
   // Same tabs as before (default: features); only the active tab is mounted.
   const [activeTab, setActiveTab] = useState<SubscriptionTab>('features');
 
+  // `?tab=billing` (the trial banner's "Add a card" link) opens the billing
+  // tab. Read after mount so the server and client first render agree.
+  useEffect(() => {
+    try {
+      const tab = new URLSearchParams(window.location.search).get('tab');
+      if (tab === 'billing' || tab === 'usage' || tab === 'features') setActiveTab(tab);
+    } catch {
+      // no window / malformed query: keep the default tab
+    }
+  }, []);
+
   // Queries
   const { data: subscription, isLoading: subscriptionLoading } = useTenantSubscription();
+  const trial = readTrialStatus(subscription);
   const { tenant: tenantConfig } = useTenant();
   const { data: invoicesData, isLoading: invoicesLoading } = useInvoices();
   const { data: savedCardsData, isLoading: cardsLoading } = useSavedCard();
@@ -93,6 +108,30 @@ export default function SubscriptionPage() {
       width="wide"
       testId="settings-subscription"
     >
+      {trial.isTrial && (
+        <SettingsNote
+          tone={trial.hasSavedCard === false ? 'warning' : 'info'}
+          icon={CalendarClock}
+          testId="trial-status"
+          action={
+            trial.hasSavedCard === false && !isPaddle ? (
+              <ActionButton icon={CreditCard} onClick={() => setActiveTab('billing')} testId="trial-add-card">
+                {tSub('trial.addCard')}
+              </ActionButton>
+            ) : undefined
+          }
+        >
+          {trial.hasSavedCard === false
+            ? tSub('trial.statusNoCard', {
+                days: trial.daysRemaining ?? 0,
+                date: trial.trialEndsAt ? formatTrialDate(trial.trialEndsAt, locale) : '—',
+              })
+            : tSub('trial.statusWithCard', {
+                date: trial.trialEndsAt ? formatTrialDate(trial.trialEndsAt, locale) : '—',
+              })}
+        </SettingsNote>
+      )}
+
       <Segmented<SubscriptionTab>
         value={activeTab}
         onChange={setActiveTab}

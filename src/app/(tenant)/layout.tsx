@@ -48,6 +48,7 @@ import { parseFeatureKeys } from "@/lib/calling-access";
 import { useAuth } from "@/contexts/AuthContext";
 import { SubscriptionInactiveAdminScreen } from "@/components/subscription/SubscriptionInactiveAdminScreen";
 import { SubscriptionInactiveUserScreen } from "@/components/subscription/SubscriptionInactiveUserScreen";
+import { TrialBanner } from "@/components/subscription/TrialBanner";
 import { useReactivateSubscription, useDashboardAppearance } from "@/hooks/api";
 import { Plus, Volume2, VolumeX, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -666,6 +667,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
         />
 
         <SidebarInset className="flex flex-col h-screen overflow-hidden">
+          <TrialBanner />
           <header className="sticky top-0 left-0 right-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-3">
             <SidebarTrigger className="h-7 w-7 text-muted-foreground hover:bg-muted hover:text-foreground" />
             <span aria-hidden className="h-4 w-px bg-border" />
