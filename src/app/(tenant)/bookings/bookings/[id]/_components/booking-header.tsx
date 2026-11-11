@@ -24,14 +24,14 @@ export function BookingHeader({
   t,
 }: {
   booking: BookingDetail
-  /** The action currently running (every button is disabled meanwhile). */
-  busy: BookingAction | null
+  /** An action is running: every button is disabled meanwhile. */
+  busy: boolean
   onAction: (action: BookingAction) => void
   t: Translate
 }) {
   const locale = useLocale()
   const a = bookingActions(booking.status)
-  const disabled = busy !== null
+  const disabled = busy
   const btn = (action: BookingAction, cls: string, Icon: typeof CheckCircle2, label: string) => (
     <button type="button" className={cls} disabled={disabled} onClick={() => onAction(action)} data-testid={`bkg-action-${action}`}>
       <Icon className="h-3.5 w-3.5" aria-hidden />

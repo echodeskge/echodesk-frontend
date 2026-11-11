@@ -44,7 +44,7 @@ export default function BookingDetailPage() {
   const [booking, setBooking] = useState<BookingDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<unknown>(null)
-  const [busy, setBusy] = useState<BookingAction | null>(null)
+  const [busy, setBusy] = useState<BookingAction | "payment" | null>(null)
   const [dialog, setDialog] = useState<Dialog>(null)
   const [forceAction, setForceAction] = useState<"confirm" | "checkIn" | null>(null)
   const [cancelResult, setCancelResult] = useState<BookingCancelResponse | null>(null)
@@ -161,7 +161,7 @@ export default function BookingDetailPage() {
 
   const onRecordPayment = useCallback(
     async (p: { amount: string; method: MethodEnum; note: string }) => {
-      setBusy("cancel")
+      setBusy("payment")
       try {
         setBooking(await recordBookingPayment(id, p))
         setDialog(null)
@@ -276,7 +276,7 @@ export default function BookingDetailPage() {
     <BookingsPage testId="bkg-booking-detail">
       <BookingsHeaderBridge breadcrumb={`#${booking.booking_number}`} />
       <div className="flex w-full max-w-[1200px] min-w-0 flex-col gap-4">
-        <BookingHeader booking={booking} busy={busy} onAction={onAction} t={t} />
+        <BookingHeader booking={booking} busy={busy !== null} onAction={onAction} t={t} />
         <DetailColumns
           main={
             <>
@@ -309,7 +309,7 @@ export default function BookingDetailPage() {
       <CancelDialog open={dialog === "cancel"} onOpenChange={(o) => !o && setDialog(null)} onSubmit={onCancel} submitting={busy === "cancel"} t={t} />
       <RescheduleDialog open={dialog === "reschedule"} onOpenChange={(o) => !o && setDialog(null)} booking={booking} onSubmit={onReschedule} submitting={busy === "reschedule"} t={t} />
       <AssignStaffDialog open={dialog === "assignStaff"} onOpenChange={(o) => !o && setDialog(null)} booking={booking} onSubmit={onAssign} submitting={busy === "assignStaff"} t={t} />
-      <RecordPaymentDialog open={dialog === "payment"} onOpenChange={(o) => !o && setDialog(null)} booking={booking} onSubmit={onRecordPayment} submitting={busy === "cancel"} t={t} />
+      <RecordPaymentDialog open={dialog === "payment"} onOpenChange={(o) => !o && setDialog(null)} booking={booking} onSubmit={onRecordPayment} submitting={busy === "payment"} t={t} />
     </BookingsPage>
   )
 }
