@@ -268,9 +268,13 @@ export function RegistrationFormStep({
         {/* Submit Button */}
         <div className="flex justify-end">
           <Button type="submit" size="lg" disabled={loading} className="min-w-[200px]">
-            {loading ? t('processing') : t('continueToPayment')}
+            {loading ? t('processing') : t('startFreeTrial')}
           </Button>
         </div>
+
+        <p className="text-center text-sm text-muted-foreground" data-testid="trial-note">
+          {tp('registration.trialNote')}
+        </p>
 
         <p className="text-center text-sm text-muted-foreground">
           {t('byContinuing')}{' '}

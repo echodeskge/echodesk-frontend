@@ -5,9 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { FeatureSelection } from './FeatureSelection';
 import { RegistrationFormStep } from './RegistrationFormStep';
-import { PaymentProviderSelection, type PaymentProviderType } from './PaymentProviderSelection';
 import { Footer } from '@/components/landing/Footer';
-import { featuresList, registerTenantWithPayment } from '@/api/generated/api';
+import { featuresList, registerTenant } from '@/api/generated/api';
 import type { Feature } from '@/types/package';
 import { PricingModel } from '@/types/package';
 import type { PackSlug } from '@/data/packs';
@@ -22,9 +21,7 @@ import {
   priceByKey,
   toggleModule,
 } from '@/lib/pricing';
-import { usePaddle } from '@/hooks/usePaddle';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { saveRegistrationResult, trialEndFromResponse } from '@/lib/registration-result';
 
 export interface RegistrationFormData {
   company_name: string;
@@ -45,14 +42,18 @@ export interface RegistrationFormData {
   custom_price?: string;
 }
 
+/**
+ * Public signup. Two steps: 1 = review / build the plan, 2 = the registration
+ * form. Submits to `POST /api/register/` (`registerTenant`), which opens the
+ * workspace on a 30-day free trial without a card — exactly what the copy
+ * promises. A card is added later from Settings → Subscription.
+ */
 export function RegistrationFlow() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = useTranslations('auth');
-  const tSub = useTranslations('subscription');
-  const { openCheckout } = usePaddle();
 
-  // Steps: 1 = Review / build plan, 2 = Payment provider, 3 = Registration form
+  // Steps: 1 = Review / build plan, 2 = Registration form
   const [step, setStep] = useState(1);
   const [features, setFeatures] = useState<Feature[]>([]);
   // Selected module KEYS (workspace + zero-price stubs are added at submit).
@@ -60,7 +61,6 @@ export function RegistrationFlow() {
   const [pack, setPack] = useState<PackSlug | null>(null);
   const [autoNotice, setAutoNotice] = useState<string | null>(null);
   const [employees, setEmployees] = useState(MIN_EMPLOYEES);
-  const [paymentProvider, setPaymentProvider] = useState<PaymentProviderType>('bog');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
@@ -89,7 +89,7 @@ export function RegistrationFlow() {
 
   // Load the catalogue, then apply `?pack=` / `?modules=` / `?employees=`
   // (or the legacy `?features=<ids>&agents=`) from the landing CTAs. A
-  // pre-built plan skips straight to the payment-provider step.
+  // pre-built plan skips straight to the registration form.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -143,7 +143,7 @@ export function RegistrationFlow() {
       setLoading(true);
       setError('');
 
-      const registrationData: any = {
+      const registrationData = {
         company_name: data.company_name,
         domain: data.domain,
         description: data.description || '',
@@ -156,26 +156,19 @@ export function RegistrationFlow() {
         preferred_language: data.preferred_language,
         is_custom: true,
         feature_ids: data.feature_ids,
-        payment_provider: paymentProvider,
       };
 
-      const response: any = await registerTenantWithPayment(registrationData);
+      // POST /api/register/: creates the workspace on a 30-day free trial.
+      // No payment step, no card.
+      const response = await registerTenant(registrationData as any);
 
-      if (response.requires_redirect && response.payment_url) {
-        // BOG: redirect to hosted payment page
-        window.location.href = response.payment_url;
-      } else if (response.checkout_data?.transaction_id) {
-        // Paddle: open overlay checkout
-        openCheckout({
-          transactionId: response.checkout_data.transaction_id,
-          successUrl: `${window.location.origin}/registration/success`,
-        });
-      } else if (response.payment_url) {
-        // Fallback: redirect
-        window.location.href = response.payment_url;
-      } else {
-        router.push('/registration/success');
-      }
+      saveRegistrationResult({
+        company_name: data.company_name,
+        admin_email: data.admin_email,
+        frontend_url: response?.frontend_url ?? (response?.tenant as any)?.frontend_url ?? null,
+        trial_ends_at: trialEndFromResponse(response),
+      });
+      router.push('/registration/success');
     } catch (error: any) {
       console.error('Registration failed:', error);
       setError(
@@ -208,32 +201,6 @@ export function RegistrationFlow() {
         )}
 
         {step === 2 && (
-          <div className="max-w-2xl mx-auto space-y-8">
-            <div className="text-center space-y-4">
-              <Button variant="ghost" onClick={() => setStep(1)} className="mb-4">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {t('backToPlans')}
-              </Button>
-              <h1 className="text-3xl font-bold">{tSub('paymentProvider')}</h1>
-              <p className="text-muted-foreground">
-                {tSub('choosePaymentProvider')}
-              </p>
-            </div>
-
-            <PaymentProviderSelection
-              selected={paymentProvider}
-              onSelect={setPaymentProvider}
-            />
-
-            <div className="flex justify-end">
-              <Button size="lg" onClick={() => setStep(3)} className="min-w-[200px]">
-                {t('continue')}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
           <RegistrationFormStep
             formData={formData}
             setFormData={setFormData}
@@ -243,7 +210,7 @@ export function RegistrationFlow() {
             loading={loading}
             error={error}
             onSubmit={handleFormSubmit}
-            onBack={() => setStep(2)}
+            onBack={() => setStep(1)}
           />
         )}
       </div>
