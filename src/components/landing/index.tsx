@@ -10,6 +10,12 @@ import { CTA } from './CTA';
 import { Footer } from './Footer';
 import type { Feature } from '@/types/package';
 
+/**
+ * Marketing homepage shell ("Landing – Redesign" design file). `.lp`
+ * scopes the Schibsted Grotesk face (variable set by the root layout), the
+ * 15/22 base type and the dark-mode token variants (globals.css); dark mode
+ * itself follows the app's ThemeProvider (system preference by default).
+ */
 export function EchoDeskLanding({
   initialFeatures = [],
   testimonialsSlot = null,
@@ -22,21 +28,16 @@ export function EchoDeskLanding({
   testimonialsSlot?: ReactNode;
 }) {
   return (
-    <div className="min-h-screen">
-      {/* Header with Language Switcher */}
+    <div className="lp min-h-screen bg-background text-foreground">
       <Header />
-
-      {/* Main Content */}
-      <main className="py-16 space-y-24 bg-background">
+      <main id="top">
         <Hero />
-        <Features />
+        <Features features={initialFeatures} />
         <Pricing initialFeatures={initialFeatures} />
         {testimonialsSlot}
         <FAQ />
         <CTA />
       </main>
-
-      {/* Footer */}
       <Footer />
     </div>
   );

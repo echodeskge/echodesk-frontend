@@ -1,103 +1,68 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { ArrowRight, MessageSquare, Phone, Mail } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { ArrowRight, MessageSquare } from 'lucide-react';
+import { MODULE_CATALOG } from '@/data/module-catalog';
+import { cn } from '@/lib/utils';
+import { AppMock } from './AppMock';
+import { CONTAINER } from './SectionHeading';
+
+/** Hero chips: real modules, same icons as the catalogue. */
+const CHIPS = [
+  { key: 'tickets', moduleKey: 'ticket_management' },
+  { key: 'inbox', moduleKey: 'social_integrations' },
+  { key: 'calls', moduleKey: 'ip_calling' },
+] as const;
 
 export function Hero() {
   const t = useTranslations('landing.hero');
 
   return (
-    <section className="container space-y-10">
-      <div className="grid place-items-center text-center gap-y-6">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 dark:bg-blue-500/10 text-secondary dark:text-blue-300 text-sm font-medium">
-          <MessageSquare className="h-4 w-4" />
-          <span>{t('badge')}</span>
+    <section className={cn(CONTAINER, 'flex flex-col gap-14 pt-[72px]')} data-testid="hero">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-end gap-x-16 gap-y-8">
+        <div className="flex flex-col gap-[22px]">
+          <span className="inline-flex h-7 w-fit items-center gap-2 rounded-full border border-secondary/30 bg-secondary/[.08] px-3 text-xs font-semibold tracking-[.01em] text-secondary">
+            <MessageSquare className="h-[13px] w-[13px]" aria-hidden="true" />
+            {t('badge')}
+          </span>
+          <h1 className="text-[clamp(40px,5.4vw,66px)] font-extrabold leading-none tracking-[-.04em]">
+            {t('title')}
+          </h1>
         </div>
 
-        {/* Main Heading */}
-        <h1 className="text-5xl md:text-6xl font-black leading-tight max-w-4xl text-foreground">
-          {t('title')}
-        </h1>
-
-        {/* Subheading */}
-        <p className="max-w-2xl text-lg md:text-xl text-muted-foreground">
-          {t('subtitle')}
-        </p>
-
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 mt-4">
-          <Button size="lg" asChild>
-            <Link href="/registration">
+        <div className="flex max-w-[480px] flex-col gap-6">
+          <p className="text-lg leading-7 text-muted-foreground">{t('subtitle')}</p>
+          <div className="flex flex-wrap gap-2.5">
+            <Link
+              href="/registration"
+              className="inline-flex h-[46px] items-center gap-2 rounded-[9px] bg-primary px-5 text-[15px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+            >
               {t('cta.primary')}
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link href="#features">{t('cta.secondary')}</Link>
-          </Button>
-        </div>
-
-        {/* Feature Icons */}
-        <div className="flex flex-col md:flex-row md:flex-wrap justify-center gap-6 mt-8 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-foreground" />
-            <span>{t('features.messaging')}</span>
+            <Link
+              href="#features"
+              className="inline-flex h-[46px] items-center rounded-[9px] border px-5 text-[15px] font-semibold transition-colors hover:bg-accent"
+            >
+              {t('cta.secondary')}
+            </Link>
           </div>
-          <div className="flex items-center gap-2">
-            <Phone className="h-5 w-5 text-foreground" />
-            <span>{t('features.calling')}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-foreground" />
-            <span>{t('features.email')}</span>
-          </div>
+          <ul className="flex flex-wrap gap-[18px] text-sm text-muted-foreground" data-testid="hero-chips">
+            {CHIPS.map((chip) => {
+              const Icon = MODULE_CATALOG[chip.moduleKey].icon;
+              return (
+                <li key={chip.key} className="inline-flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-foreground" aria-hidden="true" />
+                  {t(`chips.${chip.key}`)}
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </div>
 
-      {/* Hero Image */}
-      <HeroImage />
+      <AppMock />
     </section>
-  );
-}
-
-function HeroImage() {
-  return (
-    <Card className="p-3 md:p-6" style={{ backgroundColor: '#FCFCFC' }}>
-      <Card className="pointer-events-none bg-muted p-6 overflow-hidden" asChild>
-        <div className="relative w-full">
-          {/* Desktop Image */}
-          <div className="hidden md:block relative w-full" style={{ aspectRatio: '2560/1240' }}>
-            <Image
-              src="/dashboard-preview.png"
-              alt="EchoDesk Dashboard Preview"
-              fill
-              sizes="(max-width: 1200px) 80vw, 1400px"
-              priority
-              quality={100}
-              className="object-contain object-top rounded-lg"
-            />
-          </div>
-
-          {/* Mobile Image */}
-          <div className="block md:hidden relative w-full" style={{ aspectRatio: '750/1334' }}>
-            <Image
-              src="/dashboard-preview-mobile.png"
-              alt="EchoDesk Dashboard Preview"
-              fill
-              sizes="100vw"
-              priority
-              quality={100}
-              className="object-contain object-top rounded-lg"
-            />
-          </div>
-        </div>
-      </Card>
-    </Card>
   );
 }

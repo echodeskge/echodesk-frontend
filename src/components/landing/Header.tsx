@@ -3,180 +3,129 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Globe, Menu, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
+import { CONTAINER } from './SectionHeading';
 
+const NAV = [
+  { key: 'features', href: '/#features' },
+  { key: 'pricing', href: '/#pricing' },
+  { key: 'faq', href: '/#faq' },
+  { key: 'docs', href: '/docs' },
+] as const;
+
+/**
+ * Sticky marketing header (shared by the homepage and the other marketing
+ * pages). Carries the `.lp` scope itself so it looks the same wherever
+ * it is mounted. The wordmark is the live-site logo, unchanged.
+ */
 export function Header() {
   const t = useTranslations('landing.header');
   const router = useRouter();
-  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const changeLanguage = async (locale: string) => {
     try {
-      // Set locale cookie
       await fetch('/api/set-locale', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ locale }),
       });
-
-      // Reload to apply new language
       router.refresh();
     } catch (error) {
       console.error('Failed to change language:', error);
     }
   };
 
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-      setMobileMenuOpen(false);
-    }
-  };
+  const navLink = 'text-sm font-medium text-muted-foreground transition-colors hover:text-foreground';
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2">
-          <Image
-            src="/logo-svg.svg"
-            alt="EchoDesk"
-            width={100}
-            height={26}
-            className="h-6 w-auto"
-          />
+    <header className="lp sticky top-0 z-50 w-full border-b bg-background/85 backdrop-blur-[12px]">
+      <div className={cn(CONTAINER, 'flex h-[60px] items-center justify-between gap-4')}>
+        <Link href="/" className="flex items-center" aria-label="EchoDesk">
+          <Image src="/logo-svg.svg" alt="EchoDesk" width={100} height={26} className="h-6 w-auto" priority />
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          <button
-            onClick={() => scrollToSection('features')}
-            className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
-          >
-            {t('features')}
-          </button>
-          <button
-            onClick={() => scrollToSection('pricing')}
-            className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
-          >
-            {t('pricing')}
-          </button>
-          <Link
-            href="/privacy-policy"
-            className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
-          >
-            {t('privacy')}
-          </Link>
-          <Link
-            href="/terms-of-service"
-            className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
-          >
-            {t('terms')}
-          </Link>
-          <Link
-            href="/docs"
-            className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
-          >
-            {t('docs')}
-          </Link>
+        <nav className="hidden items-center gap-7 min-[820px]:flex" aria-label="Main">
+          {NAV.map((item) => (
+            <Link key={item.key} href={item.href} className={navLink}>
+              {t(item.key)}
+            </Link>
+          ))}
         </nav>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3">
-          {/* Language Switcher */}
+        <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2" aria-label={t('language')}>
-                <Globe className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">{t('language')}</span>
-              </Button>
+              <button
+                type="button"
+                aria-label={t('language')}
+                className="inline-flex h-[34px] items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Globe className="h-[15px] w-[15px]" aria-hidden="true" />
+                <span className="hidden min-[820px]:inline">{t('language')}</span>
+              </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => changeLanguage('ka')}>
-                ქართული
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => changeLanguage('en')}>
-                English
-              </DropdownMenuItem>
+            <DropdownMenuContent align="end" className="lp min-w-[140px]">
+              <DropdownMenuItem onClick={() => changeLanguage('ka')}>ქართული</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => changeLanguage('en')}>English</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* CTA Button */}
-          <Button asChild className="hidden sm:flex">
-            <Link href="/registration">{t('getStarted')}</Link>
-          </Button>
+          <Link
+            href="/registration"
+            className="hidden h-[34px] items-center rounded-lg bg-primary px-3.5 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90 min-[820px]:inline-flex"
+          >
+            {t('getStarted')}
+          </Link>
 
-          {/* Mobile Menu Toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
+          <button
+            type="button"
+            className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-lg transition-colors hover:bg-accent min-[820px]:hidden"
             aria-label={mobileMenuOpen ? t('closeMenu') : t('openMenu')}
             aria-expanded={mobileMenuOpen}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMobileMenuOpen((open) => !open)}
           >
             {mobileMenuOpen ? (
-              <X className="h-5 w-5" aria-hidden="true" />
+              <X className="h-[18px] w-[18px]" aria-hidden="true" />
             ) : (
-              <Menu className="h-5 w-5" aria-hidden="true" />
+              <Menu className="h-[18px] w-[18px]" aria-hidden="true" />
             )}
-          </Button>
+          </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t bg-background">
-          <nav className="container py-4 flex flex-col space-y-3">
-            <button
-              onClick={() => scrollToSection('features')}
-              className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors text-left"
-            >
-              {t('features')}
-            </button>
-            <button
-              onClick={() => scrollToSection('pricing')}
-              className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors text-left"
-            >
-              {t('pricing')}
-            </button>
+        <nav
+          className="flex flex-col gap-1 border-t bg-background px-6 pb-4 pt-3 min-[820px]:hidden"
+          aria-label="Main"
+        >
+          {NAV.map((item) => (
             <Link
-              href="/privacy-policy"
-              className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
+              key={item.key}
+              href={item.href}
+              className="rounded-lg px-2 py-2.5 text-[15px] font-medium transition-colors hover:bg-accent"
               onClick={() => setMobileMenuOpen(false)}
             >
-              {t('privacy')}
+              {t(item.key)}
             </Link>
-            <Link
-              href="/terms-of-service"
-              className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t('terms')}
-            </Link>
-            <Link
-              href="/docs"
-              className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t('docs')}
-            </Link>
-            <Button asChild className="w-full">
-              <Link href="/registration">{t('getStarted')}</Link>
-            </Button>
-          </nav>
-        </div>
+          ))}
+          <Link
+            href="/registration"
+            className="mt-2 flex h-11 items-center justify-center rounded-lg bg-primary font-semibold text-primary-foreground"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            {t('getStarted')}
+          </Link>
+        </nav>
       )}
     </header>
   );
