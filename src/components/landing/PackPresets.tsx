@@ -94,7 +94,7 @@ export function PackPresets({ features, employees, onLoad }: PackPresetsProps) {
                 <Link
                   href={registrationUrl({ pack: pack.slug, modules: pack.moduleKeys, employees })}
                   data-testid={`pack-cta-${pack.slug}`}
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                  className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-center text-[13px] font-semibold leading-[18px] text-primary-foreground transition-opacity hover:opacity-90"
                 >
                   {t(`packs.${pack.slug}.cta`)}
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
