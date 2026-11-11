@@ -22,6 +22,8 @@ interface OrderHeaderCardProps {
   order: OrderDetail
   updatingStatus: boolean
   isManager: boolean
+  /** Cleaned (hidden) order: no status changes until it is restored. */
+  disabled?: boolean
   onStatusChange: (status: string) => void
   t: Translate
 }
@@ -41,7 +43,7 @@ export function isFinalStatus(status: string): boolean {
 }
 
 /** Summary card on top of the order page: number, date, statuses and the status menu. */
-export function OrderHeaderCard({ order, updatingStatus, isManager, onStatusChange, t }: OrderHeaderCardProps) {
+export function OrderHeaderCard({ order, updatingStatus, isManager, disabled, onStatusChange, t }: OrderHeaderCardProps) {
   const locale = useLocale()
   const status = String(order.status || "pending")
   const paymentStatus = String(order.payment_status || "pending")
@@ -68,7 +70,7 @@ export function OrderHeaderCard({ order, updatingStatus, isManager, onStatusChan
         <PaymentStatusPill status={paymentStatus} />
       </div>
       <div className="ms-auto">
-        <Select value={status} onValueChange={onStatusChange} disabled={updatingStatus || isFinal}>
+        <Select value={status} onValueChange={onStatusChange} disabled={updatingStatus || isFinal || disabled}>
           <SelectTrigger className="h-7 w-[168px] text-xs" aria-label={t("detail.orderStatus")} data-testid="ec-order-status-select">
             <SelectValue />
           </SelectTrigger>

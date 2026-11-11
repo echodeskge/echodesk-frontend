@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +27,10 @@ interface OrderDetailsProps {
   refunding: boolean
   /** E-commerce manager: may refund, mark paid and cancel paid orders. */
   isManager: boolean
+  /** Cleaned (hidden) order: status, mark-paid and refund are off until it is restored. */
+  locked?: boolean
+  /** Full-width notice above the header card (e.g. the "cleaned" banner). */
+  banner?: ReactNode
   onStatusChange: (status: string) => Promise<void>
   onMarkPaid: () => Promise<void>
   onRefund: () => Promise<void>
@@ -38,6 +42,8 @@ export function OrderDetails({
   updatingStatus,
   refunding,
   isManager,
+  locked = false,
+  banner,
   onStatusChange,
   onMarkPaid,
   onRefund,
@@ -75,13 +81,17 @@ export function OrderDetails({
       <DetailLayout
         testId="ec-order-detail"
         header={
-          <OrderHeaderCard
-            order={order}
-            updatingStatus={updatingStatus}
-            isManager={isManager}
-            onStatusChange={handleStatusChangeRequest}
-            t={t}
-          />
+          <>
+            {banner}
+            <OrderHeaderCard
+              order={order}
+              updatingStatus={updatingStatus}
+              isManager={isManager}
+              disabled={locked}
+              onStatusChange={handleStatusChangeRequest}
+              t={t}
+            />
+          </>
         }
         main={
           <>
@@ -96,7 +106,7 @@ export function OrderDetails({
             <OrderPaymentCard
               order={order}
               refunding={refunding}
-              isManager={isManager}
+              isManager={isManager && !locked}
               onMarkPaid={onMarkPaid}
               onRefund={handleRefundRequest}
               t={t}

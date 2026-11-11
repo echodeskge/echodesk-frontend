@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useLocale } from "next-intl"
-import { SearchX, ShoppingCart } from "lucide-react"
+import { Archive, SearchX, ShoppingCart } from "lucide-react"
 import { EcEmptyState, EcPagination, EcTable, rdButton } from "../../_components/ui"
 import { OrderListItem } from "../_types"
 import { getOrderColumns, orderSortValue } from "./orders-table-columns"
@@ -25,6 +25,10 @@ interface OrdersTableProps {
   onSelectionChange: (selectedIds: Set<number>) => void
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
+  /** Cleaned (hidden) orders view: "cleaned on" instead of status, own empty state. */
+  cleaned?: boolean
+  /** "Restore" row action (cleaned view, store admins). */
+  onRestore?: (orderId: number) => void
   t: Translate
   tUi: Translate
 }
@@ -44,6 +48,8 @@ export function OrdersTable({
   onSelectionChange,
   onPageChange,
   onPageSizeChange,
+  cleaned,
+  onRestore,
   t,
   tUi,
 }: OrdersTableProps) {
@@ -61,6 +67,8 @@ export function OrdersTable({
     onSelectionChange,
     sort,
     onSort: setSort,
+    cleaned,
+    onRestore,
   })
 
   const showFooter = !error && !!data && data.length > 0
@@ -91,6 +99,8 @@ export function OrdersTable({
               </button>
             }
           />
+        ) : cleaned ? (
+          <EcEmptyState icon={Archive} title={t("cleaned.noCleaned")} description={t("cleaned.noCleanedHint")} />
         ) : (
           <EcEmptyState icon={ShoppingCart} title={t("noOrders")} description={t("noOrdersYet")} />
         )

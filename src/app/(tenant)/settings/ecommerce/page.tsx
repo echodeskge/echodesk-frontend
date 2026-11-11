@@ -49,6 +49,8 @@ import {
   fieldWidth,
   settingsInput,
 } from "./_components/settings-ui"
+import { OrdersSection } from "./_components/orders-section"
+import { useMyAccess } from "@/hooks/useMyAccess"
 import {
   deploymentTone,
   legacyPaymentFlags,
@@ -216,6 +218,8 @@ function extLink(href: string) {
 
 export default function EcommerceSettingsPage() {
   const t = useTranslations("ecommerceSettings")
+  // Cleaning the order list is a store-admin action (the backend answers 403 otherwise).
+  const { isStoreAdmin } = useMyAccess()
   const [loading, setLoading] = useState(true)
   const [loadFailed, setLoadFailed] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -751,6 +755,9 @@ export default function EcommerceSettingsPage() {
           />
         </FieldRow>
       </SectionCard>
+
+      {/* Orders: counts + "Clean order list" (store admins) */}
+      {isStoreAdmin && <OrdersSection />}
 
       {/* Payment Methods */}
       <SectionCard

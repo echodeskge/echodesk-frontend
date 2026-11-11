@@ -35,6 +35,8 @@ const axiosMock = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }))
 vi.mock("@/api/axios", () => ({ default: axiosMock }))
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
 vi.mock("sonner", () => ({ toast }))
+// The settings page gates its Orders section on the store admin (EC-05 covers that section).
+vi.mock("@/hooks/useMyAccess", () => ({ useMyAccess: () => ({ isStoreAdmin: false }) }))
 vi.mock("@/components/MiniMapPicker", () => ({
   MiniMapPicker: ({ labels }: { labels?: { dropPin?: string } }) => <div data-testid="map">{labels?.dropPin}</div>,
 }))

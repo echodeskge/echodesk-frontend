@@ -11,6 +11,10 @@ interface OrdersTableToolbarProps {
   statusFilter: string
   onSearchChange: (value: string) => void
   onStatusFilterChange: (value: string) => void
+  /** Store admins: "Active | Cleaned" switch (cleaned = hidden orders, URL `?cleaned=1`). */
+  showCleanedToggle?: boolean
+  cleaned?: boolean
+  onCleanedChange?: (cleaned: boolean) => void
   t: Translate
   tUi: Translate
 }
@@ -21,6 +25,9 @@ export function OrdersTableToolbar({
   statusFilter,
   onSearchChange,
   onStatusFilterChange,
+  showCleanedToggle,
+  cleaned,
+  onCleanedChange,
   t,
   tUi,
 }: OrdersTableToolbarProps) {
@@ -43,6 +50,18 @@ export function OrdersTableToolbar({
 
   return (
     <Toolbar testId="ec-orders-toolbar">
+      {showCleanedToggle && (
+        <Segmented
+          value={cleaned ? "cleaned" : "active"}
+          onChange={(v) => onCleanedChange?.(v === "cleaned")}
+          ariaLabel={t("cleaned.viewLabel")}
+          options={[
+            { value: "active", label: t("cleaned.active") },
+            { value: "cleaned", label: t("cleaned.cleaned") },
+          ]}
+          testId="ec-orders-cleaned"
+        />
+      )}
       <Segmented
         value={statusFilter}
         onChange={onStatusFilterChange}

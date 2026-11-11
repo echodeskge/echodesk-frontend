@@ -7,6 +7,7 @@ import React from "react"
 import fs from "node:fs"
 import path from "node:path"
 import { render } from "@testing-library/react"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { NextIntlClientProvider } from "next-intl"
 import en from "@/i18n/messages/en.json"
 import ka from "@/i18n/messages/ka.json"
@@ -59,6 +60,16 @@ export function renderEc(ui: React.ReactElement, locale: "en" | "ka" = "en") {
       </NextIntlClientProvider>
     </HeaderActionsProvider>
   )
+}
+
+/**
+ * `renderEc` inside a React Query provider, for pages that use `useQueryClient`
+ * (orders list / detail invalidate the dashboard analytics). Pass your own
+ * client to spy on `invalidateQueries`.
+ */
+export function renderEcQuery(ui: React.ReactElement, locale: "en" | "ka" = "en", client?: QueryClient) {
+  const qc = client ?? new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return renderEc(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>, locale)
 }
 
 /** Flat "a.b.c" -> string map of a catalog subtree. */

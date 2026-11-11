@@ -1,14 +1,17 @@
 "use client"
 
+import { RotateCcw } from "lucide-react"
 import {
   IdText,
   MoneyCell,
   OrderStatusPill,
   PaymentStatusPill,
   PersonCell,
+  TonePill,
   formatCount,
   formatEcDate,
   parseMoney,
+  rdButton,
   selectionColumn,
   type EcColumn,
 } from "../../_components/ui"
@@ -27,6 +30,10 @@ interface ColumnOptions {
   onSelectionChange: (ids: Set<number>) => void
   sort: SortState | null
   onSort: (next: SortState | null) => void
+  /** Cleaned (hidden) orders: the status column shows when they were cleaned. */
+  cleaned?: boolean
+  /** Adds a "Restore" row action (cleaned view, store admins). */
+  onRestore?: (orderId: number) => void
 }
 
 /** The value a column sorts by (current page only). */
@@ -42,6 +49,8 @@ export function orderSortValue(order: OrderListItem, id: string): string | numbe
       return String(order.payment_status ?? "")
     case "status":
       return String(order.status ?? "")
+    case "cleanedAt":
+      return order.deleted_at ? new Date(order.deleted_at).getTime() : null
     case "total":
       return parseMoney(order.total_amount)
     case "date":
@@ -60,11 +69,63 @@ export function getOrderColumns({
   onSelectionChange,
   sort,
   onSort,
+  cleaned,
+  onRestore,
 }: ColumnOptions): EcColumn<OrderListItem>[] {
   const head = (id: string, label: string, align: "start" | "end" = "start") => (
     <SortHeader id={id} label={label} sort={sort} onSort={onSort} align={align} ariaLabel={t("sortBy", { column: label })} />
   )
   const customerName = (o: OrderListItem) => o.client_name || t("unknownCustomer")
+
+  const statusColumn: EcColumn<OrderListItem> = cleaned
+    ? {
+        id: "cleanedAt",
+        header: head("cleanedAt", t("table.status")),
+        width: "150px",
+        mobile: "end",
+        cell: (o) => (
+          <span className="flex min-w-0 items-center gap-1.5">
+            <TonePill tone="neutral" dot testId="ec-order-cleaned">
+              {t("cleaned.pill")}
+            </TonePill>
+            <span className="truncate text-[11px] text-muted-foreground tabular-nums">{formatEcDate(o.deleted_at, locale)}</span>
+          </span>
+        ),
+      }
+    : {
+        id: "status",
+        header: head("status", t("table.status")),
+        width: "120px",
+        mobile: "end",
+        cell: (o) => <OrderStatusPill status={String(o.status || "pending")} />,
+      }
+
+  const restoreColumn: EcColumn<OrderListItem>[] =
+    cleaned && onRestore
+      ? [
+          {
+            id: "restore",
+            header: "",
+            width: "96px",
+            align: "end",
+            // Own line on phones: next to the "Cleaned" pill it squeezed the
+            // order number to "#ORD-DEM…" in Georgian at 390px.
+            mobile: "actions",
+            cell: (o) => (
+              <button
+                type="button"
+                className={rdButton.outlineSm}
+                onClick={() => onRestore(o.id)}
+                aria-label={`${t("cleaned.restore")} #${o.order_number}`}
+                data-testid="ec-order-restore"
+              >
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                {t("cleaned.restore")}
+              </button>
+            ),
+          },
+        ]
+      : []
 
   return [
     selectionColumn<OrderListItem>({
@@ -118,13 +179,7 @@ export function getOrderColumns({
         )
       },
     },
-    {
-      id: "status",
-      header: head("status", t("table.status")),
-      width: "120px",
-      mobile: "end",
-      cell: (o) => <OrderStatusPill status={String(o.status || "pending")} />,
-    },
+    statusColumn,
     {
       id: "total",
       header: head("total", t("table.total"), "end"),
@@ -142,5 +197,6 @@ export function getOrderColumns({
       className: "tabular-nums",
       cell: (o) => formatEcDate(o.created_at, locale),
     },
+    ...restoreColumn,
   ]
 }
