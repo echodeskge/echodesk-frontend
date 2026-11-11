@@ -194,7 +194,8 @@ export default function ServicesPage() {
       {
         id: "type",
         header: t("type"),
-        width: "150px",
+        // Wide enough for the Georgian "duration based" pill (174px of text at 11px).
+        width: "190px",
         mobile: "hidden",
         cell: (s) => (
           <TonePill tone="neutral" testId="bkg-service-type-pill">

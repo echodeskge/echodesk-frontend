@@ -75,14 +75,16 @@ export function getBookingColumns({ t, tUi, locale }: { t: Translate; tUi: Trans
     {
       id: "payment",
       header: t("payment"),
-      width: "110px",
+      // The Georgian "fully paid" pill is 113px of text at 11px.
+      width: "140px",
       mobile: "hidden",
       cell: (b) => <PaymentStatusPill status={b.payment_status} />,
     },
     {
       id: "status",
       header: t("status"),
-      width: "120px",
+      // Icon + the Georgian "confirmed" (118px of text at 11px) did not fit in 120px.
+      width: "150px",
       mobile: "end",
       cell: (b) => <BookingStatusPill status={b.status} />,
     },
