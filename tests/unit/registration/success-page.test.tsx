@@ -51,8 +51,8 @@ describe("registration success page", () => {
   it("shows the workspace, the trial end date and the day-30 note (en)", async () => {
     window.sessionStorage.setItem(REGISTRATION_RESULT_KEY, JSON.stringify(RESULT));
     renderPage();
-    expect(screen.getByRole("heading", { level: 1, name: "Your workspace is ready" })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByTestId("success-subtitle")).toHaveTextContent("Acme Inc is set up"));
+    expect(screen.getByRole("heading", { level: 1, name: "Your workspace is being set up" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId("success-subtitle")).toHaveTextContent("Acme Inc is being created"));
     expect(screen.getByTestId("trial-ends")).toHaveTextContent("Free trial ends on 11 December 2026");
     expect(screen.getByTestId("workspace-host")).toHaveTextContent("acme.echodesk.ge");
     expect(screen.getByTestId("open-workspace")).toHaveAttribute("href", "https://acme.echodesk.ge");
@@ -68,7 +68,7 @@ describe("registration success page", () => {
   it("renders Georgian copy", async () => {
     window.sessionStorage.setItem(REGISTRATION_RESULT_KEY, JSON.stringify(RESULT));
     renderPage("ka");
-    expect(screen.getByRole("heading", { level: 1, name: "თქვენი სამუშაო სივრცე მზადაა" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "თქვენი სამუშაო სივრცე იქმნება" })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId("success-subtitle")).toHaveTextContent("Acme Inc შექმნილია"));
     const date = formatTrialDate(RESULT.trial_ends_at, "ka");
     expect(date).toMatch(/2026/);
@@ -80,7 +80,7 @@ describe("registration success page", () => {
   it("falls back to generic copy and a 30-day date when opened without a signup in this tab", () => {
     renderPage();
     expect(screen.getByTestId("success-subtitle")).toHaveTextContent(
-      "Your workspace is set up and your 30-day free trial has started — no card needed.",
+      "Your workspace is being created — this takes a minute or two. Your 30-day free trial has started, no card needed.",
     );
     expect(screen.queryByTestId("workspace-card")).not.toBeInTheDocument();
     expect(screen.getByTestId("trial-ends")).toHaveTextContent(/Free trial ends on \d{1,2} \w+ \d{4}/);
