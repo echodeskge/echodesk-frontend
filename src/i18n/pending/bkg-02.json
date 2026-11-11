@@ -1,0 +1,52 @@
+{
+  "en": {
+    "bookingsCalendar": {
+      "viewsAria": "Calendar view",
+      "legendAria": "Status legend",
+      "zoomAria": "Time scale",
+      "previous": "Previous",
+      "next": "Next",
+      "dateAria": "Date",
+      "more": "+{n} more",
+      "openAria": "Open booking: {label}",
+      "noBookingsInRange": "No bookings in this period",
+      "noBookingsHint": "Bookings in this period will show here.",
+      "bookingsInRange": "{n, plural, one {# booking} other {# bookings}}",
+      "timeline": {
+        "nowLine": "Now",
+        "readOnlyHint": "Click a booking to see its details. Only administrators can add or change bookings here."
+      },
+      "dialog": {
+        "freeTimes": "Free start times",
+        "loadingTimes": "Loading free times…",
+        "noFreeTimes": "No free times for this service on that day — you can still type a time.",
+        "optionsFailed": "Couldn't load the specialists and services. Close the dialog and try again."
+      }
+    }
+  },
+  "ka": {
+    "bookingsCalendar": {
+      "viewsAria": "კალენდრის ხედი",
+      "legendAria": "სტატუსების ლეგენდა",
+      "zoomAria": "დროის მასშტაბი",
+      "previous": "წინა",
+      "next": "შემდეგი",
+      "dateAria": "თარიღი",
+      "more": "კიდევ {n}",
+      "openAria": "ჯავშნის გახსნა: {label}",
+      "noBookingsInRange": "ამ პერიოდში ჯავშნები არ არის",
+      "noBookingsHint": "ამ პერიოდის ჯავშნები აქ გამოჩნდება.",
+      "bookingsInRange": "{n} ჯავშანი",
+      "timeline": {
+        "nowLine": "ახლა",
+        "readOnlyHint": "დააჭირეთ ჯავშანს დეტალების სანახავად. აქ ჯავშნების დამატება და შეცვლა მხოლოდ ადმინისტრატორებს შეუძლიათ."
+      },
+      "dialog": {
+        "freeTimes": "თავისუფალი დროები",
+        "loadingTimes": "თავისუფალი დროები იტვირთება…",
+        "noFreeTimes": "ამ დღეს ამ სერვისისთვის თავისუფალი დრო არ არის — დრო მაინც შეგიძლიათ ჩაწეროთ.",
+        "optionsFailed": "სპეციალისტებისა და სერვისების ჩატვირთვა ვერ მოხერხდა. დახურეთ ფანჯარა და კიდევ სცადეთ."
+      }
+    }
+  }
+}
