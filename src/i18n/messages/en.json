@@ -5542,7 +5542,15 @@
       "allowCash": "Allow Cash Payment",
       "allowCashDesc": "Allow customers to pay in cash on arrival",
       "allowCard": "Allow Card Payment",
-      "allowCardDesc": "Allow customers to pay by card via BOG"
+      "allowCardDesc": "Allow customers to pay by card via BOG",
+      "paymentMethod": "Online payment",
+      "paymentMethodDesc": "How clients pay for online bookings: by bank transfer with the details below, or by card through the Bank of Georgia gateway.",
+      "manualTransfer": "Bank transfer",
+      "bogGateway": "BOG card gateway",
+      "bankName": "Bank name",
+      "bankHelp": "These details are shown to clients who book online and pay by transfer.",
+      "bankIban": "IBAN",
+      "bankAccountHolder": "Account holder"
     },
     "bogSettings": {
       "title": "Bank of Georgia Payment Gateway",
@@ -5709,7 +5717,11 @@
     "clients": "Clients",
     "viewClientInfo": "View client information",
     "staffAvailability": "Staff Availability",
-    "manageSchedules": "Manage staff schedules"
+    "manageSchedules": "Manage staff schedules",
+    "completedToday": "Completed today",
+    "revenueThisWeek": "Revenue this week",
+    "thisWeek": "This week",
+    "loadFailed": "Couldn't load the dashboard"
   },
   "bookingsServices": {
     "title": "Services",
@@ -5759,7 +5771,45 @@
     "priceRequired": "Price is required",
     "pricePositive": "Price must be greater than 0",
     "durationRequired": "Duration is required",
-    "durationPositive": "Duration must be greater than 0"
+    "durationPositive": "Duration must be greater than 0",
+    "minutes": "{count} min",
+    "comingSoon": "Coming soon",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "serviceActivated": "Service activated",
+    "serviceDeactivated": "Service deactivated",
+    "deleteHasBookings": "This service has bookings and can't be deleted. Deactivate it instead.",
+    "editAria": "Edit {name}",
+    "deleteAria": "Delete {name}",
+    "priceNotNegative": "Price can't be negative (0 means free)",
+    "bufferInvalid": "Buffer must be 0 or more minutes",
+    "depositRange": "Deposit must be between 0 and 100%",
+    "deleteDialog": {
+      "title": "Delete this service?",
+      "description": "“{name}” will be removed from the catalog and the online booking page. This can't be undone.",
+      "confirm": "Delete"
+    },
+    "form": {
+      "details": "Details",
+      "nameEn": "Name (English)",
+      "nameKa": "Name (Georgian)",
+      "descriptionEn": "Description (English)",
+      "descriptionKa": "Description (Georgian)",
+      "category": "Category",
+      "noCategory": "No category",
+      "loadingOptions": "Loading…",
+      "optionsFailed": "Couldn't load the categories and staff",
+      "pricing": "Duration & price",
+      "buffer": "Buffer after (minutes)",
+      "bufferHelp": "Time kept free after each booking, e.g. for cleaning.",
+      "priceHelp": "0 makes the service free.",
+      "deposit": "Deposit (%)",
+      "depositHelp": "Share of the price paid up front when deposits are required.",
+      "booking": "Booking",
+      "staff": "Staff",
+      "staffHint": "{count} selected",
+      "noStaff": "No staff members yet. Add them under Staff first."
+    }
   },
   "bookingsCategories": {
     "title": "Service Categories",
@@ -5795,7 +5845,28 @@
     "saveFailed": "Failed to save category",
     "deleteFailed": "Failed to delete category",
     "confirmDelete": "Are you sure you want to delete this category?",
-    "nameRequired": "Category name is required"
+    "nameRequired": "Category name is required",
+    "editAria": "Edit {name}",
+    "deleteAria": "Delete {name}",
+    "deleteDialog": {
+      "title": "Delete this category?",
+      "description": "“{name}” will be removed; its services stay without a category. This can't be undone.",
+      "confirm": "Delete"
+    },
+    "form": {
+      "details": "Details",
+      "nameEn": "Name (English)",
+      "nameKa": "Name (Georgian)",
+      "descriptionEn": "Description (English)",
+      "descriptionKa": "Description (Georgian)",
+      "display": "Display",
+      "icon": "Icon",
+      "iconHelp": "Icon name shown on the online booking page (optional).",
+      "displayOrder": "Display order",
+      "displayOrderHelp": "Lower numbers come first.",
+      "isActive": "Active",
+      "isActiveHelp": "Inactive categories are hidden from the online booking page."
+    }
   },
   "bookingsStaff": {
     "title": "Staff Members",
@@ -5846,7 +5917,21 @@
     "confirmDelete": "Are you sure you want to remove this staff member?",
     "userRequired": "Please select a user",
     "servicesRequired": "At least one service must be selected",
-    "workingHours": "Working hours"
+    "workingHours": "Working hours",
+    "editAria": "Edit {name}",
+    "deleteAria": "Remove {name}",
+    "noStaffYet": "Add the people who take bookings.",
+    "usersFailed": "Couldn't load the users",
+    "selectUserHelp": "Search by name or e-mail, then pick the user.",
+    "noUsersMatch": "No users match this search",
+    "activeForBookingsHelp": "Inactive staff don't appear on the online booking page.",
+    "loadingServices": "Loading services…",
+    "servicesFailed": "Couldn't load the services",
+    "deleteDialog": {
+      "title": "Remove this staff member?",
+      "description": "{name} will no longer take bookings. Their past bookings are kept.",
+      "confirm": "Remove"
+    }
   },
   "bookingsBookings": {
     "title": "Bookings",
@@ -5934,7 +6019,11 @@
     "paymentUrl": "Payment Link",
     "bogOrderId": "Order ID",
     "clientEmail": "Email",
-    "clientPhone": "Phone"
+    "clientPhone": "Phone",
+    "dateFilter": "Date",
+    "statusFilter": "Status",
+    "loadFailed": "Couldn't load the bookings",
+    "openBooking": "Open booking {number}"
   },
   "bookingsCalendar": {
     "title": "Booking Calendar",
@@ -6972,7 +7061,42 @@
     "dayOff": "Day Off",
     "working": "Working",
     "confirmDeleteException": "Delete this exception?",
-    "status": "Status"
+    "status": "Status",
+    "backToStaff": "Staff",
+    "breakLabel": "Break: {range}",
+    "editScheduleFor": "Edit {day}",
+    "editScheduleHint": "Working hours and the break for this weekday.",
+    "workingDay": "Working day",
+    "workingDayOn": "Bookings can be made on this day.",
+    "workingDayOff": "Day off: no bookings on this day.",
+    "breakHint": "Leave empty for no break.",
+    "editException": "Edit exception",
+    "exceptionHint": "A day off or special hours that override the weekly schedule.",
+    "exceptionKind": "Type",
+    "unavailableAllDay": "Unavailable all day",
+    "specialHours": "Special hours",
+    "reasonHint": "Shown only to your team.",
+    "reasonPlaceholder": "e.g. Conference, Holiday",
+    "exceptionUpdated": "Exception updated",
+    "deleteFailed": "Couldn't delete the exception",
+    "noExceptionsHint": "Days off and special hours from today on appear here.",
+    "editExceptionAria": "Edit the exception on {date}",
+    "deleteExceptionAria": "Delete the exception on {date}",
+    "noStaff": "No staff members yet",
+    "noStaffHint": "Add staff first, then set their working hours here.",
+    "readOnlyHint": "Only administrators and managers can change working hours.",
+    "inactive": "inactive",
+    "errors": {
+      "endAfterStart": "End time must be after the start time",
+      "breakBothEnds": "Enter both the break start and end",
+      "breakOrder": "Break end must be after the break start",
+      "breakInside": "The break must be within the working hours",
+      "dateRequired": "Pick a date"
+    },
+    "deleteDialog": {
+      "title": "Delete this exception?",
+      "description": "The exception on {date} will be removed and the weekly schedule applies again."
+    }
   },
   "shippingMethods": {
     "title": "Shipping Methods",
@@ -8719,6 +8843,231 @@
       "users": "users",
       "whatsapp": "WhatsApp",
       "storage": "storage"
+    }
+  },
+  "bookingsUi": {
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "no_show": "No show"
+    },
+    "paymentStatus": {
+      "pending": "Unpaid",
+      "deposit_paid": "Deposit paid",
+      "fully_paid": "Fully paid",
+      "failed": "Failed",
+      "refunded": "Refunded"
+    },
+    "errorTitle": "Couldn't load this page",
+    "errorHint": "Check your connection and try again.",
+    "noAccessTitle": "No access",
+    "noAccessHint": "You don't have permission to see this. Ask an administrator for access.",
+    "retry": "Try again",
+    "loading": "Loading…",
+    "range": "{from}–{to} of {total}",
+    "noMatches": "Nothing matches these filters",
+    "noMatchesHint": "Try another search or clear the filters.",
+    "clearFilters": "Clear filters",
+    "clearSearch": "Clear search",
+    "unassigned": "Unassigned",
+    "back": "Back",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close"
+  },
+  "bookingsDetail": {
+    "backToBookings": "Bookings",
+    "notFound": "Booking not found",
+    "notFoundHint": "It may have been deleted, or the link is wrong.",
+    "loadFailed": "Couldn't load the booking",
+    "actions": {
+      "confirm": "Confirm",
+      "checkIn": "Check in",
+      "complete": "Complete",
+      "noShow": "No-show",
+      "reschedule": "Reschedule",
+      "assignStaff": "Assign staff",
+      "cancel": "Cancel"
+    },
+    "cards": {
+      "bookingInfo": "Booking information",
+      "clientInfo": "Client information",
+      "notes": "Notes",
+      "paymentInfo": "Payment information",
+      "timeline": "Timeline",
+      "rating": "Rating",
+      "cancellation": "Cancellation"
+    },
+    "fields": {
+      "dateTime": "Date & time",
+      "service": "Service",
+      "staff": "Staff",
+      "status": "Status",
+      "client": "Client",
+      "email": "Email",
+      "phone": "Phone",
+      "clientNotes": "Client notes",
+      "staffNotes": "Staff notes",
+      "noNotes": "No notes",
+      "viewClient": "View client",
+      "unassigned": "Unassigned",
+      "duration": "{minutes} min"
+    },
+    "notes": {
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "saved": "Notes saved",
+      "saveFailed": "Couldn't save the notes",
+      "clientPlaceholder": "What the client asked for…",
+      "staffPlaceholder": "Internal notes for the team…"
+    },
+    "payment": {
+      "total": "Total amount",
+      "deposit": "Deposit",
+      "paid": "Paid",
+      "remaining": "Remaining",
+      "method": "Method",
+      "methods": {
+        "cash": "Cash",
+        "card": "Card",
+        "transfer": "Bank transfer",
+        "other": "Other"
+      },
+      "recordPayment": "Record payment",
+      "manualPayments": "Recorded payments",
+      "recordedBy": "by {name}",
+      "checkPaymentStatus": "Check payment status",
+      "paymentStatusChecked": "Payment status: {status}",
+      "checkFailed": "Couldn't check the payment status",
+      "editPrice": "Edit price",
+      "price": "Price (₾)",
+      "priceSaved": "Price updated",
+      "priceInvalid": "Enter a price of 0 or more",
+      "priceFailed": "Couldn't update the price",
+      "bogOrderId": "Order ID"
+    },
+    "timeline": {
+      "created": "Created",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "rating": {
+      "outOf": "{rating}/5",
+      "noReview": "No review"
+    },
+    "cancellation": {
+      "cancelledAt": "Cancelled at",
+      "cancelledBy": "Cancelled by",
+      "by": {
+        "client": "the client",
+        "staff": "a staff member",
+        "admin": "an administrator"
+      },
+      "reason": "Reason",
+      "noReason": "No reason given",
+      "refund": "Refund",
+      "refundStatus": {
+        "no_refund": "No refund",
+        "pending": "Refund pending",
+        "completed": "Refunded",
+        "refunded": "Refunded",
+        "error": "Refund failed"
+      },
+      "manualRefundDue": "{amount} paid in cash is to be returned by hand."
+    },
+    "force": {
+      "title": "Proceed without payment?",
+      "description": "The customer chose to pay online by card and hasn't paid yet. You can go ahead anyway and take the payment at the venue.",
+      "confirm": "Proceed anyway",
+      "cancel": "Keep waiting"
+    },
+    "cancelDialog": {
+      "title": "Cancel booking",
+      "description": "The time is freed and the customer is told by email if we have one. Online payments are refunded by the cancellation policy.",
+      "reason": "Reason",
+      "reasonPlaceholder": "Why is the booking cancelled?",
+      "keep": "Keep booking",
+      "confirm": "Cancel booking"
+    },
+    "rescheduleDialog": {
+      "title": "Reschedule",
+      "description": "Pick a day and one of the free times for {service}.",
+      "date": "New date",
+      "time": "New time",
+      "loadingSlots": "Looking for free times…",
+      "noSlots": "No free times on this day",
+      "pickDate": "Pick a date to see free times",
+      "submit": "Reschedule",
+      "cancel": "Cancel"
+    },
+    "assignDialog": {
+      "title": "Assign staff",
+      "staff": "Staff member",
+      "select": "Select a staff member",
+      "noStaff": "No staff member is active for bookings",
+      "submit": "Assign",
+      "cancel": "Cancel"
+    },
+    "paymentDialog": {
+      "title": "Record payment",
+      "description": "A payment taken at the venue. {remaining} is still owed.",
+      "amount": "Amount (₾)",
+      "method": "Method",
+      "note": "Note",
+      "notePlaceholder": "Receipt number, who paid…",
+      "amountInvalid": "Enter an amount between 0.01 and {remaining}",
+      "submit": "Record",
+      "cancel": "Cancel"
+    },
+    "toast": {
+      "confirmed": "Booking confirmed",
+      "checkedIn": "Client checked in",
+      "completed": "Booking completed",
+      "noShow": "Marked as no-show",
+      "cancelled": "Booking cancelled",
+      "refundStarted": "A refund of {amount} was started",
+      "manualRefundDue": "Return {amount} paid in cash to the client by hand.",
+      "rescheduled": "Booking rescheduled",
+      "staffAssigned": "Staff assigned",
+      "paymentRecorded": "Payment recorded",
+      "actionFailed": "Action failed"
+    }
+  },
+  "bookingsClients": {
+    "title": "Clients",
+    "count": "{count, plural, one {# client} other {# clients}}",
+    "searchPlaceholder": "Search name, phone or email",
+    "table": {
+      "name": "Client",
+      "phone": "Phone",
+      "email": "Email",
+      "verified": "Verified",
+      "bookings": "Bookings"
+    },
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "noClients": "No clients yet",
+    "noClientsHint": "Clients appear here after their first booking.",
+    "loadFailed": "Couldn't load the clients",
+    "openClient": "Open {name}",
+    "rail": {
+      "title": "Client",
+      "close": "Close",
+      "stats": {
+        "total": "Bookings",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "spent": "Total spent"
+      },
+      "bookings": "Bookings",
+      "noBookings": "No bookings yet",
+      "open": "Open",
+      "loadFailed": "Couldn't load the client's bookings"
     }
   }
 }
