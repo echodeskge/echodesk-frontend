@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import type { ComponentProps, MouseEvent } from "react"
 import Lightbox from "yet-another-react-lightbox"
 import Captions from "yet-another-react-lightbox/plugins/captions"
@@ -18,7 +18,7 @@ import "yet-another-react-lightbox/plugins/thumbnails.css"
 import { ImageOff } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import axios from "@/api/axios"
+import { loadAuthenticatedMedia, needsAuthFetch, useAuthenticatedMedia } from "@/lib/authenticated-media"
 
 export interface MediaType {
   src: string
@@ -55,47 +55,14 @@ function UnavailableMedia({ label, className }: { label: string; className?: str
   )
 }
 
-// Check if URL requires authenticated fetch (e.g. WhatsApp media proxy)
-function needsAuthFetch(src: string | undefined | null): boolean {
-  if (!src) return false
-  return src.includes("/api/social/whatsapp-media/")
-}
-
 /**
- * Component that fetches an image via authenticated axios request
- * and renders it using a blob URL. Used for WhatsApp media proxy.
+ * Image behind the WhatsApp media proxy: fetched with the auth interceptor
+ * through the shared cache in src/lib/authenticated-media.ts (one request
+ * per media id, started when the tile nears the viewport) and rendered from
+ * the resulting blob URL.
  */
 function AuthenticatedImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null)
-  const [error, setError] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    setBlobUrl(null)
-    setError(false)
-
-    axios
-      .get(src, { responseType: "blob" })
-      .then((res) => {
-        if (!cancelled) {
-          setBlobUrl(URL.createObjectURL(res.data))
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setError(true)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [src])
-
-  // Cleanup blob URL on unmount or change
-  useEffect(() => {
-    return () => {
-      if (blobUrl) URL.revokeObjectURL(blobUrl)
-    }
-  }, [blobUrl])
+  const { blobUrl, error, ref } = useAuthenticatedMedia(src)
 
   if (error) {
     return (
@@ -112,7 +79,7 @@ function AuthenticatedImage({ src, alt, className }: { src: string; alt: string;
   }
 
   if (!blobUrl) {
-    return <div className={cn("animate-pulse bg-muted rounded-lg", className)} style={{ minHeight: 100 }} />
+    return <div ref={ref} className={cn("animate-pulse bg-muted rounded-lg", className)} style={{ minHeight: 100 }} />
   }
 
   // eslint-disable-next-line @next/next/no-img-element
@@ -127,36 +94,7 @@ function AuthenticatedImage({ src, alt, className }: { src: string; alt: string;
  * <video> a local blob URL, mirroring AuthenticatedImage.
  */
 function AuthenticatedVideo({ src, className }: { src: string; className?: string }) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null)
-  const [error, setError] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    setBlobUrl(null)
-    setError(false)
-
-    axios
-      .get(src, { responseType: "blob" })
-      .then((res) => {
-        if (!cancelled) {
-          setBlobUrl(URL.createObjectURL(res.data))
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setError(true)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [src])
-
-  // Cleanup blob URL on unmount or change
-  useEffect(() => {
-    return () => {
-      if (blobUrl) URL.revokeObjectURL(blobUrl)
-    }
-  }, [blobUrl])
+  const { blobUrl, error, ref } = useAuthenticatedMedia(src)
 
   if (error) {
     return (
@@ -173,7 +111,7 @@ function AuthenticatedVideo({ src, className }: { src: string; className?: strin
   }
 
   if (!blobUrl) {
-    return <div className={cn("animate-pulse bg-muted rounded-lg", className)} style={{ minHeight: 100 }} />
+    return <div ref={ref} className={cn("animate-pulse bg-muted rounded-lg", className)} style={{ minHeight: 100 }} />
   }
 
   return (
@@ -207,6 +145,10 @@ export function MediaGrid({
   // lightbox opens so those slides become PLAIN image slides — slides that go
   // through render.slide bypass the Zoom plugin entirely, so without this
   // proxy-hosted images could not zoom at all.
+  //
+  // The blobs come from the shared cache (src/lib/authenticated-media.ts), so
+  // an image already shown in the thread is not fetched again here, and the
+  // URLs stay valid for the page session — nothing to revoke on unmount.
   const [authBlobs, setAuthBlobs] = useState<Record<string, string>>({})
   useEffect(() => {
     if (!lightboxOpen) return
@@ -215,13 +157,10 @@ export function MediaGrid({
       (item) => item.src && item.type !== "VIDEO" && needsAuthFetch(item.src) && !authBlobs[item.src]
     )
     for (const item of targets) {
-      axios
-        .get(item.src, { responseType: "blob" })
-        .then((res) => {
+      loadAuthenticatedMedia(item.src)
+        .then((blobUrl) => {
           if (cancelled) return
-          setAuthBlobs((prev) =>
-            prev[item.src] ? prev : { ...prev, [item.src]: URL.createObjectURL(res.data) }
-          )
+          setAuthBlobs((prev) => (prev[item.src] ? prev : { ...prev, [item.src]: blobUrl }))
         })
         .catch(() => {
           // render.slide's AuthenticatedImage stays as the fallback path
@@ -231,16 +170,6 @@ export function MediaGrid({
       cancelled = true
     }
   }, [lightboxOpen, data, authBlobs])
-
-  // Revoke created blob URLs when the grid unmounts.
-  const authBlobsRef = useRef(authBlobs)
-  authBlobsRef.current = authBlobs
-  useEffect(
-    () => () => {
-      for (const url of Object.values(authBlobsRef.current)) URL.revokeObjectURL(url)
-    },
-    []
-  )
 
   // Filter out items with no src (e.g. sent attachments with no URL yet)
   const validData = data.filter((item) => item.src)

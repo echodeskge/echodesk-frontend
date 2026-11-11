@@ -1,9 +1,9 @@
 import type { ReactNode } from "react"
-import { useMemo, useState, useEffect, useRef } from "react"
+import { useMemo } from "react"
 import DOMPurify from "dompurify"
 import { MapPin } from "lucide-react"
 import type { MessageType } from "@/components/chat/types"
-import axios from "@/api/axios"
+import { useAuthenticatedMedia } from "@/lib/authenticated-media"
 
 import { cn } from "@/lib/utils"
 
@@ -11,29 +11,22 @@ import { MessageBubbleContentFiles } from "./message-bubble-content-files"
 import { MessageBubbleContentImages } from "./message-bubble-content-images"
 import { MessageBubbleContentText } from "./message-bubble-content-text"
 
+/**
+ * Audio behind the WhatsApp media proxy: fetched with the auth interceptor
+ * through the shared, viewport-lazy cache in src/lib/authenticated-media.ts
+ * (one request per media id, shared with images/videos of the same
+ * attachment) and played from the resulting blob URL.
+ */
 function AuthenticatedAudio({ url, className }: { url: string; className?: string }) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null)
-  const blobUrlRef = useRef<string | null>(null)
+  const { blobUrl, error, ref } = useAuthenticatedMedia(url)
 
-  useEffect(() => {
-    let cancelled = false
-    axios.get(url, { responseType: "blob" }).then((res) => {
-      if (cancelled) return
-      const objectUrl = URL.createObjectURL(res.data)
-      blobUrlRef.current = objectUrl
-      setBlobUrl(objectUrl)
-    }).catch(() => {
-      // Fallback: try direct URL (works for non-authenticated URLs)
-      if (!cancelled) setBlobUrl(url)
-    })
-    return () => {
-      cancelled = true
-      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current)
-    }
-  }, [url])
+  if (error) {
+    // Fallback: try the direct URL (works for non-authenticated URLs)
+    return <audio controls src={url} className={className} />
+  }
 
   if (!blobUrl) {
-    return <div className="text-xs opacity-60 py-1">Loading audio...</div>
+    return <div ref={ref} className="text-xs opacity-60 py-1">Loading audio...</div>
   }
 
   return <audio controls src={blobUrl} className={className} />
