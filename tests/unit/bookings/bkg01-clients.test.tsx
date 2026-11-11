@@ -12,7 +12,8 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(nav.search),
 }))
 
-import BookingClientsPage, { parseClientParam } from "@/app/(tenant)/bookings/clients/page"
+import BookingClientsPage from "@/app/(tenant)/bookings/clients/page"
+import { parseClientParam } from "@/app/(tenant)/bookings/_lib/client-param"
 
 const client = (id: number, over: Record<string, unknown> = {}) => ({
   id,

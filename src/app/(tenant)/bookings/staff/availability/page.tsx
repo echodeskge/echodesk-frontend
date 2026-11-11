@@ -35,15 +35,7 @@ import {
 import { ActivePill, DeleteDialog } from "../../_components/catalog"
 import { ScheduleDialog, WEEKDAY_KEYS, scheduleToPayload, type ScheduleFormState } from "./_components/schedule-dialog"
 import { ExceptionDialog, exceptionToPayload, type ExceptionFormState } from "./_components/exception-dialog"
-
-/** "09:00 – 17:00 (Break: 13:00 – 14:00)" for a working day; the day-off / no-schedule texts otherwise. */
-export function scheduleText(row: StaffAvailability | undefined, t: (key: string, values?: Record<string, string>) => string): string {
-  if (!row) return t("noScheduleSet")
-  if (!row.is_available) return t("dayOff")
-  const hours = formatTimeRange(row.start_time, row.end_time)
-  if (row.break_start && row.break_end) return `${hours} (${t("breakLabel", { range: formatTimeRange(row.break_start, row.break_end) })})`
-  return hours
-}
+import { scheduleText } from "./_components/schedule-text"
 
 export default function StaffAvailabilityPage() {
   const t = useTranslations("bookingsAvailability")

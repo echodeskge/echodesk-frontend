@@ -4,42 +4,16 @@ import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useLocale, useTranslations } from "next-intl"
 import { Briefcase, Calendar, CalendarCheck, CheckCircle2, Clock, DollarSign, Users, type LucideIcon } from "lucide-react"
-import type { BookingDashboard } from "@/api/generated/interfaces"
 import { fetchActiveServicesCount, fetchDashboard } from "./_lib/bookings-api"
+import { dashboardTiles, type DashboardTiles } from "./_lib/dashboard-tiles"
 import {
   BookingsErrorState,
   BookingsHeaderBridge,
   BookingsPage,
   BookingsStatGrid,
   SectionCard,
-  formatMoney,
   type BookingsStatItem,
 } from "./_components/ui"
-
-export interface DashboardTiles {
-  todayBookings: number
-  pendingApproval: number
-  completedToday: number
-  weekRevenue: string
-  activeStaff: number
-  totalClients: number
-}
-
-/**
- * The tiles from the real `{today, week, overall}` payload. The API has no
- * month figures, so the tiles say what they show: today's counts and this
- * week's revenue.
- */
-export function dashboardTiles(data: BookingDashboard): DashboardTiles {
-  return {
-    todayBookings: data.today?.total_bookings ?? 0,
-    pendingApproval: data.today?.pending ?? 0,
-    completedToday: data.today?.completed ?? 0,
-    weekRevenue: formatMoney(data.week?.revenue ?? 0),
-    activeStaff: data.overall?.active_staff ?? 0,
-    totalClients: data.overall?.total_clients ?? 0,
-  }
-}
 
 interface QuickLink {
   key: string

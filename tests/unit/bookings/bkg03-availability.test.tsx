@@ -10,7 +10,8 @@ vi.mock("sonner", () => ({ toast }))
 const access = vi.hoisted(() => ({ current: { isBookingAdmin: true, userId: 1, loaded: true } }))
 vi.mock("@/hooks/useMyAccess", () => ({ useMyAccess: () => access.current }))
 
-import StaffAvailabilityPage, { scheduleText } from "@/app/(tenant)/bookings/staff/availability/page"
+import StaffAvailabilityPage from "@/app/(tenant)/bookings/staff/availability/page"
+import { scheduleText } from "@/app/(tenant)/bookings/staff/availability/_components/schedule-text"
 import { scheduleToPayload, validateSchedule } from "@/app/(tenant)/bookings/staff/availability/_components/schedule-dialog"
 import { exceptionToPayload } from "@/app/(tenant)/bookings/staff/availability/_components/exception-dialog"
 

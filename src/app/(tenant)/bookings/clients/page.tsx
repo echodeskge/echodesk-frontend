@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl"
 import { SearchX, Users } from "lucide-react"
 import type { BookingClient, BookingClientStats } from "@/api/generated/interfaces"
 import { fetchBookingClient, fetchBookingClients, fetchClientStats } from "../_lib/bookings-api"
+import { parseClientParam } from "../_lib/client-param"
 import {
   BookingsEmptyState,
   BookingsHeaderBridge,
@@ -20,13 +21,6 @@ import { getClientColumns } from "./_components/clients-columns"
 import { ClientRail } from "./_components/client-rail"
 
 const DEFAULT_PAGE_SIZE = 20
-
-/** `?client=<id>` (the booking detail's client link) → a positive integer id, or null. */
-export function parseClientParam(raw: string | null | undefined): number | null {
-  if (!raw || !/^\d+$/.test(raw)) return null
-  const n = Number(raw)
-  return Number.isSafeInteger(n) && n > 0 ? n : null
-}
 
 /** Reads `?client=` on mount (own component: `useSearchParams` needs a Suspense boundary). */
 function ClientDeepLink({ onLinked, clearRef }: { onLinked: (id: number) => void; clearRef: React.MutableRefObject<() => void> }) {
