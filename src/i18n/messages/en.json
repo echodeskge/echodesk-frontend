@@ -540,7 +540,6 @@
     "selectedFeatures": "Selected Features",
     "pricingModel": "Pricing Model",
     "users": "Users",
-    "freeTrialDays": "14-Day Free Trial",
     "noChargeNow": "No charge now, only after trial ends",
     "totalPerMonth": "Total per month",
     "todaysCharge": "Today's Charge",
@@ -4861,16 +4860,16 @@
       }
     },
     "cta": {
-      "title": "Ready to Transform Your Customer Support?",
-      "subtitle": "Join hundreds of businesses using EchoDesk to deliver exceptional customer service",
-      "button": "Start Free Trial",
-      "noCreditCard": "No credit card required • 14-day free trial"
+      "title": "Ready to run your business from one place?",
+      "subtitle": "Built for Georgian teams, priced in GEL, supported from Tbilisi.",
+      "button": "Start 30 days free",
+      "noCreditCard": "30 days free • no card needed"
     },
     "pageCommon": {
       "relatedHeading": "Related pages",
       "ctaTitle": "Ready to run your business from one place?",
-      "ctaSubtitle": "14 days free. No credit card required.",
-      "ctaButton": "Start free trial"
+      "ctaSubtitle": "30 days free. No card needed.",
+      "ctaButton": "Start 30 days free"
     },
     "faq": {
       "heading": "Frequently asked questions",
@@ -4894,15 +4893,15 @@
         },
         "freeTrial": {
           "question": "Is there a free trial?",
-          "answer": "Every account gets 14 days free, no credit card required. You can invite your team, connect channels, and publish invoices during the trial — nothing is locked."
+          "answer": "Yes — every new workspace gets 30 days free, no card needed. You can invite your team, connect channels and publish invoices during the trial — nothing is locked. Add a card before the trial ends to keep going."
         },
         "competitors": {
           "question": "How is EchoDesk different from Kommo, Bitrix24, or Zendesk?",
-          "answer": "EchoDesk is pay-per-feature, priced in GEL, and supports Georgian businesses out of the box: Georgian hosting, local SIP providers, GEL invoices, and Tbilisi-based support. International tools charge in USD and don't integrate with Georgian telephony or accounting."
+          "answer": "EchoDesk is pay-per-module, priced in GEL, and supports Georgian businesses out of the box: local SIP providers, GEL invoices, Bank of Georgia payments and Tbilisi-based support. International tools charge in USD and don't integrate with Georgian telephony or accounting."
         },
         "dataResidency": {
           "question": "Where is my data stored?",
-          "answer": "Data is stored in Frankfurt (EU) on DigitalOcean infrastructure. Tenant isolation is enforced at the database level — your conversations and invoices never touch another customer's schema."
+          "answer": "Data is stored on servers in Germany (EU), hosted by Hetzner Online GmbH. Tenant isolation is enforced at the database level — your conversations and invoices never touch another customer's schema."
         }
       }
     },
@@ -7406,7 +7405,7 @@
   "seo": {
     "home": {
       "title": "EchoDesk — Run your whole business from one place",
-      "description": "Stop paying for ten tools. EchoDesk handles WhatsApp, Instagram, Messenger, email, SIP calls, tickets, invoices, bookings, and leave management in one platform — built for Georgian teams, pay only for what you use. Start free for 14 days.",
+      "description": "Stop paying for ten tools. EchoDesk handles WhatsApp, Instagram, Messenger, email, SIP calls, tickets, invoices, bookings, and leave management in one platform — built for Georgian teams, pay only for what you use. Start free for 30 days.",
       "keywords": "all-in-one business software, WhatsApp helpdesk, omnichannel CRM, invoicing Georgia, booking software, HR Georgia, leave management, SIP PBX, Kommo alternative, Tbilisi CRM",
       "ogTitle": "Run your business from one place",
       "ogSubtitle": "Social · calls · email · tickets · invoices · bookings · leave management",
@@ -7437,10 +7436,10 @@
       "ogTag": "Docs"
     },
     "registration": {
-      "title": "Try EchoDesk free for 14 days — no credit card",
-      "description": "Spin up your whole back-office — channels, calls, email, tickets, invoices, bookings, leave management — in under two minutes. 14 days free, no card required. If it works, pay in GEL; if not, walk away.",
+      "title": "Try EchoDesk free for 30 days — no card",
+      "description": "Spin up your whole back-office — channels, calls, email, tickets, invoices, bookings, leave management — in under two minutes. 30 days free, no card needed. If it works, pay in GEL; if not, walk away.",
       "keywords": "EchoDesk free trial, WhatsApp helpdesk trial, CRM Georgia signup, invoicing trial, HR software trial, Kommo alternative trial",
-      "ogTitle": "14 days. No card. Full platform.",
+      "ogTitle": "30 days. No card. Full platform.",
       "ogSubtitle": "Channels, calls, invoices, bookings, HR — ready in two minutes",
       "ogTag": "Free trial"
     },

@@ -7,21 +7,24 @@ import { Card } from '@/components/ui/card';
  * Locale-aware CTA card — mirrors `src/components/landing/CTA.tsx` but
  * takes locale directly so we don't depend on next-intl's client-side
  * context and can render fully server-side.
+ *
+ * Trial copy = what `POST /api/register/` does: 30 days free, no card
+ * (decision D1). Keep in sync with `landing.cta` / `landing.pageCommon`.
  */
 export function LandingCTA({ locale }: { locale: 'ka' | 'en' }) {
   const title =
     locale === 'ka'
-      ? 'მზად ხარ EchoDesk-ის გამოსაცდელად?'
-      : 'Ready to try EchoDesk?';
+      ? 'მზად ხართ, მთელი ბიზნესი ერთი ადგილიდან მართოთ?'
+      : 'Ready to run your business from one place?';
   const subtitle =
     locale === 'ka'
-      ? 'დაიწყე 14-დღიანი უფასო ცდა — ბარათი არ სჭირდება, გააქტიურდი წუთებში.'
-      : 'Start your 14-day free trial. No credit card required, set up in minutes.';
-  const button = locale === 'ka' ? 'დაიწყე უფასო ცდა' : 'Start free trial';
+      ? 'შექმნილია ქართული გუნდებისთვის, ფასი ლარში, მხარდაჭერა თბილისიდან.'
+      : 'Built for Georgian teams, priced in GEL, supported from Tbilisi.';
+  const button = locale === 'ka' ? 'დაიწყეთ 30 დღე უფასოდ' : 'Start 30 days free';
   const note =
     locale === 'ka'
-      ? 'საკრედიტო ბარათი არ არის საჭირო • 14 დღე უფასოდ'
-      : 'No credit card required · 14-day free trial';
+      ? '30 დღე უფასოდ • ბარათის გარეშე'
+      : '30 days free · no card needed';
 
   return (
     <section className="container py-16">

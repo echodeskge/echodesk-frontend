@@ -277,8 +277,8 @@ export default async function BlogPostPage({
         <div className="mt-12 rounded-2xl bg-primary/5 border border-primary/20 p-6 md:p-8">
           <h2 className="text-xl font-semibold mb-2">
             {lang === 'ka'
-              ? 'სცადე EchoDesk უფასოდ 14 დღე'
-              : 'Try EchoDesk free for 14 days'}
+              ? 'სცადე EchoDesk უფასოდ 30 დღე'
+              : 'Try EchoDesk free for 30 days'}
           </h2>
           <p className="text-muted-foreground mb-4">
             {lang === 'ka'
