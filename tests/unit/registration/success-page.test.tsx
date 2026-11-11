@@ -56,7 +56,7 @@ describe("registration success page", () => {
     expect(screen.getByTestId("trial-ends")).toHaveTextContent("Free trial ends on 11 December 2026");
     expect(screen.getByTestId("workspace-host")).toHaveTextContent("acme.echodesk.ge");
     expect(screen.getByTestId("open-workspace")).toHaveAttribute("href", "https://acme.echodesk.ge");
-    expect(screen.getByText("Sign in with nino@acme.ge and the password you chose.")).toBeInTheDocument();
+    expect(screen.getByText("Once it is ready (you will get an email), sign in with nino@acme.ge and the password you chose.")).toBeInTheDocument();
     expect(screen.getByTestId("day30-card")).toHaveTextContent("What happens on day 30");
     expect(screen.getByTestId("day30-card")).toHaveTextContent(
       "add a card in Settings → Subscription before 11 December 2026",
@@ -69,7 +69,7 @@ describe("registration success page", () => {
     window.sessionStorage.setItem(REGISTRATION_RESULT_KEY, JSON.stringify(RESULT));
     renderPage("ka");
     expect(screen.getByRole("heading", { level: 1, name: "თქვენი სამუშაო სივრცე იქმნება" })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByTestId("success-subtitle")).toHaveTextContent("Acme Inc შექმნილია"));
+    await waitFor(() => expect(screen.getByTestId("success-subtitle")).toHaveTextContent("Acme Inc იქმნება"));
     const date = formatTrialDate(RESULT.trial_ends_at, "ka");
     expect(date).toMatch(/2026/);
     expect(screen.getByTestId("trial-ends")).toHaveTextContent(`უფასო პერიოდი მთავრდება: ${date}`);
