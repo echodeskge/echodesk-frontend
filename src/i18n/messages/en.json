@@ -4799,7 +4799,7 @@
           "contact": "50+ employees? Write to <email>info@echodesk.ge</email> for a custom quote.",
           "teamSize": "Team size",
           "teamHint": "How many employees will log in?",
-          "planSummary": "{modules} modules selected for {n} employees"
+          "planSummary": "{modules, plural, one {# module} other {# modules}} selected for {n} employees"
         },
         "selectTitle": "Select your modules",
         "selectSubtitle": "Switch modules on or off. Add or remove any time.",

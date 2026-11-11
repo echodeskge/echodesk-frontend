@@ -49,7 +49,8 @@ export function PackPresets({ features, employees, onLoad }: PackPresetsProps) {
       <p className="text-sm text-muted-foreground">
         <span className="font-semibold text-foreground">{t('packs.pick')}</span> {t('packs.orBuild')}
       </p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 min-[1000px]:grid-cols-4">
+      {/* px variants only: Tailwind emits `min-[…px]` blocks before the rem breakpoints, so a `sm:` rule would win. */}
+      <div className="grid grid-cols-1 gap-3 min-[640px]:grid-cols-2 min-[1000px]:grid-cols-4">
         {cards.map((pack) => {
           const Icon = PACK_ICONS[pack.slug];
           const perEmployee = perEmployeePrice(pack.moduleKeys, prices);

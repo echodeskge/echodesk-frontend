@@ -76,7 +76,7 @@ export function ModulePicker({ features, selectedKeys, prices, onToggle, onToggl
         price={
           <>
             <span className="text-sm font-bold text-muted-foreground">{t('table.included')}</span>
-            <span className="text-[11px] text-muted-foreground tabular-nums">
+            <span className="hidden text-[11px] text-muted-foreground tabular-nums min-[640px]:inline">
               {formatGel(workspacePrice(prices))} ₾ {t('perEmployeeMonth')}
             </span>
           </>
@@ -109,7 +109,8 @@ export function ModulePicker({ features, selectedKeys, prices, onToggle, onToggl
               price={
                 <>
                   <span className="text-sm font-bold tabular-nums">{formatGel(prices.get(m.key) ?? 0)} ₾</span>
-                  <span className="text-[11px] text-muted-foreground">{t('perEmployeeMonth')}</span>
+                  {/* Below 640 px the per-month label would squeeze the name column. */}
+                  <span className="hidden text-[11px] text-muted-foreground min-[640px]:inline">{t('perEmployeeMonth')}</span>
                 </>
               }
             />
@@ -209,7 +210,7 @@ function Row({ testId, name, desc, badge, checked, locked, onToggle, infoOpen, o
             </button>
           </span>
           {badge && (
-            <span className="h-[18px] rounded bg-secondary/10 px-1.5 text-[11px] font-semibold leading-[18px] text-secondary">
+            <span className="h-[18px] whitespace-nowrap rounded bg-secondary/10 px-1.5 text-[11px] font-semibold leading-[18px] text-secondary">
               {badge}
             </span>
           )}
