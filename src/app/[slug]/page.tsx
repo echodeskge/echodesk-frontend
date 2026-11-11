@@ -8,12 +8,21 @@ import { extractTenantSubdomainFromHost } from '@/lib/tenant-subdomain';
 import { fetchLandingPageServer } from '@/hooks/useLandingPages';
 import { fetchFeaturesServer } from '@/lib/fetch-features';
 import { LandingPageView } from '@/components/landing-page/LandingPageView';
+import { isLandingSlug } from '@/lib/landing-slug';
 
-// 5-minute ISR — matches the blog. Do NOT set `export const dynamic`;
-// letting Next resolve rendering mode from `headers()`/`cookies()` keeps
-// <title>/<meta name="description"> flushed into <head> rather than
-// pushed mid-stream into <body> (Phase 2 regression).
-export const revalidate = 300;
+// Rendered per request: locale comes from the NEXT_LOCALE cookie and the
+// tenant-host guard reads `headers()`, so this route can never be served
+// from the ISR cache. It used to also `export const revalidate = 300`,
+// which made Next attempt a static render first and bail with
+// "Dynamic server usage: cookies/headers" on every uncached slug (Sentry
+// 1D/1E). The 5-minute cache lives on the data instead — both
+// fetchLandingPageServer and fetchFeaturesServer pass
+// `next: { revalidate: 300 }` — so page edits still show up within 5 min.
+//
+// Do NOT set `export const dynamic` either: letting Next resolve the
+// rendering mode from `headers()`/`cookies()` keeps <title>/<meta
+// name="description"> flushed into <head> rather than pushed mid-stream
+// into <body> (Phase 2 regression).
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
@@ -42,6 +51,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  // File probes (`/robots%2etxt`, `/apple-touch-icon-precomposed.png`) 404
+  // before any dynamic API or backend call.
+  if (!isLandingSlug(slug)) {
+    return { title: 'Not found' };
+  }
   const lang = await resolveLocale();
   const page = await fetchLandingPageServer(slug, lang).catch(() => null);
   if (!page) {
@@ -84,6 +98,8 @@ export default async function FeatureLandingPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  // Same guard as generateMetadata: reject before cookies()/headers().
+  if (!isLandingSlug(slug)) notFound();
   const lang = await resolveLocale();
 
   // Tenant-subdomain guard — marketing pages must 404 on tenant hosts
