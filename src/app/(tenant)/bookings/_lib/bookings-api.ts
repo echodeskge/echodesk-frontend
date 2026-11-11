@@ -1,0 +1,206 @@
+/**
+ * Typed wrappers over the generated booking admin client (BKG-00 foundation).
+ * Pages call these instead of the positional generated functions, so a
+ * filter is named at the call site and list loads never stop at the
+ * backend's default 20 rows.
+ */
+import {
+  bookingsAdminBookingsAssignStaffCreate,
+  bookingsAdminBookingsCancelCreate,
+  bookingsAdminBookingsCheckInCreate,
+  bookingsAdminBookingsCheckPaymentStatusRetrieve,
+  bookingsAdminBookingsCompleteCreate,
+  bookingsAdminBookingsConfirmCreate,
+  bookingsAdminBookingsNoShowCreate,
+  bookingsAdminBookingsPartialUpdate,
+  bookingsAdminBookingsRecordPaymentCreate,
+  bookingsAdminBookingsRescheduleCreate,
+  bookingsAdminBookingsRetrieve,
+  bookingsAdminBookingsRowsList,
+  bookingsAdminClientsBookingsRetrieve,
+  bookingsAdminClientsList,
+  bookingsAdminClientsRetrieve,
+  bookingsAdminClientsStatsRetrieve,
+  bookingsAdminDashboardRetrieve,
+  bookingsAdminServicesList,
+  bookingsAdminSettingsRetrieve,
+  bookingsAdminSlotsRetrieve,
+  bookingsAdminStaffList,
+} from "@/api/generated"
+import type {
+  AdminSlotsResponse,
+  BookingCancelResponse,
+  BookingClient,
+  BookingClientStats,
+  BookingDashboard,
+  BookingDetail,
+  BookingList,
+  BookingRow,
+  BookingStaff,
+  MethodEnum,
+  PaginatedBookingClientList,
+  PaginatedBookingRowList,
+  PatchedAdminBookingUpdateRequest,
+} from "@/api/generated/interfaces"
+
+/** The backend caps `page_size` at 100. */
+export const MAX_PAGE_SIZE = 100
+
+export interface Paginated<T> {
+  count: number
+  next?: string | null
+  results: T[]
+}
+
+/**
+ * Every row of a paginated endpoint: pages of `MAX_PAGE_SIZE` until `next`
+ * is empty (or the count is reached). Replaces the old first-20-rows loads.
+ */
+export async function fetchAllPages<T>(
+  fetchPage: (page: number, pageSize: number) => Promise<Paginated<T> | T[]>,
+  pageSize = MAX_PAGE_SIZE
+): Promise<T[]> {
+  const out: T[] = []
+  for (let page = 1; ; page += 1) {
+    const res = await fetchPage(page, pageSize)
+    if (Array.isArray(res)) return res
+    out.push(...(res.results ?? []))
+    const total = typeof res.count === "number" ? res.count : Number.POSITIVE_INFINITY
+    if (!res.next || out.length >= total || (res.results ?? []).length === 0) break
+  }
+  return out
+}
+
+export type BookingStatusFilter = BookingRow["status"]
+
+export interface BookingRowsParams {
+  page?: number
+  pageSize?: number
+  search?: string
+  status?: BookingStatusFilter
+  dateFrom?: string
+  dateTo?: string
+  staff?: number
+  client?: number
+  lang?: string
+}
+
+/** Slim booking rows (`bookings/rows/`): the list page and the stat counts. */
+export function fetchBookingRows(p: BookingRowsParams = {}): Promise<PaginatedBookingRowList> {
+  return bookingsAdminBookingsRowsList(
+    p.client,
+    p.dateFrom,
+    p.dateTo,
+    p.lang,
+    undefined,
+    undefined,
+    p.page,
+    p.pageSize,
+    undefined,
+    p.search || undefined,
+    undefined,
+    p.staff,
+    p.status
+  )
+}
+
+export interface BookingStatusCounts {
+  total: number
+  pending: number
+  confirmed: number
+  completed: number
+}
+
+/** Total / pending / confirmed / completed counts, one `page_size=1` request each (the API has no counts endpoint). */
+export async function fetchBookingStatusCounts(): Promise<BookingStatusCounts> {
+  const [total, pending, confirmed, completed] = await Promise.all([
+    fetchBookingRows({ pageSize: 1 }),
+    fetchBookingRows({ pageSize: 1, status: "pending" }),
+    fetchBookingRows({ pageSize: 1, status: "confirmed" }),
+    fetchBookingRows({ pageSize: 1, status: "completed" }),
+  ])
+  return { total: total.count ?? 0, pending: pending.count ?? 0, confirmed: confirmed.count ?? 0, completed: completed.count ?? 0 }
+}
+
+/** `dashboard/?lite=1` (today's bookings without the heavy nested service). */
+export function fetchDashboard(lang?: string): Promise<BookingDashboard> {
+  return bookingsAdminDashboardRetrieve(lang, true)
+}
+
+/** Number of services with status `active` (the list's `count`, one row requested). */
+export async function fetchActiveServicesCount(): Promise<number> {
+  const res = await bookingsAdminServicesList(undefined, undefined, undefined, 1, 1, undefined, "active")
+  return res.count ?? (res.results ?? []).length
+}
+
+export const fetchBooking = (id: number): Promise<BookingDetail> => bookingsAdminBookingsRetrieve(id)
+
+export const confirmBooking = (id: number, force = false): Promise<BookingDetail> =>
+  bookingsAdminBookingsConfirmCreate(id, force ? { force: true } : {})
+
+export const checkInBooking = (id: number, force = false): Promise<BookingDetail> =>
+  bookingsAdminBookingsCheckInCreate(id, force ? { force: true } : {})
+
+export const completeBooking = (id: number): Promise<BookingDetail> => bookingsAdminBookingsCompleteCreate(id)
+
+export const markNoShow = (id: number): Promise<BookingDetail> => bookingsAdminBookingsNoShowCreate(id)
+
+export const cancelBooking = (id: number, reason: string): Promise<BookingCancelResponse> =>
+  bookingsAdminBookingsCancelCreate(id, { reason })
+
+export const rescheduleBooking = (id: number, date: string, startTime: string): Promise<BookingDetail> =>
+  bookingsAdminBookingsRescheduleCreate(id, { date, start_time: startTime })
+
+export const assignBookingStaff = (id: number, staffId: number): Promise<BookingDetail> =>
+  bookingsAdminBookingsAssignStaffCreate(id, { staff_id: staffId })
+
+/** PATCH `staff_notes` / `client_notes` / `total_amount` (the only writable fields). */
+export const updateBooking = (id: number, patch: PatchedAdminBookingUpdateRequest): Promise<BookingDetail> =>
+  bookingsAdminBookingsPartialUpdate(id, patch)
+
+export const recordBookingPayment = (
+  id: number,
+  payment: { amount: string; method: MethodEnum; note?: string }
+): Promise<BookingDetail> => bookingsAdminBookingsRecordPaymentCreate(id, payment)
+
+export const checkBookingPaymentStatus = (id: number): Promise<Record<string, unknown>> =>
+  bookingsAdminBookingsCheckPaymentStatusRetrieve(id)
+
+/** Staff members who can take bookings (every page). */
+export function fetchActiveStaff(): Promise<BookingStaff[]> {
+  return fetchAllPages((page, pageSize) => bookingsAdminStaffList(true, undefined, page, pageSize))
+}
+
+/** Free start times for a service on a day (`slots/`), skipping `excludeBooking`'s own time. */
+export function fetchSlots(p: { service: number; date: string; staff?: number; excludeBooking?: number }): Promise<AdminSlotsResponse> {
+  return bookingsAdminSlotsRetrieve(p.date, p.excludeBooking, undefined, p.service, p.staff)
+}
+
+export interface ClientsParams {
+  page?: number
+  pageSize?: number
+  search?: string
+  isVerified?: boolean
+}
+
+/** Booking clients directory (`clients/`): search covers name, phone and email. */
+export function fetchBookingClients(p: ClientsParams = {}): Promise<PaginatedBookingClientList> {
+  return bookingsAdminClientsList(p.isVerified, undefined, p.page, p.pageSize, p.search || undefined)
+}
+
+export const fetchBookingClient = (id: number): Promise<BookingClient> => bookingsAdminClientsRetrieve(id)
+
+export const fetchClientStats = (id: number): Promise<BookingClientStats> => bookingsAdminClientsStatsRetrieve(id)
+
+export const fetchClientBookings = (id: number, lang?: string): Promise<BookingList[]> =>
+  bookingsAdminClientsBookingsRetrieve(id, lang, true)
+
+export const DEFAULT_TIMEZONE = "Asia/Tbilisi"
+
+/** The business timezone from the booking settings (everyone with the feature may read them). */
+export async function fetchBusinessTimezone(): Promise<string> {
+  const settings = await bookingsAdminSettingsRetrieve()
+  return settings.timezone || DEFAULT_TIMEZONE
+}
+
+export type { BookingClient, BookingRow, BookingDetail, BookingList, BookingStaff, BookingClientStats }
