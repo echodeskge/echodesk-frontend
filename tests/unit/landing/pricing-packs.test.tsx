@@ -1,6 +1,6 @@
 /**
- * Landing pricing section — pack cards + comparison table rendered from a
- * mocked API catalogue (ka and en).
+ * Landing pricing section — pack presets above the builder, computed from a
+ * mocked API catalogue (ka and en), hidden stubs, notes row.
  */
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -31,7 +31,7 @@ function renderPricing(features = LIVE_LIKE, locale: "ka" | "en" = "ka") {
   );
 }
 
-describe("pack cards", () => {
+describe("pack presets", () => {
   it("shows the three packs + Everything with totals computed from the API prices (ka)", () => {
     renderPricing(EDITED);
     const bookings = within(screen.getByTestId("pack-bookings"));
@@ -52,14 +52,11 @@ describe("pack cards", () => {
     expect(all.getByTestId("pack-total")).toHaveTextContent("510 ₾");
   });
 
-  it("lists the included modules in Georgian and the workspace line", () => {
+  it("lists the included modules in Georgian", () => {
     renderPricing();
-    const bookings = within(screen.getByTestId("pack-bookings"));
-    expect(bookings.getByText("ონლაინ ჯავშნები")).toBeInTheDocument();
-    expect(bookings.getByText("ერთიანი ინბოქსი")).toBeInTheDocument();
-    expect(bookings.getByText("ინვოისები")).toBeInTheDocument();
-    expect(bookings.getByText(/სამუშაო სივრცე/)).toBeInTheDocument();
-    expect(bookings.getByText(/AI ასისტენტი \+15 ₾/)).toBeInTheDocument();
+    const bookings = screen.getByTestId("pack-bookings");
+    expect(bookings).toHaveTextContent("ონლაინ ჯავშნები · ერთიანი ინბოქსი · ინვოისები");
+    expect(bookings).toHaveTextContent("სალონები, კლინიკები");
   });
 
   it("links to /registration with the pack keys and 5 employees preselected", () => {
@@ -84,34 +81,40 @@ describe("pack cards", () => {
       "= 220 ₾ / month for 5 employees",
     );
     expect(screen.getByText("30 days free to start, no card needed.", { exact: false })).toBeInTheDocument();
+    for (const note of ["Pay for what you use", "Scale with confidence", "Cancel anytime"]) {
+      expect(screen.getByText(note)).toBeInTheDocument();
+    }
   });
 
-  it("uses the Georgian seat word, never 'operator'", () => {
+  it("uses the Georgian seat word, never 'operator', and no 14-day trial", () => {
     const { container } = renderPricing();
     const text = container.textContent ?? "";
     expect(text).toContain("თანამშრომელ");
     expect(text).not.toContain("ოპერატორების რაოდენობა");
+    expect(text).not.toMatch(/14[- ]?დღ/);
+    expect(text).not.toMatch(/14-day/);
   });
 });
 
-describe("module table + hidden stubs", () => {
-  it("hides the zero-price stubs everywhere and shows one row per sellable module", () => {
+describe("module list + hidden stubs", () => {
+  it("hides the zero-price stubs and shows one switch per sellable module plus the workspace", () => {
     const { container } = renderPricing();
     const text = container.textContent ?? "";
-    for (const stub of ["SIP Calling", "Order Management", "Advanced Analytics", "Settings"]) {
+    for (const stub of ["SIP Calling", "Order Management", "Advanced Analytics"]) {
       expect(text).not.toContain(stub);
     }
-    const table = screen.getByTestId("module-table");
-    expect(within(table).getAllByTestId(/table-row-/)).toHaveLength(8);
-    expect(within(table).getByTestId("table-total-bookings")).toHaveTextContent("44 ₾");
-    expect(within(table).getByTestId("table-total-callcentre")).toHaveTextContent("47 ₾");
-    expect(within(table).getByTestId("table-total-everything")).toHaveTextContent("100 ₾");
+    for (const key of ["sip_calling", "order_management", "advanced_analytics", "settings", "user_management"]) {
+      expect(screen.queryByTestId(`module-${key}`)).toBeNull();
+    }
+    const builder = screen.getByTestId("plan-builder");
+    expect(within(builder).getAllByRole("switch")).toHaveLength(9);
+    expect(within(builder).getByTestId("module-workspace")).toBeInTheDocument();
   });
 
   it("falls back to the API name for a sellable key without a translation", () => {
     const withUnknown = [...LIVE_LIKE, mockFeature(99, "crystal_ball", "Crystal Ball", "3.00")];
     renderPricing(withUnknown);
-    expect(screen.getAllByText("Crystal Ball").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("module-crystal_ball")).toHaveTextContent("Crystal Ball");
     expect(within(screen.getByTestId("pack-everything")).getByText("103 ₾")).toBeInTheDocument();
   });
 });

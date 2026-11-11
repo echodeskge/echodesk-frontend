@@ -1,6 +1,7 @@
 /**
- * Landing calculator ("build your own"): switches, employee stepper, live
- * total, AI → inbox rule, "50+ contact us", pack → calculator hand-off.
+ * Landing calculator (design: module list + sticky "Your plan"): switches,
+ * team-size stepper/presets, live total, AI → inbox rule, "50+ contact us",
+ * pack → calculator hand-off, select all / clear, info panels.
  */
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -32,7 +33,7 @@ function renderPricing(locale: "ka" | "en" = "en") {
   );
 }
 
-const total = () => screen.getByTestId("plan-total").textContent?.replace(/\s/g, " ");
+const total = () => screen.getByTestId("plan-total").textContent?.replace(/\s+/g, " ").trim();
 const moduleSwitch = (key: string) => within(screen.getByTestId(`module-${key}`)).getByRole("switch");
 const plus = () => screen.getByRole("button", { name: "More employees" });
 
@@ -49,16 +50,51 @@ describe("calculator", () => {
     expect(total()).toBe("100 ₾");
   });
 
-  it("the employee stepper goes 5 → 10 → … in steps of 5 and rescales the total", () => {
+  it("clicking anywhere on a row toggles it, except the (i) button", () => {
+    renderPricing();
+    fireEvent.click(screen.getByTestId("module-invoice_management"));
+    expect(moduleSwitch("invoice_management")).toHaveAttribute("aria-checked", "true");
+
+    const info = within(screen.getByTestId("module-invoice_management")).getByRole("button", { name: "What's included" });
+    fireEvent.click(info);
+    expect(moduleSwitch("invoice_management")).toHaveAttribute("aria-checked", "true");
+    expect(info).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId("module-invoice_management-info")).toHaveTextContent("Draft → Sent → Paid");
+    fireEvent.click(info);
+    expect(screen.queryByTestId("module-invoice_management-info")).toBeNull();
+  });
+
+  it("the workspace row is always on, shows 'Included' and cannot be toggled", () => {
+    renderPricing();
+    const row = screen.getByTestId("module-workspace");
+    const sw = within(row).getByRole("switch");
+    expect(sw).toHaveAttribute("aria-checked", "true");
+    expect(sw).toBeDisabled();
+    expect(row).toHaveTextContent("Included");
+    expect(row).toHaveTextContent("Always on");
+    fireEvent.click(row);
+    expect(total()).toBe("50 ₾");
+  });
+
+  it("the stepper goes 5 → 10 in steps of 5, presets jump, and the lines show price × n", () => {
     renderPricing();
     expect(screen.getByRole("button", { name: "Fewer employees" })).toBeDisabled();
     fireEvent.click(plus());
     expect(screen.getByTestId("employee-count")).toHaveTextContent("10");
     expect(total()).toBe("100 ₾");
-    // Pack cards follow the same count.
+    expect(screen.getByTestId("line-ticket_management")).toHaveTextContent("9 ₾ × 10 = 90 ₾");
+    expect(screen.getByTestId("line-workspace")).toHaveTextContent("1 ₾ × 10 = 10 ₾");
+    // Pack presets follow the same count.
     expect(within(screen.getByTestId("pack-bookings")).getByTestId("pack-total")).toHaveTextContent(
       "= 440 ₾ / month for 10 employees",
     );
+
+    fireEvent.click(screen.getByRole("button", { name: "25" }));
+    expect(screen.getByTestId("employee-count")).toHaveTextContent("25");
+    expect(total()).toBe("250 ₾");
+
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "40" } });
+    expect(screen.getByTestId("employee-count")).toHaveTextContent("40");
   });
 
   it("switching AI on also switches the inbox on and says so", () => {
@@ -67,13 +103,13 @@ describe("calculator", () => {
     expect(moduleSwitch("social_integrations")).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("status")).toHaveTextContent("we switched Unified inbox on for you");
     expect(total()).toBe("220 ₾"); // (1 + 9 + 19 + 15) × 5
-    expect(within(screen.getByTestId("module-ai_companion")).getByText("Requires Unified inbox")).toBeInTheDocument();
+    expect(screen.getByTestId("module-ai_companion")).toHaveTextContent("Requires Unified inbox");
   });
 
   it("shows 'contact us' from 50 employees", () => {
     renderPricing();
     expect(screen.queryByTestId("contact-us")).toBeNull();
-    for (let i = 0; i < 9; i += 1) fireEvent.click(plus());
+    fireEvent.click(screen.getByRole("button", { name: "50" }));
     expect(screen.getByTestId("employee-count")).toHaveTextContent("50");
     expect(screen.getByTestId("contact-us")).toHaveTextContent("50+ employees?");
     expect(within(screen.getByTestId("contact-us")).getByRole("link")).toHaveAttribute("href", "mailto:info@echodesk.ge");
@@ -94,13 +130,25 @@ describe("calculator", () => {
     expect(total()).toBe("235 ₾");
     expect(moduleSwitch("ip_calling")).toHaveAttribute("aria-checked", "true");
     expect(moduleSwitch("booking_management")).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByText(/5 of 8 selected/)).toBeInTheDocument();
   });
 
-  it("renders the Georgian calculator copy", () => {
+  it("'select all' switches every module on and becomes 'clear optional'", () => {
+    renderPricing();
+    fireEvent.click(screen.getByRole("button", { name: "Select all" }));
+    expect(total()).toBe("500 ₾");
+    expect(screen.getByText(/8 of 8 selected/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Clear optional" }));
+    expect(total()).toBe("5 ₾");
+    expect(moduleSwitch("ticket_management")).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("renders the Georgian calculator copy with the seat word", () => {
     renderPricing("ka");
-    expect(screen.getByText("ან ააწყვეთ თავად")).toBeInTheDocument();
+    expect(screen.getByText("აირჩიეთ მოდულები")).toBeInTheDocument();
     expect(screen.getByText("დაიწყეთ ამ პაკეტით")).toBeInTheDocument();
-    expect(screen.getByText("რამდენი ადამიანი შევა სისტემაში?")).toBeInTheDocument();
+    expect(screen.getByText("რამდენი თანამშრომელი შევა სისტემაში?")).toBeInTheDocument();
     expect(screen.getByTestId("plan-summary")).toHaveTextContent("10 ₾ თანამშრომელზე");
+    expect(screen.getByTestId("plan-summary")).toHaveTextContent("1 მოდული არჩეულია 5 თანამშრომლისთვის");
   });
 });
