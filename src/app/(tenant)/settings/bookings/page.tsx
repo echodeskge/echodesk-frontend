@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { LoadingBlock } from "@/components/redesign/states"
 import {
   ActionButton,
+  ChoiceControl,
   FieldRow,
   SecretInput,
   SettingsFormPage,
@@ -23,8 +24,15 @@ import { cn, getApiErrorMessage } from "@/lib/utils"
 import axios from "@/api/axios"
 import { ReminderSettingsCard, SmsSettings, SmsSettingsCard, SMS_SETTINGS_DEFAULTS } from "@/components/bookings/sms-settings-card"
 
+type PaymentMethod = "manual_transfer" | "bog_gateway"
+
 interface BookingSettings extends SmsSettings {
   id?: number
+  /** How online bookings are paid: bank transfer details shown to the client, or the BOG card gateway. */
+  payment_method: PaymentMethod
+  bank_name: string
+  bank_iban: string
+  bank_account_holder: string
   require_deposit: boolean
   allow_cash_payment: boolean
   allow_card_payment: boolean
@@ -94,6 +102,10 @@ export default function SettingsPage() {
   // says "unsaved changes" while the form differs from them.
   const [savedSettings, setSavedSettings] = useState<BookingSettings | null>(null)
   const [settings, setSettings] = useState<BookingSettings>({
+    payment_method: "manual_transfer",
+    bank_name: "",
+    bank_iban: "",
+    bank_account_holder: "",
     require_deposit: false,
     allow_cash_payment: true,
     allow_card_payment: true,
@@ -310,6 +322,50 @@ export default function SettingsPage() {
       </SettingsSection>
 
       <SettingsSection title={t("paymentSettings.title")} hint={t("paymentSettings.description")}>
+        <FieldRow label={t("paymentSettings.paymentMethod")} help={t("paymentSettings.paymentMethodDesc")} align="center">
+          <ChoiceControl
+            value={settings.payment_method || "manual_transfer"}
+            onChange={(value) => setSettings({ ...settings, payment_method: value })}
+            options={[
+              { value: "manual_transfer", label: t("paymentSettings.manualTransfer") },
+              { value: "bog_gateway", label: t("paymentSettings.bogGateway") },
+            ]}
+            ariaLabel={t("paymentSettings.paymentMethod")}
+            testId="bk-payment-method"
+          />
+        </FieldRow>
+        {(settings.payment_method || "manual_transfer") === "manual_transfer" && (
+          <>
+            <FieldRow label={t("paymentSettings.bankName")} help={t("paymentSettings.bankHelp")} htmlFor="bank_name">
+              <input
+                id="bank_name"
+                className={cn(settingsInputClass, settingsFieldWidth)}
+                value={settings.bank_name || ""}
+                onChange={(e) => setSettings({ ...settings, bank_name: e.target.value })}
+                autoComplete="off"
+              />
+            </FieldRow>
+            <FieldRow label={t("paymentSettings.bankIban")} htmlFor="bank_iban">
+              <input
+                id="bank_iban"
+                className={cn(settingsInputClass, settingsFieldWidth, "font-mono text-xs uppercase")}
+                value={settings.bank_iban || ""}
+                onChange={(e) => setSettings({ ...settings, bank_iban: e.target.value.toUpperCase().replace(/\s+/g, "") })}
+                placeholder="GE00XX0000000000000000"
+                autoComplete="off"
+              />
+            </FieldRow>
+            <FieldRow label={t("paymentSettings.bankAccountHolder")} htmlFor="bank_account_holder">
+              <input
+                id="bank_account_holder"
+                className={cn(settingsInputClass, settingsFieldWidth)}
+                value={settings.bank_account_holder || ""}
+                onChange={(e) => setSettings({ ...settings, bank_account_holder: e.target.value })}
+                autoComplete="off"
+              />
+            </FieldRow>
+          </>
+        )}
         {toggleRow("require_deposit", t("paymentSettings.requireDeposit"), t("paymentSettings.requireDepositDesc"))}
         {toggleRow("allow_cash_payment", t("paymentSettings.allowCash"), t("paymentSettings.allowCashDesc"))}
         {toggleRow("allow_card_payment", t("paymentSettings.allowCard"), t("paymentSettings.allowCardDesc"))}
