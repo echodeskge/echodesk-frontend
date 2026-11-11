@@ -4722,113 +4722,143 @@
       }
     },
     "pricing": {
-      "title": "Simple, Transparent Pricing",
-      "subtitle": "Choose the plan that fits your team size and needs. No hidden fees.",
-      "builderSubtitle": "Pay only for what you need. Select features and team size to see your price.",
-      "agentCountLabel": "Number of agents",
+      "title": "One base. Add only the modules you need.",
+      "subtitle": "Pick a ready-made pack or switch modules on one by one. Every module has one fixed price per employee, billed monthly in Georgian lari. Add, remove or cancel whenever you like.",
+      "chips": {
+        "gel": "Prices in GEL",
+        "monthly": "Billed monthly",
+        "cancel": "Cancel anytime"
+      },
+      "stepper": {
+        "label": "How many people will log in?",
+        "hint": "One employee = one login. Your clients are unlimited. Minimum {min}.",
+        "value": "{n, plural, one {employee} other {employees}}",
+        "decrease": "Fewer employees",
+        "increase": "More employees"
+      },
+      "perEmployeeMonth": "per employee / month",
+      "perMonth": "per month",
+      "forEmployees": "= {total} ₾ / month for {n} employees",
+      "contactUs": "50+ employees, a tender or a custom deployment? Write to <email>info@echodesk.ge</email>",
+      "packs": {
+        "mostPopular": "Most popular",
+        "addons": "Popular add-ons",
+        "loadCalculator": "Load into calculator",
+        "workspaceIncluded": "Workspace — staff, roles, mobile app",
+        "bookings": {
+          "name": "Bookings pack",
+          "audience": "Salons, clinics, studios, tutors",
+          "tagline": "Clients book themselves online; you answer Instagram and WhatsApp from one inbox.",
+          "cta": "Start with Bookings"
+        },
+        "shop": {
+          "name": "Online shop pack",
+          "audience": "Instagram, Facebook and TikTok sellers, small e-shops",
+          "tagline": "Products, orders and customer messages in one place — no commission on sales.",
+          "cta": "Start with Online shop"
+        },
+        "callcentre": {
+          "name": "Call centre & logistics",
+          "audience": "Couriers, forwarders, dispatch desks, support teams",
+          "tagline": "Every call and every message in one queue; every request becomes a ticket with an owner.",
+          "cta": "Start with Call centre & logistics"
+        },
+        "everything": {
+          "name": "Everything",
+          "audience": "One system for the whole business",
+          "tagline": "All eight modules, one price per employee.",
+          "cta": "Start with Everything"
+        }
+      },
+      "table": {
+        "title": "What's in each pack",
+        "module": "Module",
+        "price": "₾ / employee",
+        "total": "Total per employee / month",
+        "footnote": "Any module can be added to any pack at its own price.",
+        "included": "Included",
+        "notIncluded": "Not included"
+      },
+      "workspace": {
+        "name": "Workspace",
+        "included": "included in every plan",
+        "bullets": "Staff, groups and roles · Settings · Mobile app (iOS & Android) · Team chat and notifications · Georgian & English interface"
+      },
       "builder": {
-        "teamSize": {
-          "title": "Team Size",
-          "description": "How many agents will use EchoDesk?"
-        },
-        "agents": "agents",
-        "monthlyCost": "Your Monthly Cost",
-        "perMonth": "per month",
-        "selectFeatures": {
-          "title": "Select Your Features",
-          "description": "Choose the features your team needs. Add or remove anytime."
-        },
-        "required": "Required",
-        "perAgentMonth": "per agent/mo",
-        "empty": {
-          "title": "Select features to build your custom plan",
-          "description": "Start by choosing the features your team needs"
-        },
-        "customPlan": {
-          "title": "Your Custom Plan",
-          "description": "{count} features selected for {agents} agents"
-        },
-        "totalPerMonth": "Total per month:",
-        "continueWithPlan": "Continue with this plan"
-      },
-      "tabs": {
-        "agentBased": "Agent Based Packages",
-        "crmBased": "CRM Based Packages"
-      },
-      "popular": "Most Popular",
-      "plans": {
-        "essential": {
-          "name": "Essential",
-          "description": "Perfect for small teams getting started with customer support"
-        },
-        "professional": {
-          "name": "Professional",
-          "description": "Advanced features for growing teams"
-        },
-        "enterprise": {
-          "name": "Enterprise",
-          "description": "Complete solution for large organizations"
-        },
-        "starter": {
-          "name": "Starter",
-          "description": "Basic customer support for small businesses"
-        },
-        "business": {
-          "name": "Business",
-          "description": "Complete features for medium-sized teams"
+        "title": "Or build your own",
+        "subtitle": "Switch on modules; the total follows your team size.",
+        "requires": "Requires {module}",
+        "aiNotice": "AI assistant works inside the inbox — we switched {module} on for you.",
+        "summary": {
+          "title": "Your plan",
+          "description": "{n} employees · billed every 30 days",
+          "total": "Total per month",
+          "perEmployee": "{price} ₾ per employee",
+          "cta": "Start with this plan",
+          "note": "Add or remove modules any time. A module added mid-month is charged only for the days left.",
+          "contact": "50+ employees? Write to <email>info@echodesk.ge</email> for a custom quote."
         }
       },
-      "periods": {
-        "perAgentMonth": "per agent/month",
-        "perMonth": "per month"
-      },
-      "users": "Users",
-      "unlimited": "Unlimited",
-      "features": {
-        "tickets": "Complete Ticket Management System",
-        "email": "Email Integration",
-        "basicReporting": "Basic Reporting",
-        "teamCollaboration": "Team Collaboration",
-        "mobileApp": "Mobile App Access",
-        "emailSupport": "Email Support",
-        "allEssential": "Everything in Essential",
-        "sipPhone": "Integrated SIP Phone System",
-        "callRecording": "Call Recording & Analytics",
-        "facebookMessenger": "Facebook Messenger Integration",
-        "advancedWorkflows": "Advanced Workflows",
-        "prioritySupport": "Priority Support",
-        "allProfessional": "Everything in Professional",
-        "instagramDM": "Instagram DM Integration",
-        "whatsappAPI": "WhatsApp Business API",
-        "advancedAnalytics": "Advanced Analytics Dashboard",
-        "apiAccess": "API Access",
-        "customIntegrations": "Custom Integrations",
-        "dedicatedManager": "Dedicated Account Manager",
-        "allStarter": "Everything in Starter",
-        "users5": "Up to 5 users",
-        "users20": "Up to 20 users",
-        "allBusiness": "Everything in Business",
-        "usersUnlimited": "Unlimited users"
-      },
-      "getStarted": "Get Started",
-      "paymentNote": "All payments processed securely through Bank of Georgia",
-      "info": {
-        "title": "Flexible Pricing",
-        "subtitle": "Our feature-based pricing grows with your team",
-        "payUse": {
-          "title": "Pay for what you use",
-          "description": "Select only the features you need. No bloated packages."
+      "modules": {
+        "ticket_management": {
+          "name": "Tickets & boards",
+          "desc": "Every request in a board with an owner and a deadline.",
+          "bullets": "Kanban boards, priorities, due dates, SLA · Custom ticket forms · Time tracking · Turn any chat or email into a ticket"
         },
-        "scale": {
-          "title": "Scale with confidence",
-          "description": "Add agents or features anytime. Pricing updates automatically."
+        "social_integrations": {
+          "name": "Unified inbox",
+          "desc": "Every customer message in one inbox.",
+          "bullets": "Facebook Messenger and Instagram DMs · WhatsApp Business API · Email (IMAP/SMTP): threads, labels, attachments · Telegram, TikTok and a website chat widget · Reply templates and customer ratings"
         },
-        "cancel": {
-          "title": "Cancel anytime",
-          "description": "No long-term commitments. Manage your subscription easily from your dashboard."
+        "ai_companion": {
+          "name": "AI assistant",
+          "desc": "Replies in your tone, hands off to a person when it matters.",
+          "bullets": "Auto-replies guided by your instructions · Hand-off rules to a live agent · One-click conversation summaries · Works on every inbox channel"
+        },
+        "ip_calling": {
+          "name": "Calls & PBX",
+          "desc": "A full call centre in the browser.",
+          "bullets": "Magti, Silknet or any SIP trunk · Extensions, queues, inbound routing, IVR · Call recording and history on the client card · Live stats per agent and queue · Browser softphone"
+        },
+        "booking_management": {
+          "name": "Online bookings",
+          "desc": "Clients book themselves, day or night.",
+          "bullets": "Public booking page in Georgian and English · Staff schedules and services · Client portal and reminders · Pay at booking through Bank of Georgia · Recurring bookings"
+        },
+        "ecommerce_crm": {
+          "name": "Online shop",
+          "desc": "Your own store with GEL checkout and zero commission.",
+          "bullets": "Products, variants, stock in ka/en/ru · Orders and customer records · Storefront on your domain · BOG, TBC, Flitt, instalments · Promo codes, reviews, shipping methods"
+        },
+        "invoice_management": {
+          "name": "Invoices",
+          "desc": "From draft to paid, in GEL.",
+          "bullets": "Draft → Sent → Paid · Line items and tax · PDF and email sending · Bank of Georgia payment links · Recurring invoices"
+        },
+        "leave_management": {
+          "name": "Leave & HR",
+          "desc": "Leave requests without spreadsheets.",
+          "bullets": "Vacation, sick, personal leave · Manager + HR approval chain · Balances, accrual, Georgian public holidays · Substitutes, attendance, KPI and payroll (free switches)"
         }
       },
-      "allPricesNote": "All prices in Georgian Lari (₾). Billed monthly. Cancel anytime."
+      "billing": {
+        "gel": "Paid in GEL by Bank of Georgia card. International payment — contact us.",
+        "change": "Change modules, add employees or cancel any time. No contract, no setup fee.",
+        "included": "Mobile app, Georgian interface and support from Tbilisi are included in every plan.",
+        "footer": "All prices in Georgian lari (₾), per employee, billed every 30 days. 30 days free to start, no card needed."
+      },
+      "registration": {
+        "reviewTitle": "Review your plan",
+        "buildTitle": "Build your plan",
+        "subtitle": "Switch modules on or off and set your team size. You can change both later from Settings → Subscription.",
+        "yourPack": "Your pack",
+        "customPlan": "Custom plan",
+        "continue": "Continue",
+        "loading": "Loading modules…",
+        "employees": "Employees",
+        "planLine": "Your plan: {plan} · {n} employees · {total} ₾ / month",
+        "trialNote": "30 days free, no card needed. After the trial you pay the amount above every 30 days."
+      }
     },
     "cta": {
       "title": "Ready to Transform Your Customer Support?",

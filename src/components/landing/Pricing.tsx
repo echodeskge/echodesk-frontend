@@ -1,47 +1,34 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useMemo } from "react";
-import { useTranslations } from "next-intl";
-import { Check, ArrowRight, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import Link from "next/link";
-import { featuresList } from "@/api/generated/api";
-import type { Feature } from "@/types/package";
+import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { Badge } from '@/components/ui/badge';
+import { featuresList } from '@/api/generated/api';
+import type { Feature } from '@/types/package';
+import type { PackSlug } from '@/data/packs';
+import { MIN_EMPLOYEES, defaultModuleKeys, packModuleKeys, registrationUrl } from '@/lib/pricing';
+import { BillingNotes } from '@/components/pricing/BillingNotes';
+import { EmployeeStepper } from '@/components/pricing/EmployeeStepper';
+import { ModuleTable } from '@/components/pricing/ModuleTable';
+import { PackCards } from '@/components/pricing/PackCards';
+import { PlanBuilder } from '@/components/pricing/PlanBuilder';
+import { usePlanSelection } from '@/components/pricing/use-plan-selection';
 
-// Required features that cannot be unchecked
-const REQUIRED_FEATURE_KEYS = ['user_management', 'settings'];
-const POPULAR_FEATURE_KEYS = ['ticket_management', 'user_management', 'settings'];
-
-function preselectIds(features: Feature[]): number[] {
-  return features.filter((f) => POPULAR_FEATURE_KEYS.includes(f.key)).map((f) => f.id);
-}
-
+/**
+ * Landing `#pricing`: one employee stepper that drives three buyer-named
+ * pack cards + "Everything", the module comparison table, and the
+ * à-la-carte calculator. Every number is computed from the live
+ * `GET /api/features/` prices by key — nothing is hard-coded.
+ */
 export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] }) {
-  const t = useTranslations("landing.pricing");
-  // Seed both features and the default selection from the server-rendered
-  // props so the first paint already shows real GEL prices. Crawlers get
-  // the full pricing HTML without waiting for client-side fetch.
+  const t = useTranslations('landing.pricing');
+  // Server-seeded so the first paint (and crawlers) already carry real GEL
+  // prices; refetched client-side only when the seed was empty.
   const [features, setFeatures] = useState<Feature[]>(initialFeatures);
-  const [selectedFeatureIds, setSelectedFeatureIds] = useState<number[]>(() =>
-    preselectIds(initialFeatures)
-  );
-  const [agentCount, setAgentCount] = useState(5);
+  const plan = usePlanSelection(features, MIN_EMPLOYEES);
+  const { replace } = plan;
+  const builderRef = useRef<HTMLDivElement>(null);
 
-  // On the client, refresh features in the background so the prices stay
-  // accurate even if the HTML was served from a stale ISR cache. Only kicks
-  // in when we didn't get server-seeded data (edge case).
   useEffect(() => {
     if (initialFeatures.length > 0) return;
     let cancelled = false;
@@ -51,9 +38,8 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
         const all = (data.results || []) as Feature[];
         if (cancelled || all.length === 0) return;
         setFeatures(all);
-        setSelectedFeatureIds(preselectIds(all));
       } catch {
-        /* fallback is the initial (possibly empty) set */
+        /* keep whatever we have */
       }
     })();
     return () => {
@@ -61,303 +47,55 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
     };
   }, [initialFeatures.length]);
 
-  // Group features by category
-  const featuresByCategory = useMemo(() => {
-    const grouped: Record<string, Feature[]> = {};
-    features.forEach((feature) => {
-      const category = feature.category_display || 'Other';
-      if (!grouped[category]) {
-        grouped[category] = [];
-      }
-      grouped[category].push(feature);
-    });
+  // When features arrive after mount, seed the default selection once.
+  const seeded = useRef(initialFeatures.length > 0);
+  useEffect(() => {
+    if (seeded.current || features.length === 0) return;
+    seeded.current = true;
+    replace(defaultModuleKeys(features));
+  }, [features, replace]);
 
-    // Sort features within each category
-    Object.keys(grouped).forEach((category) => {
-      grouped[category].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-    });
-
-    return grouped;
-  }, [features]);
-
-  // Calculate monthly cost
-  const monthlyTotal = useMemo(() => {
-    const selectedFeatures = features.filter((f) => selectedFeatureIds.includes(f.id));
-    const totalPerAgent = selectedFeatures.reduce(
-      (sum, feature) => sum + parseFloat(feature.price_per_user_gel || '0'),
-      0
-    );
-    return totalPerAgent * agentCount;
-  }, [features, selectedFeatureIds, agentCount]);
-
-  // Generate registration URL with pre-selected features
-  const registrationUrl = useMemo(() => {
-    if (selectedFeatureIds.length === 0) {
-      return '/registration';
-    }
-    const params = new URLSearchParams();
-    params.set('features', selectedFeatureIds.join(','));
-    params.set('agents', agentCount.toString());
-    return `/registration?${params.toString()}`;
-  }, [selectedFeatureIds, agentCount]);
-
-  const handleFeatureToggle = (featureId: number) => {
-    // Don't allow toggling required features
-    const feature = features.find(f => f.id === featureId);
-    if (feature && REQUIRED_FEATURE_KEYS.includes(feature.key)) {
-      return;
-    }
-
-    setSelectedFeatureIds((prev) =>
-      prev.includes(featureId)
-        ? prev.filter((id) => id !== featureId)
-        : [...prev, featureId]
-    );
+  const loadPack = (slug: PackSlug) => {
+    replace(packModuleKeys(slug, features));
+    builderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (
-    <section id="pricing" className="container py-16 space-y-8">
-      <div className="text-center mx-auto space-y-4 max-w-3xl">
-        <h2 className="text-4xl font-bold">{t("title")}</h2>
-        <p className="text-lg text-muted-foreground">{t('builderSubtitle')}</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-12">
-        {/* Everything below renders synchronously from server-seeded props
-            so crawlers + LLMs get the full pricing HTML in the initial
-            response (no "Loading features…" placeholder). */}
-          {/* Left Column: Agent Count Selector */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-4">
-              <CardHeader>
-                <CardTitle>{t('builder.teamSize.title')}</CardTitle>
-                <CardDescription>{t('builder.teamSize.description')}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Agent Count Display */}
-                <div className="text-center space-y-2">
-                  <div className="text-5xl font-bold text-primary">{agentCount}</div>
-                  <div className="text-sm text-muted-foreground">{t('builder.agents')}</div>
-                </div>
-
-                {/* Slider */}
-                <div className="space-y-4">
-                  <Slider
-                    value={[agentCount]}
-                    onValueChange={([value]) => setAgentCount(value)}
-                    min={5}
-                    max={200}
-                    step={5}
-                    aria-label={t('agentCountLabel')}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>5</span>
-                    <span>200</span>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Monthly Total */}
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-muted-foreground">{t('builder.monthlyCost')}</div>
-                  <div className="space-y-1">
-                    <div className="text-4xl font-bold text-primary">
-                      {monthlyTotal.toFixed(2)}₾
-                    </div>
-                    <div className="text-xs text-muted-foreground">{t('builder.perMonth')}</div>
-                  </div>
-                </div>
-
-                {/* CTA */}
-                <Link href={registrationUrl} className="block w-full">
-                  <Button size="lg" className="w-full">
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    {t('getStarted')}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column: Feature Selection */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('builder.selectFeatures.title')}</CardTitle>
-                <CardDescription>{t('builder.selectFeatures.description')}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {Object.entries(featuresByCategory).map(([category, categoryFeatures]) => (
-                  <div key={category} className="space-y-3">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                      {category}
-                    </h3>
-                    <div className="space-y-3">
-                      {categoryFeatures.map((feature) => {
-                        const isSelected = selectedFeatureIds.includes(feature.id);
-                        const isRequired = REQUIRED_FEATURE_KEYS.includes(feature.key);
-                        const pricePerAgent = parseFloat(feature.price_per_user_gel || '0');
-                        const totalPrice = pricePerAgent * agentCount;
-
-                        return (
-                          <div
-                            key={feature.id}
-                            className={`
-                              flex items-start gap-3 p-4 rounded-lg border transition-all
-                              ${isRequired ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'}
-                              ${isSelected
-                                ? 'border-primary bg-primary/5 shadow-sm'
-                                : 'border-border hover:border-primary/50 hover:bg-accent/50'
-                              }
-                            `}
-                            onClick={() => !isRequired && handleFeatureToggle(feature.id)}
-                          >
-                            <Checkbox
-                              id={`feature-${feature.id}`}
-                              checked={isSelected}
-                              disabled={isRequired}
-                              onCheckedChange={() => handleFeatureToggle(feature.id)}
-                              className="mt-1"
-                            />
-                            <div className="flex-1 space-y-1">
-                              <Label
-                                htmlFor={`feature-${feature.id}`}
-                                className={`font-medium flex items-center gap-2 ${isRequired ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                              >
-                                {feature.icon && <span>{feature.icon}</span>}
-                                {feature.name}
-                                {isRequired && (
-                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                                    {t('builder.required')}
-                                  </span>
-                                )}
-                              </Label>
-                              {feature.description && (
-                                <p className="text-sm text-muted-foreground">
-                                  {feature.description}
-                                </p>
-                              )}
-                            </div>
-                            <div className="text-right shrink-0 space-y-1">
-                              <div className="font-semibold text-primary">
-                                {pricePerAgent.toFixed(2)}₾
-                              </div>
-                              <div className="text-xs text-muted-foreground">{t('builder.perAgentMonth')}</div>
-                              {isSelected && (
-                                <div className="text-xs font-medium text-muted-foreground">
-                                  = {totalPrice.toFixed(2)}₾/mo
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-
-                {selectedFeatureIds.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p className="font-medium">{t('builder.empty.title')}</p>
-                    <p className="text-sm">{t('builder.empty.description')}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Features Summary */}
-            {selectedFeatureIds.length > 0 && (
-              <Card className="border-primary/50 bg-primary/5">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Check className="h-5 w-5 text-primary" />
-                    {t('builder.customPlan.title')}
-                  </CardTitle>
-                  <CardDescription>
-                    {t('builder.customPlan.description', { count: selectedFeatureIds.length, agents: agentCount })}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {features
-                      .filter((f) => selectedFeatureIds.includes(f.id))
-                      .map((feature) => {
-                        const pricePerAgent = parseFloat(feature.price_per_user_gel || '0');
-                        const totalPrice = pricePerAgent * agentCount;
-                        return (
-                          <div key={feature.id} className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">
-                              {feature.icon && <span className="mr-2">{feature.icon}</span>}
-                              {feature.name}
-                            </span>
-                            <span className="font-medium">
-                              {pricePerAgent}₾ × {agentCount} = {totalPrice.toFixed(2)}₾
-                            </span>
-                          </div>
-                        );
-                      })}
-                    <Separator className="my-3" />
-                    <div className="flex items-center justify-between font-semibold text-lg">
-                      <span>{t('builder.totalPerMonth')}</span>
-                      <span className="text-primary">{monthlyTotal.toFixed(2)}₾</span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Link href={registrationUrl} className="w-full">
-                    <Button size="lg" className="w-full">
-                      {t('builder.continueWithPlan')}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
-            )}
-          </div>
+    <section id="pricing" className="container py-16 space-y-12">
+      <div className="mx-auto max-w-3xl space-y-4 text-center">
+        <h2 className="text-3xl font-bold md:text-4xl">{t('title')}</h2>
+        <p className="text-lg text-muted-foreground">{t('subtitle')}</p>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Badge variant="outline">{t('chips.gel')}</Badge>
+          <Badge variant="outline">{t('chips.monthly')}</Badge>
+          <Badge variant="outline">{t('chips.cancel')}</Badge>
         </div>
-
-      {/* Info Section */}
-      <div className="max-w-4xl mx-auto mt-16">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('info.title')}</CardTitle>
-            <CardDescription>{t('info.subtitle')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <div className="text-2xl">💪</div>
-                <h3 className="font-semibold">{t('info.payUse.title')}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {t('info.payUse.description')}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <div className="text-2xl">📈</div>
-                <h3 className="font-semibold">{t('info.scale.title')}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {t('info.scale.description')}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <div className="text-2xl">🔄</div>
-                <h3 className="font-semibold">{t('info.cancel.title')}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {t('info.cancel.description')}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
-      <div className="text-center mt-8 text-sm text-muted-foreground">
-        <p>{t('allPricesNote')}</p>
+      <EmployeeStepper value={plan.employees} onChange={plan.setEmployees} />
+
+      <PackCards features={features} employees={plan.employees} onLoad={loadPack} />
+
+      <ModuleTable features={features} />
+
+      <div ref={builderRef} id="plan-builder" className="scroll-mt-24 space-y-6">
+        <div className="mx-auto max-w-2xl space-y-2 text-center">
+          <h3 className="text-2xl font-bold">{t('builder.title')}</h3>
+          <p className="text-muted-foreground">{t('builder.subtitle')}</p>
+        </div>
+        <PlanBuilder
+          features={features}
+          employees={plan.employees}
+          selectedKeys={plan.selectedKeys}
+          prices={plan.prices}
+          onToggle={plan.toggle}
+          autoNotice={plan.autoNotice}
+          ctaHref={registrationUrl({ modules: plan.selectedKeys, employees: plan.employees })}
+          ctaLabel={t('builder.summary.cta')}
+        />
       </div>
+
+      <BillingNotes />
     </section>
   );
 }
