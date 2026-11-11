@@ -4644,7 +4644,8 @@
       "language": "Language",
       "getStarted": "Get Started",
       "openMenu": "Open menu",
-      "closeMenu": "Close menu"
+      "closeMenu": "Close menu",
+      "faq": "FAQ"
     },
     "hero": {
       "badge": "All-in-One Customer Support Platform",
@@ -4654,83 +4655,69 @@
         "primary": "Get Started Free",
         "secondary": "Explore Features"
       },
-      "features": {
-        "messaging": "Ticketing",
-        "calling": "Social Media Channels",
-        "email": "SIP Calls"
+      "chips": {
+        "tickets": "Tickets & boards",
+        "inbox": "Unified inbox",
+        "calls": "Calls & PBX"
+      },
+      "mock": {
+        "workspace": "EchoDesk Demo",
+        "url": "demo.echodesk.ge/messages",
+        "groups": {
+          "work": "Work",
+          "channels": "Channels",
+          "modules": "Modules"
+        },
+        "nav": {
+          "boards": "Boards",
+          "calls": "Calls",
+          "messages": "Messages",
+          "email": "Email",
+          "users": "Users",
+          "bookings": "Bookings",
+          "invoices": "Invoices",
+          "settings": "Settings"
+        },
+        "live": "Live",
+        "search": "Search",
+        "today": "Today",
+        "convos": {
+          "c1name": "Mariam Gelashvili",
+          "c1preview": "Also I want to add one more service…",
+          "c1time": "2m",
+          "c2name": "Giorgi Kapanadze",
+          "c2preview": "I'm on Safari on iPhone",
+          "c2time": "14m",
+          "c3name": "Ana Tsereteli",
+          "c3preview": "You: Of course, I'll send a few slots for t…",
+          "c3time": "1h",
+          "c4name": "Website visitor #4821",
+          "c4preview": "Got it, thanks",
+          "c4time": "3h",
+          "c5name": "Davit Lomidze",
+          "c5preview": "Re: Invoice INV-0231 — paid",
+          "c5time": "Yesterday"
+        },
+        "channelLine": "WhatsApp · +995 598 21 44 09",
+        "ticket": "TK-1042",
+        "call": "Call",
+        "msg1": "გამარჯობა, შემიძლია ხვალ 11:00-ზე ჩავიწერო?",
+        "msg2": "Also I want to add one more service to the booking.",
+        "reply": "Yes — booked you with Nino for 11:00 tomorrow. I've added the manicure as well. Confirmation sent.",
+        "replyMeta": "Nino Beridze · 10:14",
+        "callTitle": "Incoming call · 02:14",
+        "callMeta": "Answered by Nino · recording saved",
+        "composer": "Reply on WhatsApp…"
       }
     },
     "features": {
-      "title": "Everything You Need for Customer Support",
-      "subtitle": "Powerful features designed to help your team deliver exceptional customer service",
-      "ticketManagement": {
-        "title": "Complete Ticket Management",
-        "description": "Organize, track, and resolve customer issues efficiently with our intuitive ticket system. Assign priorities, set due dates, and collaborate with your team."
-      },
-      "emailIntegration": {
-        "title": "Email Integration",
-        "description": "Connect your email accounts and manage all customer emails directly from EchoDesk. No more switching between platforms."
-      },
-      "sipCalling": {
-        "title": "SIP Calling Integration",
-        "description": "Make and receive calls directly from the platform. Call recording, call history, and real-time call analytics included."
-      },
-      "advancedForms": {
-        "title": "Advanced Forms",
-        "description": "Create custom forms attachable to tickets. Collect structured information and streamline your support workflow."
-      },
-      "facebook": {
-        "title": "Messenger API",
-        "description": "Respond to Facebook messages from multiple pages in one unified inbox. Never miss a customer message."
-      },
-      "instagram": {
-        "title": "Instagram API",
-        "description": "Manage Instagram DMs alongside all other channels. Keep your social media support organized and efficient."
-      },
-      "whatsapp": {
-        "title": "WhatsApp Business API",
-        "description": "Connect your WhatsApp Business account and handle customer conversations at scale with advanced features."
-      },
-      "email": {
-        "title": "Email helpdesk",
-        "description": "IMAP + SMTP two-way sync. Thread grouping, flags, labels, attachments — same inbox as social and calls."
-      },
-      "invoicing": {
-        "title": "GEL invoicing",
-        "description": "Draft → Sent → Paid, line items, tax, recurring billing, Bank of Georgia payments built-in."
-      },
-      "bookings": {
-        "title": "Online bookings",
-        "description": "Calendar slots, service categories, payment on booking. Multi-language Georgian client-facing forms."
-      },
-      "leave": {
-        "title": "Leave management",
-        "description": "Vacation, sick, personal. Manager + HR approval workflow, accrual or annual allocation."
-      },
-      "analytics": {
-        "title": "Advanced Analytics",
-        "description": "Track team performance, response times, resolution rates, and customer satisfaction with detailed reports and dashboards."
-      },
-      "teamCollaboration": {
-        "title": "Team Collaboration",
-        "description": "Assign tickets, mention colleagues, leave internal notes, and work together seamlessly to solve customer issues."
-      },
-      "automation": {
-        "title": "Workflow Automation",
-        "description": "Automate repetitive tasks with custom workflows. Set up rules for automatic ticket routing, responses, and escalations."
-      },
-      "security": {
-        "title": "Enterprise Security",
-        "description": "Your data is protected with industry-standard encryption, secure authentication, and regular backups."
-      },
-      "realtime": {
-        "title": "Real-Time Updates",
-        "description": "Stay in sync with your team with instant notifications and live updates across all devices."
-      },
-      "multilingual": {
-        "title": "Multilingual Support",
-        "description": "Full support for English and Georgian languages. Serve your customers in their preferred language."
-      }
+      "title": "Every module your business needs",
+      "subtitle": "Switch on only what you use. Every module has one price per employee and can be added or removed at any time.",
+      "eyebrow": "Features",
+      "inboxChannels": "Messenger · Instagram · WhatsApp · Telegram · TikTok · Email · Website chat",
+      "inboxNote": "connected in Settings → Channels",
+      "addToPlan": "Add to your plan",
+      "workspaceTag": "Included in every pack"
     },
     "pricing": {
       "title": "One base. Add only the modules you need.",
@@ -4779,7 +4766,9 @@
           "audience": "One system for the whole business",
           "tagline": "Every module, one price per employee.",
           "cta": "Start with Everything"
-        }
+        },
+        "pick": "Start from a ready-made pack",
+        "orBuild": "or build your own below — every number comes from the live price list."
       },
       "table": {
         "title": "What's in each pack",
@@ -4807,8 +4796,19 @@
           "perEmployee": "{price} ₾ per employee",
           "cta": "Start with this plan",
           "note": "Add or remove modules any time. A module added mid-month is charged only for the days left.",
-          "contact": "50+ employees? Write to <email>info@echodesk.ge</email> for a custom quote."
-        }
+          "contact": "50+ employees? Write to <email>info@echodesk.ge</email> for a custom quote.",
+          "teamSize": "Team size",
+          "teamHint": "How many employees will log in?",
+          "planSummary": "{modules} modules selected for {n} employees"
+        },
+        "selectTitle": "Select your modules",
+        "selectSubtitle": "Switch modules on or off. Add or remove any time.",
+        "selectAll": "Select all",
+        "clearOptional": "Clear optional",
+        "groupModules": "Modules",
+        "selectedMeta": "{n} of {total} selected",
+        "info": "What's included",
+        "alwaysOn": "Always on"
       },
       "modules": {
         "ticket_management": {
@@ -4869,6 +4869,21 @@
         "employees": "Employees",
         "planLine": "Your plan: {plan} · {n} employees · {total} ₾ / month",
         "trialNote": "30 days free, no card needed. After the trial you pay the amount above every 30 days."
+      },
+      "eyebrow": "Pricing",
+      "notes": {
+        "pay": {
+          "title": "Pay for what you use",
+          "desc": "Select only the modules you need. No bloated packages."
+        },
+        "scale": {
+          "title": "Scale with confidence",
+          "desc": "Add employees or modules any time. The price updates automatically."
+        },
+        "cancel": {
+          "title": "Cancel anytime",
+          "desc": "No long-term commitments. Manage your subscription from Settings."
+        }
       }
     },
     "cta": {
@@ -4897,7 +4912,7 @@
         },
         "calling": {
           "question": "Do you support SIP calling?",
-          "answer": "Yes — EchoDesk ships with a built-in SIP PBX. Connect your Georgian provider, assign extensions to agents, and record calls directly against the client's ticket history."
+          "answer": "Yes — EchoDesk ships with a built-in SIP PBX. Connect your Georgian provider (Magti, Silknet or any SIP trunk), assign extensions to your employees, and record calls directly against the client's ticket history."
         },
         "gelBilling": {
           "question": "Is EchoDesk billed in Georgian Lari?",
@@ -4915,7 +4930,8 @@
           "question": "Where is my data stored?",
           "answer": "Data is stored on servers in Germany (EU), hosted by Hetzner Online GmbH. Tenant isolation is enforced at the database level — your conversations and invoices never touch another customer's schema."
         }
-      }
+      },
+      "eyebrow": "FAQ"
     },
     "footer": {
       "tagline": "Centralize customer communication across all channels",
