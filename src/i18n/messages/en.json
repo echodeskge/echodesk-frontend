@@ -6076,7 +6076,9 @@
       "cancelDescription": "{name} at {time} will be cancelled and the time freed. The customer is told by email if we have one.",
       "keep": "Keep",
       "cancelYes": "Cancel booking",
-      "hint": "Click a free time to add a booking. Click a booking to confirm, finish or cancel it. Grey areas are outside the specialist's working hours."
+      "hint": "Click a free time to add a booking. Click a booking to confirm, finish or cancel it. Grey areas are outside the specialist's working hours.",
+      "nowLine": "Now",
+      "readOnlyHint": "Click a booking to see its details. Only administrators can add or change bookings here."
     },
     "dialog": {
       "staff": "Specialist",
@@ -6109,8 +6111,23 @@
       "addNew": "Add new customer",
       "addNamed": "Add new customer “{name}”",
       "noCustomers": "No customers found",
-      "newCustomerSaved": "The customer is saved to your customer list together with the booking."
-    }
+      "newCustomerSaved": "The customer is saved to your customer list together with the booking.",
+      "freeTimes": "Free start times",
+      "loadingTimes": "Loading free times…",
+      "noFreeTimes": "No free times for this service on that day — you can still type a time.",
+      "optionsFailed": "Couldn't load the specialists and services. Close the dialog and try again."
+    },
+    "viewsAria": "Calendar view",
+    "legendAria": "Status legend",
+    "zoomAria": "Time scale",
+    "previous": "Previous",
+    "next": "Next",
+    "dateAria": "Date",
+    "more": "+{n} more",
+    "openAria": "Open booking: {label}",
+    "noBookingsInRange": "No bookings in this period",
+    "noBookingsHint": "Bookings in this period will show here.",
+    "bookingsInRange": "{n, plural, one {# booking} other {# bookings}}"
   },
   "autoPosting": {
     "title": "AI Auto-Posting",
