@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTenantSubscription } from '@/hooks/api/useTenant';
 import { useTenant } from '@/contexts/TenantContext';
@@ -36,15 +37,12 @@ export default function SubscriptionPage() {
   const [activeTab, setActiveTab] = useState<SubscriptionTab>('features');
 
   // `?tab=billing` (the trial banner's "Add a card" link) opens the billing
-  // tab. Read after mount so the server and client first render agree.
+  // tab, also when the link is clicked while already on this page.
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get('tab') ?? null;
   useEffect(() => {
-    try {
-      const tab = new URLSearchParams(window.location.search).get('tab');
-      if (tab === 'billing' || tab === 'usage' || tab === 'features') setActiveTab(tab);
-    } catch {
-      // no window / malformed query: keep the default tab
-    }
-  }, []);
+    if (tabParam === 'billing' || tabParam === 'usage' || tabParam === 'features') setActiveTab(tabParam);
+  }, [tabParam]);
 
   // Queries
   const { data: subscription, isLoading: subscriptionLoading } = useTenantSubscription();

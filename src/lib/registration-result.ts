@@ -59,13 +59,21 @@ export function readRegistrationResult(): RegistrationResult | null {
   }
 }
 
-/** Long date in the UI locale, e.g. "11 December 2026" / "11 დეკემბერი, 2026". */
+const MONTHS = {
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+  ka: ['იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი', 'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი'],
+} as const;
+
+/**
+ * Long date in the UI locale, e.g. "11 December 2026" / "11 დეკემბერი, 2026".
+ * Month names are spelled out here rather than through Intl: browsers with
+ * reduced ICU data (headless builds, some WebViews) render ka-GE as "M12".
+ */
 export function formatTrialDate(value: string | Date, locale: string): string {
   const date = typeof value === 'string' ? new Date(value) : value;
   if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat(locale === 'ka' ? 'ka-GE' : 'en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(date);
+  const day = date.getDate();
+  const year = date.getFullYear();
+  if (locale === 'ka') return `${day} ${MONTHS.ka[date.getMonth()]}, ${year}`;
+  return `${day} ${MONTHS.en[date.getMonth()]} ${year}`;
 }
