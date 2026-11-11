@@ -5,6 +5,9 @@
  * backend's default 20 rows.
  */
 import {
+  bookingsAdminAvailabilityCreate,
+  bookingsAdminAvailabilityList,
+  bookingsAdminAvailabilityPartialUpdate,
   bookingsAdminBookingsAssignStaffCreate,
   bookingsAdminBookingsCancelCreate,
   bookingsAdminBookingsCheckInCreate,
@@ -17,18 +20,36 @@ import {
   bookingsAdminBookingsRescheduleCreate,
   bookingsAdminBookingsRetrieve,
   bookingsAdminBookingsRowsList,
+  bookingsAdminCategoriesCreate,
+  bookingsAdminCategoriesDestroy,
+  bookingsAdminCategoriesList,
+  bookingsAdminCategoriesPartialUpdate,
   bookingsAdminClientsBookingsRetrieve,
   bookingsAdminClientsList,
   bookingsAdminClientsRetrieve,
   bookingsAdminClientsStatsRetrieve,
   bookingsAdminDashboardRetrieve,
+  bookingsAdminExceptionsCreate,
+  bookingsAdminExceptionsDestroy,
+  bookingsAdminExceptionsList,
+  bookingsAdminExceptionsPartialUpdate,
+  bookingsAdminServicesActivateCreate,
+  bookingsAdminServicesCreate,
+  bookingsAdminServicesDeactivateCreate,
+  bookingsAdminServicesDestroy,
   bookingsAdminServicesList,
+  bookingsAdminServicesPartialUpdate,
   bookingsAdminSettingsRetrieve,
   bookingsAdminSlotsRetrieve,
+  bookingsAdminStaffAvailableUsersRetrieve,
+  bookingsAdminStaffCreate,
+  bookingsAdminStaffDestroy,
   bookingsAdminStaffList,
+  bookingsAdminStaffPartialUpdate,
 } from "@/api/generated"
 import type {
   AdminSlotsResponse,
+  AvailableUser,
   BookingCancelResponse,
   BookingClient,
   BookingClientStats,
@@ -37,10 +58,25 @@ import type {
   BookingList,
   BookingRow,
   BookingStaff,
+  BookingStaffCreateRequest,
   MethodEnum,
   PaginatedBookingClientList,
   PaginatedBookingRowList,
   PatchedAdminBookingUpdateRequest,
+  PatchedBookingStaffCreateRequest,
+  PatchedServiceCategoryRequest,
+  PatchedServiceCreateRequest,
+  PatchedStaffAvailabilityRequest,
+  PatchedStaffExceptionRequest,
+  ServiceCategory,
+  ServiceCategoryRequest,
+  ServiceCreateRequest,
+  ServiceDetail,
+  ServiceList,
+  StaffAvailability,
+  StaffAvailabilityRequest,
+  StaffException,
+  StaffExceptionRequest,
 } from "@/api/generated/interfaces"
 
 /** The backend caps `page_size` at 100. */
@@ -203,4 +239,97 @@ export async function fetchBusinessTimezone(): Promise<string> {
   return settings.timezone || DEFAULT_TIMEZONE
 }
 
-export type { BookingClient, BookingRow, BookingDetail, BookingList, BookingStaff, BookingClientStats }
+// ---------------------------------------------------------------------------
+// Catalog (BKG-03): services, categories, staff, availability, exceptions.
+// ---------------------------------------------------------------------------
+
+/** Every service, in the UI locale (`name_display`), newest filters off. */
+export function fetchAllServices(): Promise<ServiceList[]> {
+  return fetchAllPages((page, pageSize) => bookingsAdminServicesList(undefined, undefined, undefined, page, pageSize))
+}
+
+export const createService = (data: ServiceCreateRequest): Promise<ServiceDetail> => bookingsAdminServicesCreate(data)
+
+export const updateService = (id: number, data: PatchedServiceCreateRequest): Promise<ServiceDetail> =>
+  bookingsAdminServicesPartialUpdate(id, data)
+
+/** 409 when the service still has bookings (`isConflictError`). */
+export const deleteService = (id: number): Promise<unknown> => bookingsAdminServicesDestroy(id)
+
+export const activateService = (id: number): Promise<ServiceDetail> => bookingsAdminServicesActivateCreate(id)
+
+export const deactivateService = (id: number): Promise<ServiceDetail> => bookingsAdminServicesDeactivateCreate(id)
+
+/** Every category, in display order. */
+export function fetchAllCategories(): Promise<ServiceCategory[]> {
+  return fetchAllPages((page, pageSize) => bookingsAdminCategoriesList(undefined, page, pageSize))
+}
+
+export const createCategory = (data: ServiceCategoryRequest): Promise<ServiceCategory> => bookingsAdminCategoriesCreate(data)
+
+export const updateCategory = (id: number, data: PatchedServiceCategoryRequest): Promise<ServiceCategory> =>
+  bookingsAdminCategoriesPartialUpdate(id, data)
+
+export const deleteCategory = (id: number): Promise<unknown> => bookingsAdminCategoriesDestroy(id)
+
+/** Every staff member, active for bookings or not. */
+export function fetchAllStaff(): Promise<BookingStaff[]> {
+  return fetchAllPages((page, pageSize) => bookingsAdminStaffList(undefined, undefined, page, pageSize))
+}
+
+export const createStaff = (data: BookingStaffCreateRequest): Promise<BookingStaff> => bookingsAdminStaffCreate(data)
+
+export const updateStaff = (id: number, data: PatchedBookingStaffCreateRequest): Promise<BookingStaff> =>
+  bookingsAdminStaffPartialUpdate(id, data)
+
+export const deleteStaff = (id: number): Promise<unknown> => bookingsAdminStaffDestroy(id)
+
+/** Users who are not booking staff yet (`staff/available_users/?search=`). */
+export const fetchAvailableUsers = (search?: string): Promise<AvailableUser[]> =>
+  bookingsAdminStaffAvailableUsersRetrieve(search || undefined)
+
+/** A staff member's weekly rows (at most one per weekday). */
+export function fetchStaffAvailability(staffId: number): Promise<StaffAvailability[]> {
+  return fetchAllPages((page, pageSize) =>
+    bookingsAdminAvailabilityList(undefined, undefined, undefined, page, pageSize, undefined, staffId)
+  )
+}
+
+export const createAvailability = (data: StaffAvailabilityRequest): Promise<StaffAvailability> =>
+  bookingsAdminAvailabilityCreate(data)
+
+export const updateAvailability = (id: number, data: PatchedStaffAvailabilityRequest): Promise<StaffAvailability> =>
+  bookingsAdminAvailabilityPartialUpdate(id, data)
+
+/** A staff member's exceptions from today on (`showPast` for the older ones too). */
+export function fetchStaffExceptions(staffId: number, showPast = false): Promise<StaffException[]> {
+  return fetchAllPages((page, pageSize) =>
+    bookingsAdminExceptionsList(undefined, undefined, page, pageSize, undefined, showPast || undefined, staffId)
+  )
+}
+
+export const createException = (data: StaffExceptionRequest): Promise<StaffException> => bookingsAdminExceptionsCreate(data)
+
+export const updateException = (id: number, data: PatchedStaffExceptionRequest): Promise<StaffException> =>
+  bookingsAdminExceptionsPartialUpdate(id, data)
+
+export const deleteException = (id: number): Promise<unknown> => bookingsAdminExceptionsDestroy(id)
+
+/** True for an HTTP 409 (a service delete refused because bookings reference it). */
+export function isConflictError(error: unknown): boolean {
+  return (error as { response?: { status?: number } } | null | undefined)?.response?.status === 409
+}
+
+export type {
+  BookingClient,
+  BookingRow,
+  BookingDetail,
+  BookingList,
+  BookingStaff,
+  BookingClientStats,
+  ServiceList,
+  ServiceCategory,
+  StaffAvailability,
+  StaffException,
+  AvailableUser,
+}
