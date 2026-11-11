@@ -53,8 +53,8 @@ export default function BookingsDashboard() {
   const stats: BookingsStatItem[] = [
     { key: "today", label: t("todaysBookings"), value: tiles?.todayBookings, hint: t("scheduledForToday"), icon: Calendar, testId: "bkg-tile-today" },
     { key: "pending", label: t("pendingApproval"), value: tiles?.pendingApproval, hint: t("awaitingConfirmation"), icon: Clock, testId: "bkg-tile-pending" },
-    { key: "completed", label: t("completedToday"), value: tiles?.completedToday, hint: t("successfullyCompleted"), icon: CheckCircle2, testId: "bkg-tile-completed" },
-    { key: "revenue", label: t("revenueThisWeek"), value: tiles?.weekRevenue, hint: t("thisWeek"), icon: DollarSign, testId: "bkg-tile-revenue" },
+    { key: "completed", label: t("completedThisMonth"), value: tiles?.completedThisMonth, hint: t("thisMonth"), icon: CheckCircle2, testId: "bkg-tile-completed" },
+    { key: "revenue", label: t("totalRevenue"), value: tiles?.totalRevenue, hint: t("allPaidBookings"), icon: DollarSign, testId: "bkg-tile-revenue" },
   ]
   const counts: BookingsStatItem[] = [
     { key: "services", label: t("activeServices"), value: activeServices, testId: "bkg-tile-services" },

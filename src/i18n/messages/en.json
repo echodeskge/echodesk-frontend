@@ -5718,9 +5718,7 @@
     "viewClientInfo": "View client information",
     "staffAvailability": "Staff Availability",
     "manageSchedules": "Manage staff schedules",
-    "completedToday": "Completed today",
-    "revenueThisWeek": "Revenue this week",
-    "thisWeek": "This week",
+    "allPaidBookings": "All paid bookings",
     "loadFailed": "Couldn't load the dashboard"
   },
   "bookingsServices": {

@@ -138,14 +138,25 @@ describe("BKG-00 fetchAllPages", () => {
 })
 
 describe("BKG-01 dashboard tiles", () => {
-  it("map the real {today, week, overall} payload", () => {
+  it("map the {today, week, month, overall} payload", () => {
+    expect(
+      dashboardTiles({
+        today: { total_bookings: 6, confirmed: 2, pending: 4, completed: 1, status_breakdown: [], bookings: [] },
+        week: { total_bookings: 20, revenue: 970, popular_services: [] },
+        month: { total_bookings: 40, completed: 17, revenue: 2100 },
+        overall: { total_clients: 11, total_revenue: 5000, active_staff: 3, pending: 9 },
+      })
+    ).toEqual({ todayBookings: 6, pendingApproval: 9, completedThisMonth: 17, totalRevenue: "₾5,000.00", activeStaff: 3, totalClients: 11 })
+  })
+
+  it("fall back to today's figures on an older payload", () => {
     expect(
       dashboardTiles({
         today: { total_bookings: 6, confirmed: 2, pending: 4, completed: 1, status_breakdown: [], bookings: [] },
         week: { total_bookings: 20, revenue: 970, popular_services: [] },
         overall: { total_clients: 11, total_revenue: 5000, active_staff: 3 },
       })
-    ).toEqual({ todayBookings: 6, pendingApproval: 4, completedToday: 1, weekRevenue: "₾970.00", activeStaff: 3, totalClients: 11 })
+    ).toMatchObject({ pendingApproval: 4, completedThisMonth: 1, totalRevenue: "₾5,000.00" })
   })
 })
 

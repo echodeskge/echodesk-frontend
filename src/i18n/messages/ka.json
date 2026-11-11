@@ -5561,9 +5561,7 @@
     "viewClientInfo": "კლიენტის ინფორმაციის ნახვა",
     "staffAvailability": "პერსონალის განრიგი",
     "manageSchedules": "მართეთ თანამშრომლების განრიგი",
-    "completedToday": "დღეს დასრულებული",
-    "revenueThisWeek": "ამ კვირის შემოსავალი",
-    "thisWeek": "ამ კვირაში",
+    "allPaidBookings": "ყველა გადახდილი ჯავშანი",
     "loadFailed": "მიმოხილვა ვერ ჩაიტვირთა"
   },
   "bookingsServices": {

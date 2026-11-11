@@ -11,7 +11,8 @@ import BookingsDashboard from "@/app/(tenant)/bookings/page"
 const payload = {
   today: { total_bookings: 6, confirmed: 2, pending: 4, completed: 1, status_breakdown: [], bookings: [] },
   week: { total_bookings: 20, revenue: 970, popular_services: [] },
-  overall: { total_clients: 11, total_revenue: 5000, active_staff: 3 },
+  month: { total_bookings: 40, completed: 17, revenue: 2100 },
+  overall: { total_clients: 11, total_revenue: 5000, active_staff: 3, pending: 9 },
 }
 
 beforeEach(() => {
@@ -27,17 +28,17 @@ describe("BKG-01 dashboard", () => {
     expect(api.bookingsAdminDashboardRetrieve).toHaveBeenCalledWith("en", true)
     // active services = the list's count for status=active, one row requested
     expect(api.bookingsAdminServicesList).toHaveBeenCalledWith(undefined, undefined, undefined, 1, 1, undefined, "active")
-    expect(screen.getByTestId("bkg-tile-pending-value")).toHaveTextContent("4")
-    expect(screen.getByTestId("bkg-tile-completed-value")).toHaveTextContent("1")
-    expect(screen.getByTestId("bkg-tile-revenue-value")).toHaveTextContent("₾970.00")
+    expect(screen.getByTestId("bkg-tile-pending-value")).toHaveTextContent("9")
+    expect(screen.getByTestId("bkg-tile-completed-value")).toHaveTextContent("17")
+    expect(screen.getByTestId("bkg-tile-revenue-value")).toHaveTextContent("₾5,000.00")
     expect(screen.getByTestId("bkg-tile-services-value")).toHaveTextContent("4")
     expect(screen.getByTestId("bkg-tile-staff-value")).toHaveTextContent("3")
     expect(screen.getByTestId("bkg-tile-clients-value")).toHaveTextContent("11")
-    // honest labels: the API has today's and this week's figures, not the month's
+    // the design's tiles: pending on any date, completed this month, all-time revenue
     const stats = screen.getByTestId("bkg-dashboard-stats")
     expect(stats).toHaveTextContent("Today's Bookings")
-    expect(stats).toHaveTextContent("Completed today")
-    expect(stats).toHaveTextContent("Revenue this week")
+    expect(stats).toHaveTextContent("Completed This Month")
+    expect(stats).toHaveTextContent("Total Revenue")
     expect(await screen.findByTestId("bkg-header-crumb")).toHaveTextContent("Booking Management")
 
     const quick = screen.getByTestId("bkg-quick-actions")
@@ -70,7 +71,7 @@ describe("BKG-01 dashboard", () => {
     renderBookings(<BookingsDashboard />, "ka")
     await waitFor(() => expect(screen.getByTestId("bkg-tile-today-value")).toHaveTextContent("6"))
     expect(api.bookingsAdminDashboardRetrieve).toHaveBeenCalledWith("ka", true)
-    expect(screen.getByTestId("bkg-dashboard-stats")).toHaveTextContent("დღეს დასრულებული")
+    expect(screen.getByTestId("bkg-dashboard-stats")).toHaveTextContent("თვის დასრულებული")
     expect(screen.getByTestId("bkg-quick-actions")).toHaveTextContent("სწრაფი მოქმედებები")
   })
 })
