@@ -139,6 +139,14 @@ describe("Calls & SIP settings", () => {
     expect(within(row).queryByTestId("sip-set-default")).toBeNull()
   })
 
+  it("has no Quick setup button (S1: it carried a real SIP password)", async () => {
+    renderSt(<CallSettingsPage />)
+    await screen.findByTestId("sip-config-row")
+    expect(screen.queryByTestId("sip-quick-setup")).toBeNull()
+    expect(screen.queryByText(/Quick Setup/i)).toBeNull()
+    expect(screen.getByTestId("sip-add")).toBeInTheDocument()
+  })
+
   it("creates a configuration WITH the typed password (bug fix) and a translated toast", async () => {
     renderSt(<CallSettingsPage />)
     await screen.findByTestId("sip-config-row")
@@ -158,7 +166,9 @@ describe("Calls & SIP settings", () => {
     fireEvent.click(await screen.findByTestId("sip-edit"))
     await waitFor(() => expect(screen.getByLabelText(/Trunk Phone Number/)).toHaveValue("+995322000111"))
     expect(screen.getByLabelText(/WebSocket Path/i)).toHaveValue("/custom-ws")
-    expect(screen.getByRole("checkbox", { name: /Active/ })).toBeChecked()
+    expect(screen.getByRole("switch", { name: /Active/ })).toBeChecked()
+    // The stored password is never prefilled; the form only says one exists.
+    expect(screen.getByLabelText(/SIP Password/)).toHaveValue("")
     fireEvent.click(screen.getByTestId("sip-form-submit"))
     await waitFor(() => expect(state.api.sipConfigurationsUpdate).toHaveBeenCalledTimes(1))
     expect(state.api.sipConfigurationsUpdate).toHaveBeenCalledWith(1, expect.objectContaining({ is_active: true, is_default: true, max_concurrent_calls: 9, websocket_path: "/custom-ws", password: "" }))

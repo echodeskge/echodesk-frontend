@@ -1,26 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 import { Phone, PhoneMissed, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useCall } from "@/contexts/CallContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { useUserProfile } from "@/hooks/useUserProfile";
-import { useIncomingCallSidebar } from "@/contexts/IncomingCallSidebarContext";
-import { DialpadPopup } from "./DialpadPopup";
-import {
-  DOCK,
-  DIALPAD_SLOT,
-  dockSlotBottom,
-  setDialpadPresent,
-  setDialpadPanelOpen,
-  announceDockPopoverOpened,
-  onDockPopoverOpened,
-} from "@/components/TeamChat/floatingDock";
+import { useCallingAccess } from "@/lib/calling-access";
+import { DOCK, DIALPAD_SLOT, dockSlotBottom, setDialpadPresent, useDockRight } from "@/components/TeamChat/floatingDock";
 import { IncomingCallNotification } from "./IncomingCallNotification";
 import { DockBadge, DockDot, dockLauncherClass } from "./dock-launcher";
+import { useCallActions, useCallState } from "@/contexts/CallContext";
 
 export type PhoneLauncherState = "in-call" | "ringing" | "ready" | "offline";
 
@@ -43,6 +32,7 @@ const STATE_LABEL: Record<PhoneLauncherState, "phoneInCall" | "phoneRinging" | "
  * - in call: green, red dot
  * - ready (SIP registered): green status dot
  * - missed calls: destructive count badge (replaces the dot)
+ * Sits left of the open call rail on desktop (`useDockRight`).
  */
 export function PhoneLauncher({
   state,
@@ -56,6 +46,7 @@ export function PhoneLauncher({
   onClick: () => void;
 }) {
   const t = useTranslations("calls.dock");
+  const dockRight = useDockRight();
   const green = state === "in-call" || state === "ringing";
   const label = [
     open ? t("closePhone") : t("openPhone"),
@@ -70,7 +61,7 @@ export function PhoneLauncher({
       type="button"
       className={cn(dockLauncherClass(open), "fixed", green && "bg-ed-green text-white", state === "ringing" && "motion-safe:animate-ed-ring")}
       style={{
-        right: DOCK.RIGHT,
+        right: dockRight,
         bottom: dockSlotBottom(DIALPAD_SLOT),
         zIndex: DOCK.Z_INDEX.launcher,
         width: DOCK.SLOT_SIZE,
@@ -97,15 +88,21 @@ export function PhoneLauncher({
   );
 }
 
-/** Missed-call toast (top-right), restyled to the redesign toast pattern. */
+/**
+ * Missed-call toast (top-right), restyled to the redesign toast pattern.
+ * `busy`: the call was rejected with 486 because the agent was already on a
+ * call ("missed while busy").
+ */
 export function MissedCallToast({
   number,
   time,
+  busy = false,
   onCallBack,
   onDismiss,
 }: {
   number: string;
   time: Date;
+  busy?: boolean;
   onCallBack: () => void;
   onDismiss: () => void;
 }) {
@@ -115,14 +112,15 @@ export function MissedCallToast({
       role="status"
       aria-live="polite"
       className="w-full rounded-lg border bg-background p-3 text-foreground shadow-lg animate-in slide-in-from-top-2 duration-300"
-      data-testid="missed-call-toast"
+      data-testid={busy ? "busy-rejected-toast" : "missed-call-toast"}
+      data-busy={busy ? "true" : undefined}
     >
       <div className="flex items-start gap-2.5">
         <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-destructive/12 text-destructive">
           <PhoneMissed className="h-4 w-4" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-medium leading-5">{t("missedCall")}</p>
+          <p className="text-[13px] font-medium leading-5">{t(busy ? "missedWhileBusy" : "missedCall")}</p>
           <p className="truncate text-xs text-muted-foreground tabular-nums">
             {number} · {format(time, "HH:mm")}
           </p>
@@ -149,51 +147,22 @@ export function MissedCallToast({
   );
 }
 
+/**
+ * Phone launcher + call toasts (every page). The softphone itself is the
+ * call rail (`rail/call-rail.tsx`, mounted in the tenant layout): the
+ * launcher opens it, minimises it during a call and closes it when idle.
+ */
 export default function DialpadWidget() {
-  const { user } = useAuth();
-  const { data: userProfile } = useUserProfile();
-  const {
-    activeCall,
-    sipRegistered,
-    activeSipConfig,
-    isDialpadOpen,
-    toggleDialpad,
-    setIsDialpadOpen,
-    missedCall,
-    clearMissedCall,
-    setDialNumber,
-  } = useCall();
-  const { isOpen: sidebarOpen } = useIncomingCallSidebar();
+  const { activeCall, sipState, activeSipConfig, rail, missedCall, busyRejected } = useCallState();
+  const { openRail, closeRail, minimiseRail, clearMissedCall } = useCallActions();
+  const { canUseSoftphone } = useCallingAccess();
 
-  // The right-side call sidebar carries the same end/hold/mute/transfer
-  // controls plus client context — when it opens, hide the bottom-right
-  // popup so the user isn't seeing two stacked call UIs at once.
-  useEffect(() => {
-    if (sidebarOpen && isDialpadOpen) {
-      setIsDialpadOpen(false);
-    }
-  }, [sidebarOpen, isDialpadOpen, setIsDialpadOpen]);
-
-  // Check user's group-level feature keys (same as sidebar uses userProfile)
-  const hasIpCalling = useMemo(() => {
-    if (user?.is_staff || user?.is_superuser) return true;
-    const profile = userProfile as Record<string, unknown> | undefined;
-    if (!profile?.feature_keys) return false;
-    let keys: string[] = [];
-    if (typeof profile.feature_keys === "string") {
-      try { keys = JSON.parse(profile.feature_keys); } catch { return false; }
-    } else if (Array.isArray(profile.feature_keys)) {
-      keys = profile.feature_keys;
-    }
-    return keys.includes("ip_calling");
-  }, [user, userProfile]);
-
-  const isVisible = hasIpCalling && !!activeSipConfig;
-  const isPanelOpen = isVisible && isDialpadOpen && !sidebarOpen;
+  const isVisible = canUseSoftphone && !!activeSipConfig;
+  const railOpen = rail.mode === "open";
   const hasActiveCall = !!activeCall;
 
   // Missed calls since the phone was last opened (CallContext keeps only the
-  // latest one, so the count lives here). Opening the phone clears it.
+  // latest one, so the count lives here). Opening the rail clears it.
   const [missedCount, setMissedCount] = useState(0);
   const lastMissed = useRef<Date | null>(null);
   useEffect(() => {
@@ -203,8 +172,8 @@ export default function DialpadWidget() {
     }
   }, [missedCall]);
   useEffect(() => {
-    if (isPanelOpen) setMissedCount(0);
-  }, [isPanelOpen]);
+    if (railOpen) setMissedCount(0);
+  }, [railOpen]);
 
   // Tell the team chat dock whether the phone launcher occupies its slot, so
   // minimized chat bubbles stack above it instead of underneath.
@@ -213,26 +182,15 @@ export default function DialpadWidget() {
     return () => setDialpadPresent(false);
   }, [isVisible]);
 
-  // Chat windows shift left while the popup is open; the chat list closes.
-  useEffect(() => {
-    setDialpadPanelOpen(isPanelOpen);
-    if (isPanelOpen) announceDockPopoverOpened("dialpad");
-    return () => setDialpadPanelOpen(false);
-  }, [isPanelOpen]);
-
-  // Opening the team chat list closes the dialpad (kept open during a call).
-  useEffect(
-    () =>
-      onDockPopoverOpened((opened) => {
-        if (opened === "chat-list" && !hasActiveCall) setIsDialpadOpen(false);
-      }),
-    [hasActiveCall, setIsDialpadOpen]
-  );
-
-  // Don't render if user doesn't have ip_calling permission or no SIP config
   if (!isVisible) return null;
 
   const isRinging = activeCall?.direction === "incoming" && activeCall?.status === "ringing";
+
+  const toggleRail = () => {
+    if (!railOpen) openRail();
+    else if (hasActiveCall) minimiseRail();
+    else closeRail();
+  };
 
   return (
     <>
@@ -248,10 +206,10 @@ export default function DialpadWidget() {
           <MissedCallToast
             number={missedCall.number}
             time={missedCall.time}
+            busy={!!busyRejected && busyRejected.time === missedCall.time}
             onDismiss={clearMissedCall}
             onCallBack={() => {
-              setDialNumber(missedCall.number);
-              setIsDialpadOpen(true);
+              openRail({ number: missedCall.number });
               clearMissedCall();
             }}
           />
@@ -261,17 +219,11 @@ export default function DialpadWidget() {
       {/* Floating phone launcher — the dock slot directly above the
           TeamChat icon (shared layout in TeamChat/floatingDock). */}
       <PhoneLauncher
-        state={phoneLauncherState({ hasActiveCall, isRinging, sipRegistered })}
-        open={isPanelOpen}
+        state={phoneLauncherState({ hasActiveCall, isRinging, sipRegistered: sipState === "registered" })}
+        open={railOpen}
         missedCount={missedCount}
-        onClick={toggleDialpad}
+        onClick={toggleRail}
       />
-
-      {/* Dialpad popup — suppressed while the call sidebar is showing
-          to avoid two overlapping call UIs. */}
-      {isDialpadOpen && !sidebarOpen && (
-        <DialpadPopup onClose={() => setIsDialpadOpen(false)} />
-      )}
     </>
   );
 }

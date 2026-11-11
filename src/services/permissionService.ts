@@ -771,7 +771,7 @@ export const DEFAULT_MENU_ITEMS: MenuItem[] = [
     id: "calls",
     label: "Calls",
     icon: "📞",
-    requiredFeatureKey: "sip_calling",
+    requiredFeatureKey: "ip_calling",
     description: "Handle phone calls",
     isPremium: true,
   },

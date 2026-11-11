@@ -33,7 +33,7 @@ import { useSettingsNav } from "@/app/(tenant)/settings/_lib/use-settings-nav"
 
 const ALL = [
   "advanced_analytics", "ai_companion", "booking_management", "ecommerce_crm", "invoice_management", "ip_calling",
-  "leave_management", "order_management", "settings", "sip_calling", "social_integrations", "ticket_management", "user_management",
+  "leave_management", "order_management", "settings", "social_integrations", "ticket_management", "user_management",
 ]
 const ADMIN_PERMS = ["manage_settings", "manage_users", "view_reports", "manage_groups"]
 const MANAGER_PERMS = ["view_reports", "assign_tickets", "export_data"]

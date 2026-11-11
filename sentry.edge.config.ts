@@ -4,12 +4,24 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { resolveSentryOptions } from "@/lib/sentry-options";
+
+// Env DSN first, then the public project DSN (src/lib/sentry-options.ts).
+const { dsn, enabled, environment, tracesSampleRate } = resolveSentryOptions({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN,
+  nodeEnv: process.env.NODE_ENV,
+  environment: process.env.SENTRY_ENVIRONMENT,
+});
 
 Sentry.init({
-  dsn: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN || "https://b9a702d6abdafabd1d2b7af8e9bede1a@o4510624823443456.ingest.de.sentry.io/4510625079361616",
+  dsn,
+  // Only production builds report; dev/test runs stay out of the production
+  // project (see src/lib/sentry-options.ts).
+  enabled,
+  environment,
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+  // 10% of transactions in production (sentry-options.ts).
+  tracesSampleRate,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,

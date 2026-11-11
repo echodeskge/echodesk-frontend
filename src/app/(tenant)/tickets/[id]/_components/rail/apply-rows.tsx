@@ -35,6 +35,9 @@ interface ApplyPickerProps {
   testId: string;
 }
 
+/** Stable empty fallback so the `useMemo` deps don't change every render. */
+const EMPTY: never[] = [];
+
 function sameSet(a: number[], b: number[]) {
   if (a.length !== b.length) return false;
   const s = new Set(a);
@@ -100,25 +103,28 @@ export function LabelsRow({ ticket, perms }: { ticket: TicketDetail; perms: View
   const presence = useEditingPresence(ticket.id, "labels");
   const [manageOpen, setManageOpen] = useState(false);
   const { tags } = useTicketPickers(ticket.board?.id ?? null, { enabled: perms.can_edit });
+  // Guarded like `assigned_groups` below: a partial realtime/optimistic
+  // ticket may arrive without the array.
+  const ticketTags = ticket.tags ?? EMPTY;
 
   const options: PickerOption<number>[] = useMemo(() => {
     const out: PickerOption<number>[] = tags.map((tag) => ({ value: tag.id, label: tag.name, color: tag.color || null }));
-    for (const tag of ticket.tags) {
+    for (const tag of ticketTags) {
       if (!out.some((o) => o.value === tag.id)) out.unshift({ value: tag.id, label: tag.name, color: tag.color || null });
     }
     return out;
-  }, [tags, ticket.tags]);
+  }, [tags, ticketTags]);
 
   return (
     <PropertyRow label={<RailLabel>{t("labels")}</RailLabel>}>
       <ApplyPicker
         testId="labels-picker"
         options={options}
-        value={ticket.tags.map((tag) => tag.id)}
+        value={ticketTags.map((tag) => tag.id)}
         onApply={(ids) => {
           const next = ids
             .map((id) => {
-              const tag = tags.find((x) => x.id === id) ?? ticket.tags.find((x) => x.id === id);
+              const tag = tags.find((x) => x.id === id) ?? ticketTags.find((x) => x.id === id);
               return tag ? { id: tag.id, name: tag.name, color: tag.color ?? "" } : null;
             })
             .filter((x): x is TicketDetail["tags"][number] => x !== null);
@@ -152,14 +158,18 @@ export function GroupsRow({ ticket, perms }: { ticket: TicketDetail; perms: View
   const { patch } = useRailPatch(ticket.id);
   const presence = useEditingPresence(ticket.id, "groups");
   const { groups } = useTicketPickers(ticket.board?.id ?? null, { enabled: perms.can_change_groups });
+  // `assigned_groups` is typed as required but the detail payload can omit
+  // it (older serializers, partial realtime patches) — Sentry 1Q
+  // "ticket.assigned_groups is not iterable".
+  const assignedGroups = ticket.assigned_groups ?? EMPTY;
 
   const options: PickerOption<number>[] = useMemo(() => {
     const out: PickerOption<number>[] = groups.map((g) => ({ value: g.id, label: g.name }));
-    for (const g of ticket.assigned_groups) {
+    for (const g of assignedGroups) {
       if (!out.some((o) => o.value === g.id)) out.unshift({ value: g.id, label: g.name });
     }
     return out;
-  }, [groups, ticket.assigned_groups]);
+  }, [groups, assignedGroups]);
 
   if (!perms.can_change_groups) return null;
 
@@ -168,11 +178,11 @@ export function GroupsRow({ ticket, perms }: { ticket: TicketDetail; perms: View
       <ApplyPicker
         testId="groups-picker"
         options={options}
-        value={ticket.assigned_groups.map((g) => g.id)}
+        value={assignedGroups.map((g) => g.id)}
         onApply={(ids) => {
           const next = ids
             .map((id) => {
-              const g = groups.find((x) => x.id === id) ?? ticket.assigned_groups.find((x) => x.id === id);
+              const g = groups.find((x) => x.id === id) ?? assignedGroups.find((x) => x.id === id);
               return g ? { id: g.id, name: g.name, description: g.description ?? "" } : null;
             })
             .filter((x): x is TicketDetail["assigned_groups"][number] => x !== null);

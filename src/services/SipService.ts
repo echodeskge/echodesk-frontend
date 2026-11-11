@@ -5,44 +5,314 @@ import {
   SessionState,
   RegistererState,
   Registerer,
-  URI
+  TransportState,
+  URI,
 } from 'sip.js';
-import type { Session, SessionDescriptionHandler } from 'sip.js';
+import type { Session, Web } from 'sip.js';
 import type { SipConfigurationDetail } from '@/api/generated/interfaces';
+import type { CallEndReason, CallError } from '@/contexts/call-types';
 
-// sip.js type extensions — the library's types don't expose these properties
-// but they exist at runtime on the session description handler
-interface PeerConnectionAccessor {
-  peerConnection: RTCPeerConnection;
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/** `RTCIceServer` as the backend serialises it (`ice_servers` in the contract). */
+export interface IceServerConfig {
+  urls: string | string[];
+  username?: string;
+  credential?: string;
 }
 
-// Session methods that sip.js types don't fully expose
-interface SessionWithExtras {
-  invite(options?: Record<string, unknown>): Promise<unknown>;
-  refer(target: URI | Session): Promise<unknown>;
-  info(options: Record<string, unknown>): Promise<unknown>;
+/**
+ * What `initialize()` consumes: the generated SIP configuration plus the
+ * fields the softphone endpoints add (`wss_url`, `ice_servers`). The
+ * generated client may lag behind the backend, so they are optional here.
+ */
+export type SoftphoneConfig = SipConfigurationDetail & {
+  wss_url?: string | null;
+  ice_servers?: IceServerConfig[] | null;
+  sip_enabled?: boolean;
+};
+
+/** Which media leg an in-call action targets. */
+export type CallLeg = 'main' | 'consultation';
+
+export interface IncomingCallInfo {
+  /** Remote user part; empty when the INVITE carries none. */
+  number: string;
+  displayName?: string;
+  /** SIP Call-ID of the INVITE; the backend dedupes `log_incoming_call` on it. */
+  sipCallId: string;
+  /** `X-EchoDesk-Call` header (Asterisk LINKEDID) when the dialplan sets it. */
+  pbxCallId?: string;
 }
 
-// SipConfigurationDetail with websocket_path (exists in API but not in generated types)
-interface SipConfigWithWebSocket extends SipConfigurationDetail {
-  websocket_path?: string;
+export interface OutgoingCallInfo {
+  sipCallId: string;
+  /** The number actually dialled after normalisation. */
+  number: string;
 }
 
-// Safari AudioContext compat
-declare global {
-  interface Window {
-    webkitAudioContext?: typeof AudioContext;
+export type TransportStatus = 'connected' | 'disconnected';
+
+export interface SipCallEvents {
+  /** 1xx provisional response to our INVITE (the callee is ringing). */
+  onCallProgress: () => void;
+  onCallAccepted: () => void;
+  /**
+   * Exactly once per main session, after it terminated for any reason
+   * (bye, cancel, rejection, ICE failure, attended transfer).
+   */
+  onCallEnded: (reason: CallEndReason) => void;
+  /**
+   * Informational: why an outgoing INVITE or the media path failed. Never
+   * replaces `onCallEnded`; it only carries the error key.
+   */
+  onCallFailed: (error: CallError) => void;
+  /** The hold / resume re-INVITE was answered; UI hold state follows this. */
+  onCallHeld: (held: boolean) => void;
+  onIncomingCall: (invitation: Invitation) => void;
+  /** A second INVITE arrived during a call and was answered with 486 Busy. */
+  onCallBusyRejected: (info: IncomingCallInfo) => void;
+  onRegistered: () => void;
+  onUnregistered: () => void;
+  onRegistrationFailed: (error: CallError) => void;
+  onTransportState: (state: TransportStatus) => void;
+  onConsultationProgress: () => void;
+  onConsultationAccepted: () => void;
+  onConsultationEnded: () => void;
+  onConsultationFailed: (error: CallError) => void;
+  onCallQualityWarning: (warning: CallError) => void;
+}
+
+type Listener<K extends keyof SipCallEvents> = SipCallEvents[K];
+
+/** Error carrying a `calls.errors.*` key instead of an English message. */
+export class SipCallError extends Error {
+  readonly key: string;
+  readonly params?: Record<string, string | number>;
+
+  constructor(key: string, params?: Record<string, string | number>, cause?: unknown) {
+    super(key);
+    this.name = 'SipCallError';
+    this.key = key;
+    this.params = params;
+    if (cause !== undefined) {
+      (this as { cause?: unknown }).cause = cause;
+    }
+  }
+
+  toCallError(): CallError {
+    return this.params ? { key: this.key, params: this.params } : { key: this.key };
   }
 }
 
-// [Issue #6] Extracted audio constraints constant — previously duplicated in 3 places
-const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+/**
+ * Normalise anything thrown by sip.js / getUserMedia into a `CallError`.
+ * Media errors keep their own keys so the rail can tell "denied" from
+ * "no microphone".
+ */
+export function toCallError(error: unknown, fallbackKey = 'callFailed'): CallError {
+  if (error instanceof SipCallError) return error.toCallError();
+  if (error && typeof error === 'object') {
+    const name = (error as { name?: string }).name;
+    const message = String((error as { message?: string }).message ?? '');
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') {
+      return { key: 'micDenied' };
+    }
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError' || name === 'OverconstrainedError') {
+      return { key: 'micMissing' };
+    }
+    if (name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError') {
+      return { key: 'micBusy' };
+    }
+    if (/timed out|timeout/i.test(message) && /media|microphone|getUserMedia|invite/i.test(message)) {
+      return { key: 'micTimeout' };
+    }
+  }
+  return { key: fallbackKey };
+}
+
+/** Final responses that mean "nobody picked up" rather than a failure. */
+const NO_ANSWER_CODES = new Set([408, 480, 487]);
+
+/** How an outgoing INVITE's rejection ends the leg (486 busy, no answer, or failure). */
+function rejectionReason(statusCode: number | undefined): CallEndReason {
+  if (statusCode === 486) return 'busy';
+  if (statusCode !== undefined && NO_ANSWER_CODES.has(statusCode)) return 'no_answer';
+  return 'failed';
+}
+
+function sipResponseError(statusCode: number | undefined): CallError {
+  switch (statusCode) {
+    case 401:
+    case 403:
+    case 404:
+    case 408:
+    case 480:
+    case 481:
+    case 486:
+    case 487:
+    case 500:
+    case 503:
+    case 603:
+      return { key: `sip${statusCode}` };
+    default:
+      return { key: 'sipOther', params: { code: statusCode ?? 0 } };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+// sip.js's web SessionDescriptionHandler exposes the peer connection at
+// runtime but not in the public type.
+interface PeerConnectionAccessor {
+  peerConnection?: RTCPeerConnection;
+}
+
+declare global {
+  interface Window {
+    webkitAudioContext?: typeof AudioContext;
+    /** Dev-only test hook, present when `NEXT_PUBLIC_CALLS_TEST_HOOK=1`. */
+    __echodeskSip?: SipTestHook;
+  }
+}
+
+export interface SipTestHook {
+  getLocalSdp(): string | null;
+  getSenderTrackEnabled(): boolean | null;
+  getState(): Record<string, unknown>;
+}
+
+export const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: true,
   noiseSuppression: true,
   autoGainControl: true,
   sampleRate: 48000,
   channelCount: 1,
 };
+
+const MEDIA_CONSTRAINTS: MediaStreamConstraints = { audio: AUDIO_CONSTRAINTS, video: false };
+
+/** getUserMedia + ICE gathering must finish within this before we give up. */
+const INVITE_MEDIA_TIMEOUT_MS = 15_000;
+/** A hold / resume re-INVITE that is not answered in this time is a failure. */
+const REINVITE_TIMEOUT_MS = 15_000;
+/** `disconnect()` waits this long for the REGISTER (expires=0) to go out. */
+const UNREGISTER_TIMEOUT_MS = 2_000;
+/** After an attended transfer Asterisk BYEs us; hang up ourselves if it does not. */
+const TRANSFER_HANGUP_FALLBACK_MS = 10_000;
+
+const DEV_WS_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', 'lvh.me']);
+
+function isDevWebSocketHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return DEV_WS_HOSTS.has(host) || host.endsWith('.lvh.me');
+}
+
+/**
+ * WebSocket URL for the SIP transport. `wss_url` from the backend wins;
+ * otherwise `wss://host:port/path`. Plain `ws://` is accepted only for the
+ * local development hosts.
+ */
+export function resolveWebSocketUrl(config: SoftphoneConfig): string {
+  const explicit = config.wss_url?.trim();
+  let url: URL;
+  if (explicit) {
+    try {
+      url = new URL(explicit);
+    } catch {
+      throw new SipCallError('configMissing');
+    }
+  } else {
+    const host = config.sip_server?.trim();
+    if (!host) throw new SipCallError('configMissing');
+    const port = config.sip_port || 8089;
+    const rawPath = config.websocket_path?.trim() || '/ws';
+    const path = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+    url = new URL(`wss://${host}:${port}${path}`);
+  }
+  if (url.protocol === 'wss:') return url.toString();
+  if (url.protocol === 'ws:' && isDevWebSocketHost(url.hostname)) return url.toString();
+  throw new SipCallError('insecureTransport', { url: url.toString() });
+}
+
+/** ICE servers come from the backend only: `ice_servers`, else the legacy STUN/TURN fields. */
+export function resolveIceServers(config: SoftphoneConfig): RTCIceServer[] {
+  if (Array.isArray(config.ice_servers) && config.ice_servers.length > 0) {
+    return config.ice_servers
+      .filter((s) => s && s.urls && (Array.isArray(s.urls) ? s.urls.length > 0 : s.urls.trim()))
+      .map((s) => ({
+        urls: s.urls,
+        ...(s.username ? { username: s.username } : {}),
+        ...(s.credential ? { credential: s.credential } : {}),
+      }));
+  }
+  const servers: RTCIceServer[] = [];
+  const stun = config.stun_server?.trim();
+  if (stun) servers.push({ urls: stun });
+  const turn = config.turn_server?.trim();
+  if (turn) {
+    servers.push({
+      urls: turn,
+      username: config.turn_username || '',
+      credential: config.turn_password || '',
+    });
+  }
+  return servers;
+}
+
+/**
+ * Dial string clean-up. Feature codes and IVR targets (`*100`, `#1`) are
+ * passed through untouched; plain digit strings get the Georgian country
+ * code heuristics the dialplan expects.
+ */
+export function normalizeDialNumber(raw: string): string {
+  let n = raw.replace(/[^\d+*#]/g, '');
+  if (n.includes('*') || n.includes('#')) return n;
+  if (n.startsWith('00')) {
+    n = `+${n.substring(2)}`;
+  } else if (n.length === 9 && n.startsWith('5')) {
+    n = `+995${n}`;
+  } else if (n.length === 8 && n.startsWith('2')) {
+    n = `+995${n}`;
+  } else if (!n.startsWith('+') && n.length > 7) {
+    n = `+${n}`;
+  }
+  return n;
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, onTimeout: () => void, key: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      onTimeout();
+      reject(new SipCallError(key));
+    }, ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
+function peerConnectionOf(session: Session | null | undefined): RTCPeerConnection | null {
+  const sdh = session?.sessionDescriptionHandler as PeerConnectionAccessor | undefined;
+  return sdh?.peerConnection ?? null;
+}
+
+function audioSenderOf(session: Session | null | undefined): RTCRtpSender | null {
+  const pc = peerConnectionOf(session);
+  if (!pc) return null;
+  return pc.getSenders().find((s) => s.track?.kind === 'audio') ?? null;
+}
 
 // [Issue #8] Cache the dynamic import result so NoiseSuppression module is loaded only once
 let noiseSuppressionModuleCache: Promise<typeof import('./NoiseSuppression')> | null = null;
@@ -54,590 +324,808 @@ function getNoiseSuppressionModule(): Promise<typeof import('./NoiseSuppression'
   return noiseSuppressionModuleCache;
 }
 
-export interface SipCallEvents {
-  onCallProgress: () => void;
-  onCallAccepted: () => void;
-  onCallRejected: () => void;
-  onCallEnded: () => void;
-  onCallFailed: (error: string) => void;
-  onIncomingCall: (invitation: Invitation) => void;
-  onRegistered: () => void;
-  onUnregistered: () => void;
-  onRegistrationFailed: (error: string) => void;
-  onConsultationProgress: () => void;
-  onConsultationAccepted: () => void;
-  onConsultationEnded: () => void;
-  onConsultationFailed: (error: string) => void;
-  // [Issue #9] New event for call quality degradation warnings
-  onCallQualityWarning: (message: string) => void;
+/** One SIP dialog we own, with the bookkeeping its listeners need. */
+interface Leg {
+  session: Inviter | Invitation;
+  /** Set before the terminating request so the Terminated listener knows why. */
+  reason: CallEndReason | null;
+  /** Outgoing only: false until `invite()` resolved; failures before that are reported by `makeCall`. */
+  inviteSent: boolean;
+  muted: boolean;
+  held: boolean;
+  /** Terminated event already dispatched. */
+  ended: boolean;
+  /** Consultation: do not emit `onConsultationEnded` (we tore it down ourselves). */
+  silent: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Service
+// ---------------------------------------------------------------------------
 
 export class SipService {
   private userAgent: UserAgent | null = null;
   private registerer: Registerer | null = null;
-  private currentSession: Inviter | Invitation | null = null;
-  private consultationSession: Inviter | null = null;
-  private localAudioElement: HTMLAudioElement | null = null;
-  private remoteAudioElement: HTMLAudioElement | null = null;
-  private events: Partial<SipCallEvents> = {};
+  private main: Leg | null = null;
+  private consultation: Leg | null = null;
+  private activeLeg: CallLeg = 'main';
+  private localAudioElement: HTMLAudioElement | null;
+  private remoteAudioElement: HTMLAudioElement | null;
+  private listeners = new Map<keyof SipCallEvents, Set<(...args: never[]) => void>>();
   private isRegistered = false;
+  private transportConnected = false;
+  /** True while `disconnect()` tears the UA down: registerer events are expected then. */
+  private stopping = false;
   private noiseSuppression: import('./NoiseSuppression').NoiseSuppression | null = null;
-  private noiseSuppressionEnabled = false; // Disabled by default — adds ~43ms latency
+  private noiseSuppressionEnabled = false; // Disabled by default: adds ~43ms latency
 
-  // [Issue #1] Flag to prevent concurrent setupAudioStreams invocations
+  // Audio pipeline bookkeeping (one remote stream at a time)
   private audioSetupDone = false;
-
-  // [Issue #2] Track the retry timeout so it can be cleared on cleanup
   private audioPlayRetryTimeout: ReturnType<typeof setTimeout> | null = null;
-
-  // [Issue #7] Track AudioContext instances created in setupAudioStreams for cleanup
   private audioContext: AudioContext | null = null;
 
-  constructor(
-    localAudio: HTMLAudioElement,
-    remoteAudio: HTMLAudioElement
-  ) {
+  constructor(localAudio: HTMLAudioElement, remoteAudio: HTMLAudioElement) {
     this.localAudioElement = localAudio;
     this.remoteAudioElement = remoteAudio;
+    this.installTestHook();
   }
 
-  // Event handling
-  on<K extends keyof SipCallEvents>(event: K, callback: SipCallEvents[K]) {
-    this.events[event] = callback;
-  }
+  // -------------------------------------------------------------------------
+  // Events: any number of listeners per event, each `on()` returns its unsubscribe
+  // -------------------------------------------------------------------------
 
-  private emit<K extends keyof SipCallEvents>(event: K, ...args: Parameters<SipCallEvents[K]>) {
-    const callback = this.events[event];
-    if (callback) {
-      (callback as (...a: Parameters<SipCallEvents[K]>) => void)(...args);
+  on<K extends keyof SipCallEvents>(event: K, callback: Listener<K>): () => void {
+    let set = this.listeners.get(event);
+    if (!set) {
+      set = new Set();
+      this.listeners.set(event, set);
     }
+    set.add(callback as (...args: never[]) => void);
+    return () => this.off(event, callback);
   }
 
-  // Check if a SIP provider is a traditional (non-WebRTC) provider
-  private isTraditionalSipProvider(sipServer: string): boolean {
-    // VitalPBX servers are WebRTC compatible
-    if (sipServer === '165.227.166.42' || sipServer === 'pbx.echodesk.ge') {
-      return false;
-    }
-
-    // Known traditional SIP providers that don't support WebRTC
-    const traditionalProviders = [
-      '89.150.1.11', // Old Georgian SIP provider
-      'sip.telekom.ge',
-      'sip.geocell.ge',
-      'sip.megatel.ge',
-      // Add other known traditional providers
-    ];
-
-    // Check against known traditional providers
-    return traditionalProviders.some(provider =>
-      sipServer.includes(provider) || provider.includes(sipServer)
-    );
+  off<K extends keyof SipCallEvents>(event: K, callback: Listener<K>): void {
+    this.listeners.get(event)?.delete(callback as (...args: never[]) => void);
   }
 
-  // Check if a SIP provider supports WebRTC
-  private isWebRtcCompatibleProvider(sipServer: string): boolean {
-    // VitalPBX servers are explicitly WebRTC compatible
-    if (sipServer === '165.227.166.42' || sipServer === 'pbx.echodesk.ge') {
-      return true;
-    }
-
-    // Known WebRTC-compatible providers
-    const webrtcProviders = [
-      'twilio.com',
-      'vonage.com',
-      'janus.gateway',
-      'sip.js',
-      'freeswitch',
-      'asterisk',
-      'opensips',
-      'kamailio',
-      'webrtc',
-      'jssip',
-      'sipgate',
-      '3cx',
-      'vitalpbx',
-      'freepbx',
-      'issabel',
-      'elastix',
-      'echodesk.ge',
-      // Add other known WebRTC providers
-    ];
-
-    return webrtcProviders.some(provider =>
-      sipServer.toLowerCase().includes(provider.toLowerCase())
-    );
+  removeAllListeners(): void {
+    this.listeners.clear();
   }
 
-  // Get WebSocket URL for SIP server
-  private getWebSocketUrl(sipConfig: SipConfigurationDetail): string {
-    const isSecure = window.location.protocol === 'https:';
-    const wsProtocol = isSecure ? 'wss' : 'ws';
-    const port = sipConfig.sip_port || (isSecure ? 8089 : 8088);
-    const wsPath = (sipConfig as SipConfigWithWebSocket).websocket_path || '/ws';
-
-    return `${wsProtocol}://${sipConfig.sip_server}:${port}${wsPath}`;
-  }
-
-  // [Issue #2 / #7] Clear audio-related timers and contexts
-  private cleanupAudioResources(): void {
-    // Clear retry timeout
-    if (this.audioPlayRetryTimeout !== null) {
-      clearTimeout(this.audioPlayRetryTimeout);
-      this.audioPlayRetryTimeout = null;
-    }
-
-    // [Issue #7] Close the AudioContext created in setupAudioStreams
-    if (this.audioContext && this.audioContext.state !== 'closed') {
-      this.audioContext.close().catch(() => {});
-      this.audioContext = null;
-    }
-
-    // Reset the audio setup flag so a new call can set up audio fresh
-    this.audioSetupDone = false;
-  }
-
-  // Initialize SIP user agent
-  async initialize(sipConfig: SipConfigurationDetail): Promise<void> {
-    try {
-      if (this.userAgent) {
-        await this.disconnect();
+  private emit<K extends keyof SipCallEvents>(event: K, ...args: Parameters<SipCallEvents[K]>): void {
+    const set = this.listeners.get(event);
+    if (!set) return;
+    for (const callback of Array.from(set)) {
+      try {
+        (callback as (...a: Parameters<SipCallEvents[K]>) => void)(...args);
+      } catch (error) {
+        console.error(`[SipService] ${event} listener failed:`, error);
       }
+    }
+  }
 
-      // Check if this is a traditional SIP provider that doesn't support WebRTC
-      const isTraditionalProvider = this.isTraditionalSipProvider(sipConfig.sip_server);
-      const isWebRtcCompatible = this.isWebRtcCompatibleProvider(sipConfig.sip_server);
+  // -------------------------------------------------------------------------
+  // Lifecycle
+  // -------------------------------------------------------------------------
 
-      if (isTraditionalProvider && !isWebRtcCompatible) {
-        const errorMessage = `WebRTC Compatibility Issue: The SIP provider "${sipConfig.sip_server}" appears to be a traditional SIP server that only supports UDP/TCP protocols. Browser-based calling requires WebSocket (WSS) transport.
+  async initialize(config: SoftphoneConfig): Promise<void> {
+    if (this.userAgent) {
+      await this.disconnect();
+    }
 
-Solutions:
-1. Contact your SIP provider about WebRTC/WebSocket support
-2. Use a WebRTC gateway (FreeSWITCH, Asterisk) to bridge the connection
-3. Switch to a WebRTC-native provider (Twilio, Vonage, Janus)
-4. Set up an Asterisk/FreeSWITCH server with WebRTC support as a proxy
+    const server = resolveWebSocketUrl(config);
+    const realm = config.realm?.trim() || config.sip_server?.trim();
+    if (!config.username || !realm) {
+      throw new SipCallError('configMissing');
+    }
 
-Traditional SIP providers work with desktop softphones (like Zoiper) but not web browsers due to security restrictions.`;
-
-        console.error('[SipService] Provider compatibility issue:', errorMessage);
-        throw new Error(errorMessage);
-      }
-
-      // Get the appropriate WebSocket URL for this provider
-      const sipServerUri = this.getWebSocketUrl(sipConfig);
-
-      const sipUri = new URI('sip', sipConfig.username, sipConfig.realm || sipConfig.sip_server);
-
-      // [Issue #6] Use extracted AUDIO_CONSTRAINTS constant
-      // Create user agent with enhanced configuration
-      this.userAgent = new UserAgent({
-        uri: sipUri,
-        transportOptions: {
-          server: sipServerUri,
-          connectionTimeout: 30,
-          maxReconnectionAttempts: 5,
-          reconnectionTimeout: 10,
-          keepAliveInterval: 30
+    const userAgent = new UserAgent({
+      uri: new URI('sip', config.username, realm),
+      transportOptions: {
+        server,
+        connectionTimeout: 30,
+        keepAliveInterval: 30,
+      },
+      reconnectionAttempts: 5,
+      reconnectionDelay: 10,
+      authorizationUsername: config.username,
+      authorizationPassword: config.password,
+      displayName: config.username,
+      logLevel: 'warn',
+      sessionDescriptionHandlerFactoryOptions: {
+        peerConnectionConfiguration: {
+          iceServers: resolveIceServers(config),
+          iceCandidatePoolSize: 10,
         },
-        authorizationUsername: sipConfig.username,
-        authorizationPassword: sipConfig.password,
-        displayName: sipConfig.username || `EchoDesk Agent`,
-        logLevel: 'warn', // Reduce log noise in production
-        sessionDescriptionHandlerFactoryOptions: {
-          peerConnectionConfiguration: {
-            iceServers: [
-              { urls: sipConfig.stun_server || 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:stun1.l.google.com:19302' },
-              { urls: 'stun:stun2.l.google.com:19302' },
-              ...(sipConfig.turn_server ? [{
-                urls: sipConfig.turn_server,
-                username: sipConfig.turn_username || '',
-                credential: sipConfig.turn_password || ''
-              }] : [])
-            ],
-            iceCandidatePoolSize: 10
-          },
-          constraints: {
-            audio: AUDIO_CONSTRAINTS,
-            video: false
-          }
-        },
-        delegate: {
-          onInvite: (invitation: Invitation) => {
-            this.handleIncomingCall(invitation);
-          }
+        constraints: MEDIA_CONSTRAINTS,
+      },
+      delegate: {
+        onInvite: (invitation: Invitation) => this.handleIncomingCall(invitation),
+      },
+    });
+    this.userAgent = userAgent;
+
+    userAgent.transport.stateChange.addListener((state: TransportState) => {
+      if (this.userAgent !== userAgent) return;
+      if (state === TransportState.Connected) {
+        this.transportConnected = true;
+        this.emit('onTransportState', 'connected');
+      } else if (state === TransportState.Disconnected) {
+        const wasConnected = this.transportConnected;
+        this.transportConnected = false;
+        this.emit('onTransportState', 'disconnected');
+        // Registration cannot survive the socket; tell the UI immediately
+        // instead of waiting for the registerer to notice.
+        if (this.isRegistered && !this.stopping) {
+          this.isRegistered = false;
+          this.emit('onUnregistered');
+        } else if (!wasConnected && !this.stopping) {
+          // Initial connect attempt failed: surface it so retries get scheduled.
+          this.emit('onUnregistered');
         }
-      });
-
-      // Handle user agent state changes
-      this.userAgent.stateChange.addListener((state) => {
-        // State change handled
-      });
-
-      // Start the user agent
-      await this.userAgent.start();
-
-      // Register with the SIP server
-      await this.register();
-
-    } catch (error) {
-      console.error('[SipService] Failed to initialize SIP:', error);
-      throw new Error(`SIP initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  // Register with SIP server
-  async register(): Promise<void> {
-    if (!this.userAgent) {
-      throw new Error('UserAgent not initialized');
-    }
-
-    try {
-      this.registerer = new Registerer(this.userAgent);
-
-      // Handle registration state changes
-      this.registerer.stateChange.addListener((state: RegistererState) => {
-        switch (state) {
-          case RegistererState.Registered:
-            this.isRegistered = true;
-            this.emit('onRegistered');
-            break;
-          case RegistererState.Unregistered:
-            this.isRegistered = false;
-            this.emit('onUnregistered');
-            break;
-          case RegistererState.Terminated:
-            this.isRegistered = false;
-            this.emit('onRegistrationFailed', 'Registration terminated');
-            break;
-        }
-      });
-
-      // Start registration
-      await this.registerer.register();
-
-    } catch (error) {
-      console.error('[SipService] Registration failed:', error);
-      this.emit('onRegistrationFailed', error instanceof Error ? error.message : 'Registration failed');
-      throw error;
-    }
-  }
-
-  // Make an outgoing call
-  async makeCall(phoneNumber: string): Promise<void> {
-    if (!this.userAgent || !this.isRegistered) {
-      throw new Error('SIP not registered. Please check your SIP configuration and try again.');
-    }
-
-    try {
-      // Enhanced phone number cleaning and formatting
-      let cleanNumber = phoneNumber.replace(/[^\d+]/g, '');
-
-      // Handle different number formats
-      if (cleanNumber.startsWith('00')) {
-        // Convert 00 prefix to +
-        cleanNumber = '+' + cleanNumber.substring(2);
-      } else if (cleanNumber.length === 9 && cleanNumber.startsWith('5')) {
-        // Georgian mobile number, add country code
-        cleanNumber = '+995' + cleanNumber;
-      } else if (cleanNumber.length === 8 && cleanNumber.startsWith('2')) {
-        // Georgian landline, add country code
-        cleanNumber = '+995' + cleanNumber;
-      } else if (!cleanNumber.startsWith('+') && cleanNumber.length > 7) {
-        // If no country code and looks international, add +
-        cleanNumber = '+' + cleanNumber;
-      }
-
-      // Create SIP URI - use the configured realm
-      const realm = this.userAgent.configuration.uri?.host || 'pbx.echodesk.ge';
-      const targetUri = new URI('sip', cleanNumber, realm);
-
-      // [Issue #3] Wrap getUserMedia in Promise.race with a 10-second timeout
-      const stream = await Promise.race([
-        navigator.mediaDevices.getUserMedia({
-          audio: AUDIO_CONSTRAINTS, // [Issue #6] Use extracted constant
-          video: false
-        }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Microphone access timed out after 10 seconds')), 10000)
-        ),
-      ]);
-
-      // [Issue #6] Use extracted AUDIO_CONSTRAINTS constant
-      // Create inviter with enhanced options
-      this.currentSession = new Inviter(this.userAgent, targetUri, {
-        sessionDescriptionHandlerOptions: {
-          constraints: {
-            audio: AUDIO_CONSTRAINTS,
-            video: false
-          }
-        }
-      });
-
-      // Reset audio setup flag for new call
-      this.audioSetupDone = false;
-
-      // Handle session state changes with more detailed logging
-      this.currentSession.stateChange.addListener((state: SessionState) => {
-        switch (state) {
-          case SessionState.Initial:
-            break;
-          case SessionState.Establishing:
-            this.emit('onCallProgress');
-            // Start setting up audio early
-            setTimeout(() => this.setupAudioStreams(), 1000);
-            break;
-          case SessionState.Established:
-            this.emit('onCallAccepted');
-            this.setupAudioStreams();
-            break;
-          case SessionState.Terminating:
-            break;
-          case SessionState.Terminated:
-            this.emit('onCallEnded');
-            this.currentSession = null;
-            break;
-        }
-      });
-
-      // Send the invite with enhanced error handling
-      await this.currentSession.invite({
-        requestDelegate: {
-          onAccept: (response) => {
-            // Call accepted
-          },
-          onProgress: (response) => {
-            // Call in progress
-          },
-          onRedirect: (response) => {
-            // Call redirected
-          },
-          onReject: (response) => {
-            let errorMessage = 'Call rejected';
-
-            switch (response.message.statusCode) {
-              case 404:
-                errorMessage = 'Number not found or invalid';
-                break;
-              case 486:
-                errorMessage = 'Line busy';
-                break;
-              case 603:
-                errorMessage = 'Call declined';
-                break;
-              case 408:
-                errorMessage = 'No answer / Request timeout';
-                break;
-              case 480:
-                errorMessage = 'Temporarily unavailable';
-                break;
-              case 487:
-                errorMessage = 'Request terminated';
-                break;
-              case 401:
-                errorMessage = 'Authentication failed';
-                break;
-              case 403:
-                errorMessage = 'Call forbidden — check permissions';
-                break;
-              case 481:
-                errorMessage = 'Call no longer exists';
-                break;
-              case 500:
-                errorMessage = 'Server error — try again';
-                break;
-              case 503:
-                errorMessage = 'Service unavailable — try again later';
-                break;
-              default:
-                errorMessage = `Call failed (${response.message.statusCode}: ${response.message.reasonPhrase})`;
-            }
-
-            this.emit('onCallFailed', errorMessage);
-            this.currentSession = null;
-          },
-          onTrying: (response) => {
-            // Call trying
-          }
-        }
-      });
-
-    } catch (error) {
-      console.error('[SipService] Failed to make call:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown call error';
-
-      // Specific error handling for common WebRTC issues
-      if (error instanceof Error) {
-        if (error.name === 'NotAllowedError') {
-          this.emit('onCallFailed', 'Microphone access denied. Please allow microphone access and try again.');
-        } else if (error.name === 'NotFoundError') {
-          this.emit('onCallFailed', 'No microphone found. Please connect a microphone and try again.');
-        } else if (error.message.includes('getUserMedia') || error.message.includes('timed out')) {
-          this.emit('onCallFailed', 'Audio device error: ' + error.message);
-        } else {
-          this.emit('onCallFailed', errorMessage);
-        }
-      } else {
-        this.emit('onCallFailed', errorMessage);
-      }
-
-      this.currentSession = null;
-      throw new Error(`Call failed: ${errorMessage}`);
-    }
-  }
-
-  // Handle incoming call
-  private handleIncomingCall(invitation: Invitation) {
-    this.currentSession = invitation;
-
-    // Reset audio setup flag for new call
-    this.audioSetupDone = false;
-
-    // Handle session state changes
-    invitation.stateChange.addListener((state: SessionState) => {
-      switch (state) {
-        case SessionState.Established:
-          this.emit('onCallAccepted');
-          this.setupAudioStreams();
-          break;
-        case SessionState.Terminated:
-          this.emit('onCallEnded');
-          this.currentSession = null;
-          break;
       }
     });
 
-    // Emit incoming call event
+    this.registerer = this.createRegisterer(userAgent);
+
+    try {
+      await userAgent.start();
+      await this.register();
+    } catch (error) {
+      if (error instanceof SipCallError) throw error;
+      throw new SipCallError('initFailed', undefined, error);
+    }
+  }
+
+  private createRegisterer(userAgent: UserAgent): Registerer {
+    const registerer = new Registerer(userAgent);
+    registerer.stateChange.addListener((state: RegistererState) => {
+      if (this.registerer !== registerer || this.stopping) return;
+      switch (state) {
+        case RegistererState.Registered:
+          this.isRegistered = true;
+          this.emit('onRegistered');
+          break;
+        case RegistererState.Unregistered:
+          if (this.isRegistered) {
+            this.isRegistered = false;
+            this.emit('onUnregistered');
+          }
+          break;
+        case RegistererState.Terminated:
+          this.isRegistered = false;
+          break;
+      }
+    });
+    return registerer;
+  }
+
+  /** (Re-)REGISTER with the one Registerer created in `initialize()`. */
+  async register(): Promise<void> {
+    const userAgent = this.userAgent;
+    if (!userAgent) {
+      throw new SipCallError('notRegistered');
+    }
+    if (!this.registerer || this.registerer.state === RegistererState.Terminated) {
+      this.registerer = this.createRegisterer(userAgent);
+    }
+    const registerer = this.registerer;
+
+    try {
+      await registerer.register({
+        requestDelegate: {
+          onReject: (response) => {
+            if (this.registerer !== registerer || this.stopping) return;
+            const code = response.message.statusCode;
+            this.isRegistered = false;
+            this.emit('onRegistrationFailed', { key: 'registrationFailed', params: { code: code ?? 0 } });
+          },
+        },
+      });
+    } catch (error) {
+      const callError = toCallError(error, 'registrationFailed');
+      this.emit('onRegistrationFailed', callError);
+      throw error instanceof SipCallError ? error : new SipCallError(callError.key, callError.params, error);
+    }
+  }
+
+  /** Reconnect the transport if needed, then re-REGISTER. */
+  async reconnect(): Promise<void> {
+    const userAgent = this.userAgent;
+    if (!userAgent) {
+      throw new SipCallError('notRegistered');
+    }
+    try {
+      if (!userAgent.transport.isConnected()) {
+        await userAgent.transport.connect();
+      }
+    } catch (error) {
+      throw new SipCallError('networkFailed', undefined, error);
+    }
+    await this.register();
+  }
+
+  /** Unregister, stop the user agent and drop every session. */
+  async disconnect(): Promise<void> {
+    this.stopping = true;
+    try {
+      if (this.main || this.consultation) {
+        await this.endCall();
+      }
+      this.cleanupAudioResources();
+
+      const registerer = this.registerer;
+      this.registerer = null;
+      if (registerer && registerer.state === RegistererState.Registered) {
+        try {
+          await withTimeout(
+            registerer.unregister(),
+            UNREGISTER_TIMEOUT_MS,
+            () => {},
+            'registrationFailed'
+          );
+        } catch {
+          // The socket may already be gone; stopping the UA disposes it anyway.
+        }
+      }
+
+      const userAgent = this.userAgent;
+      this.userAgent = null;
+      if (userAgent) {
+        try {
+          await userAgent.stop();
+        } catch (error) {
+          console.warn('[SipService] Error stopping user agent:', error);
+        }
+      }
+      this.isRegistered = false;
+      this.transportConnected = false;
+    } finally {
+      this.stopping = false;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Outgoing / incoming
+  // -------------------------------------------------------------------------
+
+  async makeCall(phoneNumber: string): Promise<OutgoingCallInfo> {
+    const userAgent = this.userAgent;
+    if (!userAgent || !this.isRegistered) {
+      throw new SipCallError('notRegistered');
+    }
+    if (this.main) {
+      throw new SipCallError('callInProgress');
+    }
+    const realm = userAgent.configuration.uri?.host;
+    if (!realm) {
+      throw new SipCallError('configMissing');
+    }
+
+    const number = normalizeDialNumber(phoneNumber);
+    if (!number) {
+      throw new SipCallError('sip404');
+    }
+
+    const inviter = new Inviter(userAgent, new URI('sip', number, realm), {
+      sessionDescriptionHandlerOptions: { constraints: MEDIA_CONSTRAINTS },
+    });
+    const leg: Leg = {
+      session: inviter,
+      reason: null,
+      inviteSent: false,
+      muted: false,
+      held: false,
+      ended: false,
+      silent: false,
+    };
+    this.main = leg;
+    this.activeLeg = 'main';
+    this.audioSetupDone = false;
+    this.attachMainListener(leg);
+
+    try {
+      await withTimeout(
+        inviter.invite({
+          requestDelegate: {
+            onProgress: () => {
+              if (this.main === leg) this.emit('onCallProgress');
+            },
+            onReject: (response) => {
+              // A CANCEL we sent (hang-up while ringing, media timeout) is
+              // answered with a 487: the reason is already set, not a failure.
+              if (leg.reason) return;
+              const code = response.message.statusCode;
+              leg.reason = rejectionReason(code);
+              this.emit('onCallFailed', sipResponseError(code));
+            },
+          },
+        }),
+        INVITE_MEDIA_TIMEOUT_MS,
+        () => {
+          leg.reason = 'failed';
+          inviter.cancel().catch(() => {});
+        },
+        'micTimeout'
+      );
+      leg.inviteSent = true;
+      return { sipCallId: inviter.request.callId, number };
+    } catch (error) {
+      if (this.main === leg) {
+        this.main = null;
+      }
+      this.cleanupAudioResources();
+      const callError = toCallError(error, 'callFailed');
+      throw error instanceof SipCallError ? error : new SipCallError(callError.key, callError.params, error);
+    }
+  }
+
+  private handleIncomingCall(invitation: Invitation): void {
+    if (this.main || this.consultation) {
+      // No call waiting: answer the second INVITE with 486 Busy Here.
+      const info = this.getIncomingInfo(invitation);
+      invitation.reject({ statusCode: 486 }).catch((error) => {
+        console.warn('[SipService] Failed to reject second INVITE:', error);
+      });
+      this.emit('onCallBusyRejected', info);
+      return;
+    }
+
+    const leg: Leg = {
+      session: invitation,
+      reason: null,
+      inviteSent: true,
+      muted: false,
+      held: false,
+      ended: false,
+      silent: false,
+    };
+    this.main = leg;
+    this.activeLeg = 'main';
+    this.audioSetupDone = false;
+    this.attachMainListener(leg);
     this.emit('onIncomingCall', invitation);
   }
 
-  // Accept incoming call
-  async acceptCall(): Promise<void> {
-    if (!this.currentSession || !('accept' in this.currentSession)) {
-      throw new Error('No incoming call to accept');
-    }
+  /** Caller details the context needs before it writes the call log. */
+  getIncomingInfo(invitation: Invitation): IncomingCallInfo {
+    const remote = invitation.remoteIdentity;
+    const displayName = remote?.displayName?.trim();
+    const pbxCallId = invitation.request?.getHeader?.('X-EchoDesk-Call')?.trim();
+    return {
+      number: remote?.uri?.user ?? '',
+      displayName: displayName || undefined,
+      sipCallId: invitation.request?.callId ?? '',
+      pbxCallId: pbxCallId || undefined,
+    };
+  }
 
-    try {
-      // [Issue #6] Use extracted AUDIO_CONSTRAINTS constant
-      await this.currentSession.accept({
-        sessionDescriptionHandlerOptions: {
-          constraints: {
-            audio: AUDIO_CONSTRAINTS,
-            video: false
+  /**
+   * One listener per main session. The Terminated branch is the single
+   * place `onCallEnded` is emitted; `leg.reason` says why. sip.js runs the
+   * INVITE `requestDelegate.onReject` *after* the Terminated transition, so
+   * the emission is deferred one microtask to read the reason it sets.
+   */
+  private attachMainListener(leg: Leg): void {
+    const session = leg.session;
+    const onState = (state: SessionState) => {
+      switch (state) {
+        case SessionState.Established:
+          if (this.main === leg) {
+            this.activeLeg = 'main';
+            this.emit('onCallAccepted');
+            this.setupAudioStreams();
           }
+          break;
+        case SessionState.Terminated: {
+          session.stateChange.removeListener(onState);
+          if (this.main !== leg) return;
+          this.main = null;
+          this.activeLeg = 'main';
+          this.destroyNoiseSuppression();
+          this.cleanupAudioResources();
+          if (!leg.inviteSent) return; // makeCall() reports this failure itself
+          Promise.resolve().then(() => {
+            if (leg.ended) return;
+            leg.ended = true;
+            this.emit('onCallEnded', leg.reason ?? 'ended');
+          });
+          break;
         }
+        default:
+          break;
+      }
+    };
+    session.stateChange.addListener(onState);
+  }
+
+  async acceptCall(): Promise<void> {
+    const leg = this.main;
+    if (!leg || !(leg.session instanceof Invitation)) {
+      throw new SipCallError('noIncomingCall');
+    }
+    try {
+      await leg.session.accept({
+        sessionDescriptionHandlerOptions: { constraints: MEDIA_CONSTRAINTS },
       });
     } catch (error) {
-      console.error('[SipService] Failed to accept call:', error);
-      throw error;
+      const callError = toCallError(error, 'callFailed');
+      leg.reason = 'failed';
+      throw error instanceof SipCallError ? error : new SipCallError(callError.key, callError.params, error);
     }
   }
 
-  // Reject incoming call
   async rejectCall(): Promise<void> {
-    if (!this.currentSession || !('reject' in this.currentSession)) {
-      throw new Error('No incoming call to reject');
+    const leg = this.main;
+    if (!leg || !(leg.session instanceof Invitation)) {
+      throw new SipCallError('noIncomingCall');
     }
-
+    leg.reason = 'rejected';
     try {
-      await this.currentSession.reject();
-      this.currentSession = null;
+      await leg.session.reject();
     } catch (error) {
-      console.error('[SipService] Failed to reject call:', error);
-      throw error;
+      throw new SipCallError('callFailed', undefined, error);
     }
   }
 
-  // Toggle mute (local audio track)
-  toggleMute(): boolean {
-    if (!this.currentSession) return false;
+  /** Hang up (or cancel / decline) the main call and any consultation leg. */
+  async endCall(): Promise<void> {
+    await this.dropConsultation();
 
-    const sdh = this.currentSession.sessionDescriptionHandler;
-    if (!sdh) return false;
-
-    const pc = (sdh as unknown as PeerConnectionAccessor).peerConnection;
-    if (!pc) return false;
-
-    const senders = pc.getSenders();
-    const audioSender = senders.find(s => s.track?.kind === 'audio');
-    if (audioSender?.track) {
-      audioSender.track.enabled = !audioSender.track.enabled;
-      return !audioSender.track.enabled; // true = muted
+    const leg = this.main;
+    if (!leg) {
+      this.cleanupAudioResources();
+      return;
     }
-    return false;
+    try {
+      await this.terminateLeg(leg, leg.reason ?? (leg.session.state === SessionState.Established ? 'ended' : 'rejected'));
+    } catch (error) {
+      console.warn('[SipService] Failed to end call:', error);
+    } finally {
+      this.destroyNoiseSuppression();
+      this.cleanupAudioResources();
+    }
   }
 
-  // Toggle hold (re-INVITE with sendonly/sendrecv)
+  private async terminateLeg(leg: Leg, reason: CallEndReason): Promise<void> {
+    leg.reason = reason;
+    const session = leg.session;
+    if (session.state === SessionState.Terminated || session.state === SessionState.Terminating) return;
+    if (session.state === SessionState.Established) {
+      await session.bye();
+    } else if (session instanceof Inviter) {
+      await session.cancel();
+    } else {
+      await session.reject();
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // In-call controls
+  // -------------------------------------------------------------------------
+
+  private legFor(leg: CallLeg): Leg | null {
+    return leg === 'consultation' ? this.consultation : this.main;
+  }
+
+  /** Flip the local audio track of `leg` (default: the leg carrying audio). Returns the new muted state. */
+  toggleMute(leg: CallLeg = this.activeLeg): boolean {
+    const target = this.legFor(leg);
+    if (!target) return false;
+    const sender = audioSenderOf(target.session);
+    if (!sender?.track) return target.muted;
+    target.muted = !target.muted;
+    sender.track.enabled = !target.muted && !target.held;
+    return target.muted;
+  }
+
+  /**
+   * Hold / resume the main call with a real re-INVITE
+   * (`sessionDescriptionHandlerOptions.hold` → `a=sendonly` / `a=sendrecv`)
+   * and stop the local track while held. Resolves after the far end
+   * answered the re-INVITE; `onCallHeld` follows the network state.
+   */
   async toggleHold(hold: boolean): Promise<void> {
-    if (!this.currentSession || this.currentSession.state !== SessionState.Established) {
-      throw new Error('No active call to hold/resume');
+    const leg = this.main;
+    if (!leg || leg.session.state !== SessionState.Established) {
+      throw new SipCallError('noActiveCall');
     }
-
-    try {
-      const options = {
-        sessionDescriptionHandlerModifiers: hold
-          ? [(sdp: any) => {
-              // Change audio direction to sendonly (hold)
-              sdp.body = sdp.body?.replace(/a=sendrecv/g, 'a=sendonly') || sdp.body;
-              return sdp;
-            }]
-          : [] // Empty modifiers = sendrecv (resume)
-      };
-
-      await (this.currentSession as unknown as SessionWithExtras).invite(options);
-    } catch (error) {
-      console.error('[SipService] Failed to toggle hold:', error);
-      throw error;
+    await this.reinvite(leg.session, hold);
+    leg.held = hold;
+    const sender = audioSenderOf(leg.session);
+    if (sender?.track) {
+      sender.track.enabled = !hold && !leg.muted;
     }
+    this.emit('onCallHeld', hold);
   }
 
-  // Send DTMF tone
-  sendDTMF(tone: string): boolean {
-    if (!this.currentSession || this.currentSession.state !== SessionState.Established) {
+  private reinvite(session: Session, hold: boolean): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        reject(new SipCallError('holdFailed'));
+      }, REINVITE_TIMEOUT_MS);
+      const finish = (error?: SipCallError) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (error) reject(error);
+        else resolve();
+      };
+      const sessionDescriptionHandlerOptions: Web.SessionDescriptionHandlerOptions = { hold };
+      session
+        .invite({
+          sessionDescriptionHandlerOptions,
+          requestDelegate: {
+            onAccept: () => finish(),
+            onReject: (response) =>
+              finish(new SipCallError('holdFailed', { code: response.message.statusCode ?? 0 })),
+          },
+        })
+        .catch((error) => finish(new SipCallError('holdFailed', undefined, error)));
+    });
+  }
+
+  /** Send a DTMF tone on `leg` (default: the leg carrying audio). */
+  sendDTMF(tone: string, leg: CallLeg = this.activeLeg): boolean {
+    const target = this.legFor(leg);
+    if (!target || target.session.state !== SessionState.Established) {
       return false;
     }
-
     try {
-      const sdh = this.currentSession.sessionDescriptionHandler;
-      if (!sdh) return false;
-
-      const pc = (sdh as unknown as PeerConnectionAccessor).peerConnection;
-      if (!pc) return false;
-
-      const senders = pc.getSenders();
-      const audioSender = senders.find(s => s.track?.kind === 'audio');
-      if (audioSender && audioSender.dtmf) {
-        audioSender.dtmf.insertDTMF(tone, 100, 70);
+      const sender = audioSenderOf(target.session);
+      if (sender?.dtmf) {
+        // insertDTMF() replaces the tones still queued, so keys pressed while
+        // the previous tone plays (100 ms + 70 ms gap) would be dropped and
+        // only the first and the last digit would reach the PBX: append to
+        // what is still pending.
+        sender.dtmf.insertDTMF(`${sender.dtmf.toneBuffer ?? ''}${tone}`, 100, 70);
         return true;
       }
-
-      // [Issue #4] Fallback: send via SIP INFO — wrap in try-catch with proper error handling
-      if (this.currentSession.state === SessionState.Established) {
-        try {
-          (this.currentSession as unknown as SessionWithExtras).info({
-            requestOptions: {
-              body: {
-                contentType: 'application/dtmf-relay',
-                body: `Signal=${tone}\r\nDuration=100`,
-              },
+      // Fallback: SIP INFO
+      target.session
+        .info({
+          requestOptions: {
+            body: {
+              contentDisposition: 'render',
+              contentType: 'application/dtmf-relay',
+              content: `Signal=${tone}\r\nDuration=100`,
             },
-          });
-          return true;
-        } catch (infoError) {
-          console.warn('[SipService] SIP INFO DTMF fallback failed:', infoError);
-          return false;
-        }
-      }
-
-      return false;
+          },
+        })
+        .catch((error) => {
+          console.warn('[SipService] SIP INFO DTMF fallback failed:', error);
+        });
+      return true;
     } catch (error) {
       console.error('[SipService] Failed to send DTMF:', error);
       return false;
     }
   }
 
-  // [Issue #8] Apply RNNoise noise suppression to outgoing audio — uses cached import
-  private async applyNoiseSuppression(audioSender: RTCRtpSender, peerConnection: RTCPeerConnection): Promise<void> {
+  /**
+   * Blind transfer (REFER) of the main call. Resolves once the PBX accepted
+   * the REFER (202): from then on the customer is in the target's dialplan
+   * and our leg is out of the bridge with no media, and Asterisk does not
+   * BYE the transferor (observed on the local harness), so we hang up
+   * ourselves with reason `transferred`. A refused REFER (4xx/6xx) rejects
+   * with `transferFailed` and the call carries on. The NOTIFYs that report
+   * the target's progress are acknowledged and otherwise ignored.
+   * `onAccepted` runs after the 202 and before our BYE, while the leg still
+   * exists for the caller (CallContext settles the call log there).
+   */
+  async transferCall(targetNumber: string, onAccepted?: () => void): Promise<void> {
+    const leg = this.main;
+    const userAgent = this.userAgent;
+    if (!leg || !userAgent || leg.session.state !== SessionState.Established) {
+      throw new SipCallError('noActiveCall');
+    }
+    const realm = userAgent.configuration.uri?.host;
+    if (!realm) throw new SipCallError('configMissing');
+    await new Promise<void>((resolve, reject) => {
+      leg.session
+        .refer(new URI('sip', normalizeDialNumber(targetNumber), realm), {
+          requestDelegate: {
+            onAccept: () => resolve(),
+            onReject: (response) =>
+              reject(new SipCallError('transferFailed', { code: response.message.statusCode ?? 0 })),
+          },
+          onNotify: (notification) => {
+            notification.accept().catch(() => {});
+          },
+        })
+        .catch((error) => reject(new SipCallError('transferFailed', undefined, error)));
+    });
+    onAccepted?.();
+    if (this.main !== leg || leg.session.state !== SessionState.Established) return;
+    leg.reason = 'transferred';
+    leg.session.bye().catch(() => {});
+  }
+
+  // -------------------------------------------------------------------------
+  // Attended transfer
+  // -------------------------------------------------------------------------
+
+  /** Put the main call on hold and dial the consultation target. */
+  async startConsultation(targetNumber: string): Promise<void> {
+    const main = this.main;
+    const userAgent = this.userAgent;
+    if (!main || !userAgent || main.session.state !== SessionState.Established) {
+      throw new SipCallError('noActiveCall');
+    }
+    if (this.consultation) {
+      throw new SipCallError('consultationFailed');
+    }
+    const realm = userAgent.configuration.uri?.host;
+    if (!realm) throw new SipCallError('configMissing');
+
+    await this.toggleHold(true);
+
+    const inviter = new Inviter(userAgent, new URI('sip', normalizeDialNumber(targetNumber), realm), {
+      sessionDescriptionHandlerOptions: { constraints: MEDIA_CONSTRAINTS },
+    });
+    const leg: Leg = {
+      session: inviter,
+      reason: null,
+      inviteSent: false,
+      muted: false,
+      held: false,
+      ended: false,
+      silent: false,
+    };
+    this.consultation = leg;
+
+    const onState = (state: SessionState) => {
+      switch (state) {
+        case SessionState.Established:
+          if (this.consultation === leg) {
+            this.activeLeg = 'consultation';
+            this.emit('onConsultationAccepted');
+            this.setupAudioForSession(leg.session);
+          }
+          break;
+        case SessionState.Terminated:
+          inviter.stateChange.removeListener(onState);
+          if (this.consultation !== leg) return;
+          this.consultation = null;
+          this.activeLeg = 'main';
+          if (!leg.inviteSent || leg.silent) return;
+          // `requestDelegate.onReject` runs after this transition: read the
+          // reason one microtask later so a rejection is not reported twice.
+          Promise.resolve().then(() => {
+            if (leg.ended || leg.reason === 'failed') return;
+            leg.ended = true;
+            this.emit('onConsultationEnded');
+          });
+          break;
+        default:
+          break;
+      }
+    };
+    inviter.stateChange.addListener(onState);
+
+    try {
+      await withTimeout(
+        inviter.invite({
+          requestDelegate: {
+            onProgress: () => {
+              if (this.consultation === leg) this.emit('onConsultationProgress');
+            },
+            onReject: (response) => {
+              leg.reason = 'failed';
+              const code = response.message.statusCode;
+              this.emit('onConsultationFailed', code === 486 ? { key: 'sip486' } : { key: 'consultationRejected' });
+            },
+          },
+        }),
+        INVITE_MEDIA_TIMEOUT_MS,
+        () => {
+          inviter.cancel().catch(() => {});
+        },
+        'micTimeout'
+      );
+      leg.inviteSent = true;
+    } catch (error) {
+      if (this.consultation === leg) this.consultation = null;
+      this.activeLeg = 'main';
+      try {
+        await this.toggleHold(false);
+      } catch {
+        // best effort: the main call stays on hold if the resume fails
+      }
+      const callError = toCallError(error, 'consultationFailed');
+      throw error instanceof SipCallError ? error : new SipCallError(callError.key, callError.params, error);
+    }
+  }
+
+  /**
+   * REFER with Replaces: Asterisk bridges the customer to the consultation
+   * target and BYEs our leg, whose Terminated listener emits the single
+   * `onCallEnded('transferred')`.
+   */
+  async completeAttendedTransfer(): Promise<void> {
+    const main = this.main;
+    const consultation = this.consultation;
+    if (!main || !consultation) {
+      throw new SipCallError('noConsultation');
+    }
+    if (consultation.session.state !== SessionState.Established) {
+      throw new SipCallError('consultationNotEstablished');
+    }
+
+    main.reason = 'transferred';
+    try {
+      await main.session.refer(consultation.session);
+    } catch (error) {
+      main.reason = null;
+      throw new SipCallError('transferFailed', undefined, error);
+    }
+
+    consultation.silent = true;
+    this.consultation = null;
+    this.activeLeg = 'main';
+    try {
+      await consultation.session.bye();
+    } catch {
+      // Already torn down by the far end.
+    }
+
+    // Asterisk hangs up the transferor once the transfer went through. Do it
+    // ourselves if that BYE never arrives so the agent's line frees up.
+    const session = main.session;
+    setTimeout(() => {
+      if (this.main === main && session.state === SessionState.Established) {
+        session.bye().catch(() => {});
+      }
+    }, TRANSFER_HANGUP_FALLBACK_MS);
+  }
+
+  /** End the consultation leg and resume the main call. */
+  async cancelConsultation(): Promise<void> {
+    await this.dropConsultation();
+    const main = this.main;
+    if (main && main.session.state === SessionState.Established) {
+      try {
+        await this.toggleHold(false);
+        this.setupAudioForSession(main.session);
+      } catch (error) {
+        console.error('[SipService] Error resuming original call:', error);
+      }
+    }
+  }
+
+  private async dropConsultation(): Promise<void> {
+    const leg = this.consultation;
+    if (!leg) return;
+    leg.silent = true;
+    this.consultation = null;
+    this.activeLeg = 'main';
+    try {
+      await this.terminateLeg(leg, 'ended');
+    } catch (error) {
+      console.warn('[SipService] Error ending consultation:', error);
+    }
+  }
+
+  /** Resume the main call from hold (used while merging into a conference). */
+  async resumeOriginalFromHold(): Promise<void> {
+    const main = this.main;
+    if (main && main.session.state === SessionState.Established && main.held) {
+      await this.toggleHold(false);
+    }
+  }
+
+  hasConsultationSession(): boolean {
+    return this.consultation !== null && this.consultation.session.state === SessionState.Established;
+  }
+
+  // -------------------------------------------------------------------------
+  // Noise suppression (opt-in)
+  // -------------------------------------------------------------------------
+
+  private async applyNoiseSuppression(audioSender: RTCRtpSender): Promise<void> {
     try {
       const { NoiseSuppression } = await getNoiseSuppressionModule();
       this.noiseSuppression = new NoiseSuppression();
@@ -645,10 +1133,8 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       const originalTrack = audioSender.track;
       if (!originalTrack) return;
 
-      const originalStream = new MediaStream([originalTrack]);
-      const cleanStream = await this.noiseSuppression.process(originalStream);
+      const cleanStream = await this.noiseSuppression.process(new MediaStream([originalTrack]));
       const cleanTrack = cleanStream.getAudioTracks()[0];
-
       if (cleanTrack) {
         await audioSender.replaceTrack(cleanTrack);
       }
@@ -657,476 +1143,238 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
     }
   }
 
-  // Toggle noise suppression on/off
-  setNoiseSuppression(enabled: boolean) {
-    this.noiseSuppressionEnabled = enabled;
+  private destroyNoiseSuppression(): void {
     if (this.noiseSuppression) {
-      this.noiseSuppression.setEnabled(enabled);
+      this.noiseSuppression.destroy();
+      this.noiseSuppression = null;
     }
   }
 
-  // Check if noise suppression is enabled
+  setNoiseSuppression(enabled: boolean): void {
+    this.noiseSuppressionEnabled = enabled;
+    this.noiseSuppression?.setEnabled(enabled);
+  }
+
   isNoiseSuppressionEnabled(): boolean {
     return this.noiseSuppressionEnabled;
   }
 
-  // Blind transfer current call to another number
-  async transferCall(targetNumber: string): Promise<void> {
-    if (!this.currentSession || this.currentSession.state !== SessionState.Established) {
-      throw new Error('No active call to transfer');
+  // -------------------------------------------------------------------------
+  // Audio
+  // -------------------------------------------------------------------------
+
+  private cleanupAudioResources(): void {
+    if (this.audioPlayRetryTimeout !== null) {
+      clearTimeout(this.audioPlayRetryTimeout);
+      this.audioPlayRetryTimeout = null;
     }
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      this.audioContext.close().catch(() => {});
+    }
+    this.audioContext = null;
+    this.audioSetupDone = false;
+  }
+
+  /** Route a session's remote track straight to the audio element (leg switches). */
+  private setupAudioForSession(session: Session): void {
+    const remote = this.remoteAudioElement;
+    if (!remote) return;
+    const pc = peerConnectionOf(session);
+    if (!pc) return;
+    const receiver = pc.getReceivers().find((r) => r.track?.kind === 'audio');
+    if (!receiver?.track) return;
+    remote.srcObject = new MediaStream([receiver.track]);
+    remote.play().catch((error) => {
+      console.warn('[SipService] Failed to play session audio:', error);
+    });
+  }
+
+  /** Wire the main session's peer connection: remote audio, ICE monitoring, local monitor. */
+  setupAudioStreams(): void {
+    if (this.audioSetupDone) return;
+    const leg = this.main;
+    if (!leg || !this.remoteAudioElement || !this.localAudioElement) return;
+
+    const peerConnection = peerConnectionOf(leg.session);
+    if (!peerConnection) return;
+    this.audioSetupDone = true;
+
+    peerConnection.ontrack = (event) => {
+      const [remoteStream] = event.streams;
+      if (!this.remoteAudioElement || !remoteStream) return;
+      this.attachRemoteStream(remoteStream);
+    };
+
+    peerConnection.onconnectionstatechange = () => {
+      if (peerConnection.connectionState === 'failed') {
+        this.failLeg(leg, 'networkFailed');
+      }
+    };
+
+    peerConnection.oniceconnectionstatechange = () => {
+      const state = peerConnection.iceConnectionState;
+      if (state === 'failed') {
+        this.failLeg(leg, 'networkFailed');
+      } else if (state === 'disconnected') {
+        this.emit('onCallQualityWarning', { key: 'networkUnstable' });
+      }
+    };
+
+    const audioSender = audioSenderOf(leg.session);
+    if (audioSender?.track) {
+      if (this.noiseSuppressionEnabled) {
+        this.applyNoiseSuppression(audioSender).catch(() => {});
+      }
+      this.localAudioElement.srcObject = new MediaStream([audioSender.track]);
+      this.localAudioElement.muted = true;
+      this.localAudioElement.autoplay = true;
+    }
+
+    // Tracks that arrived before `ontrack` was installed
+    for (const receiver of peerConnection.getReceivers()) {
+      if (receiver.track?.kind === 'audio') {
+        this.attachRemoteStream(new MediaStream([receiver.track]));
+        break;
+      }
+    }
+  }
+
+  /** ICE / connection failure: report once, then terminate so one `onCallEnded('failed')` follows. */
+  private failLeg(leg: Leg, key: string): void {
+    if (this.main !== leg || leg.reason) return;
+    this.emit('onCallFailed', { key });
+    this.terminateLeg(leg, 'failed').catch(() => {});
+  }
+
+  private attachRemoteStream(remoteStream: MediaStream): void {
+    const remote = this.remoteAudioElement;
+    if (!remote) return;
 
     try {
-      const targetUri = new URI('sip', targetNumber, this.userAgent?.configuration.uri?.host || '');
-      await (this.currentSession as unknown as SessionWithExtras).refer(targetUri);
-    } catch (error) {
-      console.error('[SipService] Failed to transfer call:', error);
-      throw error;
-    }
-  }
-
-  // Start a consultation call for attended transfer (puts original call on hold)
-  async startConsultation(targetNumber: string): Promise<void> {
-    if (!this.userAgent || !this.currentSession || this.currentSession.state !== SessionState.Established) {
-      throw new Error('No active call for consultation');
-    }
-
-    try {
-      // Put original call on hold
-      await this.toggleHold(true);
-
-      // Create consultation call
-      const realm = this.userAgent.configuration.uri?.host || '';
-      const targetUri = new URI('sip', targetNumber, realm);
-
-      this.consultationSession = new Inviter(this.userAgent, targetUri, {
-        sessionDescriptionHandlerOptions: {
-          constraints: { audio: true, video: false }
-        }
-      });
-
-      this.consultationSession.stateChange.addListener((state: SessionState) => {
-        switch (state) {
-          case SessionState.Establishing:
-            this.emit('onConsultationProgress');
-            break;
-          case SessionState.Established:
-            this.emit('onConsultationAccepted');
-            this.setupAudioForSession(this.consultationSession!);
-            break;
-          case SessionState.Terminated:
-            this.emit('onConsultationEnded');
-            this.consultationSession = null;
-            break;
-        }
-      });
-
-      await this.consultationSession.invite({
-        requestDelegate: {
-          onReject: () => {
-            this.emit('onConsultationFailed', 'Consultation call rejected');
-            this.consultationSession = null;
-          }
-        }
-      });
-    } catch (error) {
-      console.error('[SipService] Failed to start consultation:', error);
-      // Resume original call on failure
-      try { await this.toggleHold(false); } catch {}
-      this.consultationSession = null;
-      throw error;
-    }
-  }
-
-  // Complete attended transfer: bridge customer to consultation target
-  async completeAttendedTransfer(): Promise<void> {
-    if (!this.currentSession || !this.consultationSession) {
-      throw new Error('Both original and consultation sessions required');
-    }
-
-    if (this.consultationSession.state !== SessionState.Established) {
-      throw new Error('Consultation call not established');
-    }
-
-    try {
-      // REFER with Replaces: tells Asterisk to bridge customer to consultation target
-      await (this.currentSession as unknown as SessionWithExtras).refer(this.consultationSession as unknown as Session);
-
-      // Clean up both local sessions
-      try { await this.consultationSession.bye(); } catch {}
-      this.consultationSession = null;
-      this.currentSession = null;
-    } catch (error) {
-      console.error('[SipService] Failed to complete attended transfer:', error);
-      throw error;
-    }
-  }
-
-  // Cancel consultation: end consultation call, resume original
-  async cancelConsultation(): Promise<void> {
-    if (this.consultationSession) {
-      try {
-        if (this.consultationSession.state === SessionState.Established) {
-          await this.consultationSession.bye();
-        } else if (this.consultationSession.state === SessionState.Establishing) {
-          await this.consultationSession.cancel();
-        }
-      } catch (error) {
-        console.warn('[SipService] Error ending consultation:', error);
+      if (this.audioContext && this.audioContext.state !== 'closed') {
+        this.audioContext.close().catch(() => {});
       }
-      this.consultationSession = null;
+      const ctx = new AudioContext();
+      this.audioContext = ctx;
+      const source = ctx.createMediaStreamSource(remoteStream);
+
+      // Compressor: even out volume levels
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.value = -24;
+      compressor.knee.value = 12;
+      compressor.ratio.value = 4;
+      compressor.attack.value = 0.003;
+      compressor.release.value = 0.15;
+
+      // Presence (2-4 kHz) for voice clarity on narrowband audio
+      const presenceBoost = ctx.createBiquadFilter();
+      presenceBoost.type = 'peaking';
+      presenceBoost.frequency.value = 3000;
+      presenceBoost.Q.value = 1.0;
+      presenceBoost.gain.value = 4;
+
+      // Warmth (200-500 Hz) against the "tinny" sound
+      const warmthBoost = ctx.createBiquadFilter();
+      warmthBoost.type = 'peaking';
+      warmthBoost.frequency.value = 350;
+      warmthBoost.Q.value = 1.0;
+      warmthBoost.gain.value = 2;
+
+      const highPass = ctx.createBiquadFilter();
+      highPass.type = 'highpass';
+      highPass.frequency.value = 80;
+
+      const gain = ctx.createGain();
+      gain.gain.value = 1.3;
+
+      const dest = ctx.createMediaStreamDestination();
+      source.connect(highPass);
+      highPass.connect(warmthBoost);
+      warmthBoost.connect(presenceBoost);
+      presenceBoost.connect(compressor);
+      compressor.connect(gain);
+      gain.connect(dest);
+
+      remote.srcObject = dest.stream;
+    } catch {
+      remote.srcObject = remoteStream;
     }
 
-    // Resume original call
-    if (this.currentSession && this.currentSession.state === SessionState.Established) {
-      try {
-        await this.toggleHold(false);
-        this.setupAudioForSession(this.currentSession);
-      } catch (error) {
-        console.error('[SipService] Error resuming original call:', error);
+    remote.autoplay = true;
+    remote.controls = false;
+    remote.muted = false;
+    remote.play().catch((error) => {
+      console.warn('[SipService] Failed to play remote audio, retrying in 1s:', error);
+      if (this.audioPlayRetryTimeout !== null) {
+        clearTimeout(this.audioPlayRetryTimeout);
       }
-    }
+      this.audioPlayRetryTimeout = setTimeout(() => {
+        this.audioPlayRetryTimeout = null;
+        this.remoteAudioElement?.play().catch((retryError) => {
+          console.warn('[SipService] Retry play also failed:', retryError);
+        });
+      }, 1000);
+    });
   }
 
-  // Resume original call from hold (used during merge to reconnect audio)
-  async resumeOriginalFromHold(): Promise<void> {
-    if (this.currentSession && this.currentSession.state === SessionState.Established) {
-      await this.toggleHold(false);
-    }
-  }
+  // -------------------------------------------------------------------------
+  // Introspection
+  // -------------------------------------------------------------------------
 
-  // Check if consultation session is active
-  hasConsultationSession(): boolean {
-    return this.consultationSession !== null && this.consultationSession.state === SessionState.Established;
-  }
-
-  // Setup audio for a specific session (used for switching between original and consultation)
-  private setupAudioForSession(session: Inviter | Invitation) {
-    if (!this.remoteAudioElement) return;
-
-    try {
-      const sdh = session.sessionDescriptionHandler;
-      if (!sdh) return;
-
-      const pc = (sdh as unknown as PeerConnectionAccessor).peerConnection;
-      if (!pc) return;
-
-      const receivers = pc.getReceivers();
-      for (const receiver of receivers) {
-        if (receiver.track && receiver.track.kind === 'audio') {
-          const stream = new MediaStream([receiver.track]);
-          this.remoteAudioElement.srcObject = stream;
-          this.remoteAudioElement.play().catch((e) => {
-            console.warn('[SipService] Failed to play session audio:', e);
-          });
-          break;
-        }
-      }
-    } catch (error) {
-      console.error('[SipService] Failed to setup audio for session:', error);
-    }
-  }
-
-  // End current call (and consultation if active)
-  async endCall(): Promise<void> {
-    // End consultation session if active
-    if (this.consultationSession) {
-      try {
-        if (this.consultationSession.state === SessionState.Established) {
-          await this.consultationSession.bye();
-        } else if (this.consultationSession.state === SessionState.Establishing) {
-          await this.consultationSession.cancel();
-        }
-      } catch {}
-      this.consultationSession = null;
-    }
-
-    if (!this.currentSession) {
-      // [Issue #7] Still clean up audio resources even if session is already null
-      this.cleanupAudioResources();
-      return;
-    }
-
-    try {
-      if (this.currentSession.state === SessionState.Established) {
-        await this.currentSession.bye();
-      } else if ('cancel' in this.currentSession) {
-        await this.currentSession.cancel();
-      } else if ('reject' in this.currentSession) {
-        await this.currentSession.reject();
-      }
-
-      this.currentSession = null;
-      if (this.noiseSuppression) {
-        this.noiseSuppression.destroy();
-        this.noiseSuppression = null;
-      }
-      // [Issue #2 / #7] Clean up audio resources
-      this.cleanupAudioResources();
-    } catch (error) {
-      console.error('[SipService] Failed to end call:', error);
-      this.currentSession = null;
-      if (this.noiseSuppression) {
-        this.noiseSuppression.destroy();
-        this.noiseSuppression = null;
-      }
-      // [Issue #2 / #7] Clean up audio resources even on error
-      this.cleanupAudioResources();
-    }
-  }
-
-  // Setup audio streams
-  setupAudioStreams() {
-    // [Issue #1] Prevent concurrent audio setup — flag checked and set atomically
-    if (this.audioSetupDone) {
-      return;
-    }
-
-    if (!this.currentSession || !this.remoteAudioElement || !this.localAudioElement) {
-      console.warn('[SipService] Cannot setup audio streams - missing session or audio elements');
-      return;
-    }
-
-    try {
-      // Get session description handler
-      const sessionDescriptionHandler = this.currentSession.sessionDescriptionHandler;
-      if (!sessionDescriptionHandler) {
-        console.warn('[SipService] No session description handler available');
-        return;
-      }
-
-      // Access the peer connection
-      const peerConnection = (sessionDescriptionHandler as unknown as PeerConnectionAccessor).peerConnection;
-      if (!peerConnection) {
-        console.warn('[SipService] No peer connection available');
-        return;
-      }
-
-      // [Issue #1] Mark audio setup as done to prevent re-entry
-      this.audioSetupDone = true;
-
-      // Handle remote stream — apply audio enhancement for narrowband calls
-      peerConnection.ontrack = (event) => {
-        const [remoteStream] = event.streams;
-        if (this.remoteAudioElement && remoteStream) {
-          // Apply audio enhancement pipeline for incoming audio
-          try {
-            // [Issue #7] Close previous AudioContext before creating a new one
-            if (this.audioContext && this.audioContext.state !== 'closed') {
-              this.audioContext.close().catch(() => {});
-            }
-
-            const ctx = new AudioContext();
-            this.audioContext = ctx; // [Issue #7] Track for cleanup
-            const source = ctx.createMediaStreamSource(remoteStream);
-
-            // Compressor: even out volume levels
-            const compressor = ctx.createDynamicsCompressor();
-            compressor.threshold.value = -24;
-            compressor.knee.value = 12;
-            compressor.ratio.value = 4;
-            compressor.attack.value = 0.003;
-            compressor.release.value = 0.15;
-
-            // EQ: boost clarity for 8kHz narrowband audio
-            // Boost presence (2-4kHz) for voice clarity
-            const presenceBoost = ctx.createBiquadFilter();
-            presenceBoost.type = 'peaking';
-            presenceBoost.frequency.value = 3000;
-            presenceBoost.Q.value = 1.0;
-            presenceBoost.gain.value = 4;
-
-            // Boost warmth (200-500Hz) to reduce "tinny" sound
-            const warmthBoost = ctx.createBiquadFilter();
-            warmthBoost.type = 'peaking';
-            warmthBoost.frequency.value = 350;
-            warmthBoost.Q.value = 1.0;
-            warmthBoost.gain.value = 2;
-
-            // High-pass filter to remove low-frequency rumble
-            const highPass = ctx.createBiquadFilter();
-            highPass.type = 'highpass';
-            highPass.frequency.value = 80;
-
-            // Gain: slight boost
-            const gain = ctx.createGain();
-            gain.gain.value = 1.3;
-
-            // Connect: source -> highpass -> warmth -> presence -> compressor -> gain -> destination
-            const dest = ctx.createMediaStreamDestination();
-            source.connect(highPass);
-            highPass.connect(warmthBoost);
-            warmthBoost.connect(presenceBoost);
-            presenceBoost.connect(compressor);
-            compressor.connect(gain);
-            gain.connect(dest);
-
-            this.remoteAudioElement.srcObject = dest.stream;
-          } catch {
-            // Fallback: use raw stream
-            this.remoteAudioElement.srcObject = remoteStream;
-          }
-
-          // Ensure audio element properties are set correctly
-          this.remoteAudioElement.autoplay = true;
-          this.remoteAudioElement.controls = false;
-          this.remoteAudioElement.muted = false;
-
-          this.remoteAudioElement.play().then(() => {
-            // Remote audio playing
-          }).catch(e => {
-            console.warn('[SipService] Failed to play remote audio, retrying in 1s:', e);
-            // [Issue #2] Clear any previous retry before scheduling a new one
-            if (this.audioPlayRetryTimeout !== null) {
-              clearTimeout(this.audioPlayRetryTimeout);
-            }
-            this.audioPlayRetryTimeout = setTimeout(() => {
-              this.audioPlayRetryTimeout = null;
-              // [Issue #2] Check element still exists before attempting play
-              if (this.remoteAudioElement) {
-                this.remoteAudioElement.play().catch((retryErr) => {
-                  console.warn('[SipService] Retry play also failed:', retryErr);
-                });
-              }
-            }, 1000);
-          });
-        }
-      };
-
-      // Handle connection state changes
-      peerConnection.onconnectionstatechange = () => {
-        if (peerConnection.connectionState === 'connected') {
-          // Verify audio streams
-          this.verifyAudioStreams(peerConnection);
-        } else if (peerConnection.connectionState === 'failed') {
-          console.error('[SipService] Peer connection failed');
-          this.emit('onCallFailed', 'Connection failed');
-        }
-      };
-
-      // Handle ICE connection state changes
-      peerConnection.oniceconnectionstatechange = () => {
-        const state = peerConnection.iceConnectionState;
-        if (state === 'failed') {
-          // [Issue #5 / #10] ICE failure — unrecoverable
-          console.error('[SipService] ICE connection failed');
-          this.emit('onCallFailed', 'Network connection failed');
-        } else if (state === 'disconnected') {
-          // [Issue #5 / #9] ICE disconnected — may recover, but warn the UI
-          console.warn('[SipService] ICE connection disconnected — possible network issue');
-          this.emit('onCallQualityWarning', 'Network connection unstable — call quality may be degraded');
-        }
-      };
-
-      // Get local stream
-      const senders = peerConnection.getSenders();
-      const audioSender = senders.find(sender =>
-        sender.track && sender.track.kind === 'audio'
-      );
-
-      if (audioSender && audioSender.track && this.localAudioElement) {
-        // Apply noise suppression to outgoing audio
-        if (this.noiseSuppressionEnabled) {
-          this.applyNoiseSuppression(audioSender, peerConnection).catch(err => {
-            console.warn('[SipService] Noise suppression failed, using raw audio:', err);
-          });
-        }
-
-        const localStream = new MediaStream([audioSender.track]);
-        this.localAudioElement.srcObject = localStream;
-        // Note: Local audio should be muted to prevent feedback
-        this.localAudioElement.muted = true;
-        this.localAudioElement.autoplay = true;
-      }
-
-      // Check if we already have tracks
-      const receivers = peerConnection.getReceivers();
-
-      receivers.forEach((receiver) => {
-        if (receiver.track && receiver.track.kind === 'audio') {
-          const stream = new MediaStream([receiver.track]);
-          if (this.remoteAudioElement) {
-            this.remoteAudioElement.srcObject = stream;
-            this.remoteAudioElement.play().catch((e) => {
-              console.warn('[SipService] Failed to play existing receiver track:', e);
-            });
-          }
-        }
-      });
-
-    } catch (error) {
-      console.error('[SipService] Failed to setup audio streams:', error);
-    }
-  }
-
-  // Verify audio streams are working
-  private verifyAudioStreams(peerConnection: RTCPeerConnection) {
-    const senders = peerConnection.getSenders();
-    const receivers = peerConnection.getReceivers();
-
-    // Verification complete - streams are set up
-  }
-
-  // Get current call info
-  getCurrentCallInfo() {
-    if (!this.currentSession) {
-      return null;
-    }
-
-    const remoteIdentity = 'remoteIdentity' in this.currentSession
-      ? this.currentSession.remoteIdentity
-      : null;
-
+  getCurrentCallInfo(): { remoteNumber: string; state: SessionState; direction: 'incoming' | 'outgoing' } | null {
+    const leg = this.main;
+    if (!leg) return null;
+    const session = leg.session;
     return {
-      remoteNumber: remoteIdentity?.uri?.user || 'Unknown',
-      state: this.currentSession.state,
-      direction: 'invite' in this.currentSession ? 'outgoing' : 'incoming'
+      remoteNumber: session.remoteIdentity?.uri?.user || '',
+      state: session.state,
+      direction: session instanceof Inviter ? 'outgoing' : 'incoming',
     };
   }
 
-  // Check if registered
   getRegistrationStatus(): boolean {
     return this.isRegistered;
   }
 
-  // Disconnect and cleanup
-  async disconnect(): Promise<void> {
-    try {
-      // End any active call
-      if (this.currentSession) {
-        await this.endCall();
-      }
-
-      // [Issue #2 / #7] Clean up audio resources on full disconnect
-      this.cleanupAudioResources();
-
-      // Stop user agent
-      if (this.userAgent) {
-        await this.userAgent.stop();
-        this.userAgent = null;
-      }
-
-      this.isRegistered = false;
-    } catch (error) {
-      console.error('[SipService] Error during disconnect:', error);
-    }
+  isTransportConnected(): boolean {
+    return this.transportConnected;
   }
 
-  // Test SIP connection
-  async testConnection(sipConfig: SipConfigurationDetail): Promise<boolean> {
-    try {
-      // Try to initialize and register
-      await this.initialize(sipConfig);
+  getActiveLeg(): CallLeg {
+    return this.activeLeg;
+  }
 
-      // Wait a bit for registration
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      const isConnected = this.getRegistrationStatus();
-
-      return isConnected;
-    } catch (error) {
-      console.error('[SipService] SIP connection test failed:', error);
-      return false;
-    }
+  /** Dev-only: expose SDP / track state for the Playwright suite. */
+  private installTestHook(): void {
+    if (typeof window === 'undefined') return;
+    if (process.env.NEXT_PUBLIC_CALLS_TEST_HOOK !== '1') return;
+    const legState = (leg: Leg | null) =>
+      leg
+        ? {
+            state: leg.session.state,
+            direction: leg.session instanceof Inviter ? 'outgoing' : 'incoming',
+            reason: leg.reason,
+            held: leg.held,
+            muted: leg.muted,
+            remote: leg.session.remoteIdentity?.uri?.user ?? null,
+          }
+        : null;
+    window.__echodeskSip = {
+      getLocalSdp: () => {
+        const pc = peerConnectionOf(this.main?.session);
+        return pc?.currentLocalDescription?.sdp ?? pc?.localDescription?.sdp ?? null;
+      },
+      getSenderTrackEnabled: () => {
+        const sender = audioSenderOf(this.main?.session);
+        return sender?.track ? sender.track.enabled : null;
+      },
+      getState: () => ({
+        registered: this.isRegistered,
+        transportConnected: this.transportConnected,
+        activeLeg: this.activeLeg,
+        main: legState(this.main),
+        consultation: legState(this.consultation),
+      }),
+    };
   }
 }

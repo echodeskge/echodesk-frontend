@@ -10,885 +10,1491 @@ import React, {
   useMemo,
   type ReactNode,
 } from 'react';
-import { SipService } from '@/services/SipService';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Invitation } from 'sip.js';
 import {
+  SipService,
+  SipCallError,
+  toCallError,
+  type IceServerConfig,
+  type SoftphoneConfig,
+} from '@/services/SipService';
+import {
   sipConfigurationsList,
+  sipConfigurationsMyConfigRetrieve,
   sipConfigurationsWebrtcConfigRetrieve,
   callLogsInitiateCallCreate,
   callLogsLogIncomingCallCreate,
   callLogsEndCallCreate,
   callLogsUpdateStatusPartialUpdate,
+  callLogsInitiateConsultationCreate,
+  callLogsCompleteAttendedTransferCreate,
+  callLogsTransferCallCreate,
+  callLogsCancelConsultationCreate,
+  callLogsMergeConferenceCreate,
 } from '@/api/generated/api';
 import type {
-  SipConfigurationDetail,
-  DirectionEnum,
-  CallLogCreate,
+  CallInitiateRequest,
+  CallLog,
+  CallLogCreateRequest,
+  MySoftphoneConfig,
+  SoftphoneSipConfiguration,
+  StatusB9eEnum,
 } from '@/api/generated/interfaces';
-import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { useCallingAccess } from '@/lib/calling-access';
+import { onCallEvent, type CallEventPayload } from '@/lib/call-events';
+import type {
+  ActiveCall,
+  AnsweredElsewhereNotice,
+  CallActionsValue,
+  CallEndReason,
+  CallError,
+  CallStateValue,
+  MissedCall,
+  BusyRejectedCall,
+  OpenRailOptions,
+  RailState,
+  SipState,
+} from '@/contexts/call-types';
+
+export type {
+  ActiveCall,
+  CallStatus,
+  ConsultationCall,
+  TransferPhase,
+  CallError,
+  SipState,
+  RailState,
+  CallStateValue,
+  CallActionsValue,
+} from '@/contexts/call-types';
 
 // ---------------------------------------------------------------------------
-// Types
+// Local types
 // ---------------------------------------------------------------------------
 
-export type CallStatus = 'idle' | 'ringing' | 'connecting' | 'active' | 'ending';
-export type TransferPhase = 'idle' | 'consulting' | 'conferenced';
-
-export interface ConsultationCall {
-  targetNumber: string;
-  targetName?: string;
-  status: 'connecting' | 'ringing' | 'active' | 'ended' | 'failed';
-  startTime?: Date;
-  duration: number;
-  logId?: number;
+/** Fields the softphone endpoints add that the generated client may not know yet. */
+interface SoftphoneConfigExtras {
+  wss_url?: string | null;
+  ice_servers?: IceServerConfig[] | null;
 }
 
-export interface ActiveCall {
-  id: string;
-  logId: number;
-  number: string;
-  callerName?: string;
-  direction: 'incoming' | 'outgoing';
-  status: CallStatus;
-  startTime?: Date;
-  duration: number;
-  invitation?: Invitation;
-  isOnHold?: boolean;
-  isMuted?: boolean;
-  transferPhase: TransferPhase;
-  consultationCall: ConsultationCall | null;
+type MyConfigResponse = MySoftphoneConfig &
+  SoftphoneConfigExtras & {
+    sip_configuration: SoftphoneSipConfiguration & SoftphoneConfigExtras;
+  };
+
+type WebrtcConfigResponse = SoftphoneSipConfiguration & SoftphoneConfigExtras;
+
+/** `log_incoming_call` body incl. the contract fields (`pbx_call_id` is not generated yet). */
+type IncomingLogRequest = CallLogCreateRequest & {
+  sip_call_id?: string;
+  pbx_call_id?: string;
+};
+
+interface LogTracker {
+  /** Resolves to the CallLog id, or null when the write failed / was abandoned. */
+  logId: Promise<number | null>;
+  resolve: (id: number | null) => void;
+  /** Writes against this log run in order, after the log exists. */
+  chain: Promise<unknown>;
 }
 
-export interface CallContextValue {
-  activeCall: ActiveCall | null;
-  callDuration: number;
-  sipRegistered: boolean;
-  sipConnecting: boolean;
-  activeSipConfig: SipConfigurationDetail | null;
-  dialNumber: string;
-  error: string;
-  loading: boolean;
-  isDialpadOpen: boolean;
-  setDialNumber: (num: string) => void;
-  makeCall: () => Promise<void>;
-  handleAcceptCall: () => Promise<void>;
-  handleRejectCall: () => Promise<void>;
-  handleEndCall: () => Promise<void>;
-  handleToggleHold: () => void;
-  handleToggleMute: () => void;
-  setError: (err: string) => void;
-  setIsDialpadOpen: (open: boolean) => void;
-  toggleDialpad: () => void;
-  callEndedCounter: number;
-  sendDTMF: (tone: string) => boolean;
-  transferCall: (targetNumber: string) => Promise<void>;
-  startAttendedTransfer: (targetNumber: string, targetName?: string) => Promise<void>;
-  completeTransfer: () => Promise<void>;
-  cancelTransfer: () => Promise<void>;
-  mergeConference: () => Promise<void>;
-  missedCall: { number: string; time: Date } | null;
-  clearMissedCall: () => void;
+/** A leg that ended recently; late `call_event`s are matched against it. */
+interface RecentEndedLeg {
+  call: ActiveCall;
+  /** The missed-call toast raised for this leg, retracted if it turns out answered elsewhere. */
+  missed: MissedCall | null;
+  timer: ReturnType<typeof setTimeout>;
 }
 
-// ---------------------------------------------------------------------------
-// Context
-// ---------------------------------------------------------------------------
+const ERROR_AUTO_CLEAR_MS = 6_000;
+/** How long the rail shows "Answered by {agent}" after a ringall sibling took the call. */
+export const ANSWERED_ELSEWHERE_NOTICE_MS = 3_000;
+/** How long an ended leg stays matchable by a late `call_event`. */
+export const RECENT_ENDED_MS = 10_000;
+const UNREGISTERED_RETRIES = 5;
+const UNREGISTERED_RETRY_STEP_MS = 5_000;
+const REGISTRATION_RETRIES = 3;
+const REGISTRATION_RETRY_STEP_MS = 10_000;
 
-const CallContext = createContext<CallContextValue | undefined>(undefined);
+const RINGTONE_FREQUENCY_HZ = 800;
+const RINGTONE_INTERVAL_MS = 1_000;
 
-// The softphone endpoints (my_config, webrtc_config) send sip_enabled=false
-// with blank credentials when this user has nothing to register with.
-function isSipEnabled(config: SipConfigurationDetail & { sip_enabled?: boolean }): boolean {
+const CONNECTION_ERROR_KEYS = new Set(['registrationFailed', 'networkFailed', 'initFailed', 'notRegistered']);
+
+// The softphone endpoints send sip_enabled=false with blank credentials when
+// this user has nothing to register with.
+function isSipEnabled(config: SoftphoneConfig): boolean {
   if (config.sip_enabled === false) return false;
   return Boolean(config.username);
 }
+
+function newCallId(prefix: string, seed: string): string {
+  const rand =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
+  return `${prefix}-${seed || rand}-${Date.now()}`;
+}
+
+// ---------------------------------------------------------------------------
+// Contexts
+// ---------------------------------------------------------------------------
+
+const CallStateContext = createContext<CallStateValue | undefined>(undefined);
+const CallActionsContext = createContext<CallActionsValue | undefined>(undefined);
 
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
 
 export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { hasFeature } = useSubscription();
   const { user } = useAuth();
-  const { data: userProfile } = useUserProfile();
+  const { canUseSoftphone } = useCallingAccess();
+  const queryClient = useQueryClient();
+  const userId = user?.id ?? null;
 
   // ---- State ----
-  const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
-  const [callDuration, setCallDuration] = useState(0);
-  const [sipRegistered, setSipRegistered] = useState(false);
-  const [sipConnecting, setSipConnecting] = useState(false);
-  const [activeSipConfig, setActiveSipConfig] = useState<SipConfigurationDetail | null>(null);
-  const [dialNumber, setDialNumber] = useState('');
-  const [error, setError] = useState('');
+  const [activeCall, setActiveCallState] = useState<ActiveCall | null>(null);
+  const [sipState, setSipStateState] = useState<SipState>('off');
+  const [activeSipConfig, setActiveSipConfig] = useState<SoftphoneConfig | null>(null);
+  const [dialNumber, setDialNumberState] = useState('');
+  const [error, setErrorState] = useState<CallError | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDialpadOpen, setIsDialpadOpen] = useState(false);
+  const [rail, setRailState] = useState<RailState>({ mode: 'closed', prefill: null, autoDial: false });
   const [callEndedCounter, setCallEndedCounter] = useState(0);
-  const [missedCall, setMissedCall] = useState<{ number: string; time: Date } | null>(null);
+  const [missedCall, setMissedCall] = useState<MissedCall | null>(null);
+  const [busyRejected, setBusyRejected] = useState<BusyRejectedCall | null>(null);
+  const [answeredElsewhereNotice, setAnsweredElsewhereNotice] = useState<AnsweredElsewhereNotice | null>(null);
+  const [soundBlocked, setSoundBlocked] = useState(false);
 
-  // ---- Refs ----
+  // ---- Refs (synchronous mirrors read by SIP event handlers and actions) ----
+  const activeCallRef = useRef<ActiveCall | null>(null);
+  const sipStateRef = useRef<SipState>('off');
+  const activeSipConfigRef = useRef<SoftphoneConfig | null>(null);
+  const dialNumberRef = useRef('');
+  const railRef = useRef<RailState>(rail);
+  const userIdRef = useRef<number | null>(userId);
   const sipServiceRef = useRef<SipService | null>(null);
   const localAudioRef = useRef<HTMLAudioElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
-  const callTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef<number>(0);
+  const mountedRef = useRef(true);
+  const logsRef = useRef(new Map<string, LogTracker>());
+  const retryRef = useRef<{ attempts: number; timer: ReturnType<typeof setTimeout> | null }>({
+    attempts: 0,
+    timer: null,
+  });
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const noticeRef = useRef<AnsweredElsewhereNotice | null>(null);
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recentEndedRef = useRef(new Map<string, RecentEndedLeg>());
   const audioContextRef = useRef<AudioContext | null>(null);
-  const ringtoneTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isRingtonePlayingRef = useRef<boolean>(false);
+  const ringingRef = useRef(false);
+  const ringTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto-clear errors after 5 seconds
-  const errorTimerRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
-    if (error) {
-      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-      errorTimerRef.current = setTimeout(() => setError(''), 5000);
-    }
-    return () => { if (errorTimerRef.current) clearTimeout(errorTimerRef.current); };
-  }, [error]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
-  // Ref that always mirrors activeCall state – used inside event callbacks
-  // to avoid stale closures.
-  const activeCallRef = useRef<ActiveCall | null>(null);
   useEffect(() => {
-    activeCallRef.current = activeCall;
-  }, [activeCall]);
+    userIdRef.current = userId;
+  }, [userId]);
 
-  // Also keep activeSipConfig in a ref for use inside callbacks.
-  const activeSipConfigRef = useRef<SipConfigurationDetail | null>(null);
   useEffect(() => {
     activeSipConfigRef.current = activeSipConfig;
   }, [activeSipConfig]);
 
-  // Mounted flag to prevent state updates after unmount
-  const mountedRef = useRef(true);
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => { mountedRef.current = false; };
+  // ---- Synchronous state wrappers ----
+
+  const setSipState = useCallback((next: SipState) => {
+    sipStateRef.current = next;
+    if (mountedRef.current) setSipStateState(next);
   }, []);
 
-  // Track reconnect timeout for cleanup
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // ---------------------------------------------------------------------------
-  // Ringtone helpers (Web Audio API – 800 Hz sine wave)
-  // ---------------------------------------------------------------------------
-
-  const createRingtone = useCallback(async () => {
-    if (!isRingtonePlayingRef.current || !mountedRef.current) return;
-
-    try {
-      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-        audioContextRef.current = new (window.AudioContext ||
-          window.webkitAudioContext)();
-      }
-
-      const audioContext = audioContextRef.current;
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-      oscillator.type = 'sine';
-
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
-      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.4);
-
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.5);
-
-      // Re-check flag after async operations to prevent infinite loop
-      if (isRingtonePlayingRef.current && mountedRef.current) {
-        ringtoneTimeoutRef.current = setTimeout(createRingtone, 1000);
-      }
-    } catch (err) {
-      console.warn('Could not create ringtone:', err);
-      isRingtonePlayingRef.current = false;
+  const updateRail = useCallback((fn: (prev: RailState) => RailState) => {
+    const next = fn(railRef.current);
+    if (
+      next.mode === railRef.current.mode &&
+      next.prefill === railRef.current.prefill &&
+      next.autoDial === railRef.current.autoDial
+    ) {
+      return;
     }
+    railRef.current = next;
+    if (mountedRef.current) setRailState(next);
+  }, []);
+
+  /**
+   * Every write to `activeCall` goes through here so `activeCallRef` is
+   * current *before* the next SIP event fires (C2). Rail rule: an incoming
+   * ring or a call turning active forces the rail open.
+   */
+  const updateCall = useCallback(
+    (next: ActiveCall | null | ((prev: ActiveCall | null) => ActiveCall | null)) => {
+      const prev = activeCallRef.current;
+      const value = typeof next === 'function' ? next(prev) : next;
+      if (value === prev) return;
+      activeCallRef.current = value;
+      if (mountedRef.current) setActiveCallState(value);
+      if (value) {
+        const newIncomingRing = value.direction === 'incoming' && value.status === 'ringing' && prev?.id !== value.id;
+        const becameActive = value.status === 'active' && prev?.status !== 'active';
+        if (newIncomingRing || becameActive) {
+          updateRail((r) => (r.mode === 'open' ? r : { ...r, mode: 'open' }));
+        }
+      }
+    },
+    [updateRail]
+  );
+
+  // Reading through a function keeps TypeScript from narrowing the ref
+  // across awaits (the ref changes while an action is suspended).
+  const readActiveCall = useCallback((): ActiveCall | null => activeCallRef.current, []);
+
+  const setDialNumber = useCallback((number: string) => {
+    dialNumberRef.current = number;
+    setDialNumberState(number);
+  }, []);
+
+  const setError = useCallback((next: CallError | null) => {
+    if (!mountedRef.current) return;
+    setErrorState(next);
+  }, []);
+
+  const clearError = useCallback(() => setError(null), [setError]);
+
+  // Errors clear themselves; the rail strip is informational.
+  useEffect(() => {
+    if (errorTimerRef.current) {
+      clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = null;
+    }
+    if (!error) return;
+    errorTimerRef.current = setTimeout(() => setErrorState(null), ERROR_AUTO_CLEAR_MS);
+    return () => {
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    };
+  }, [error]);
+
+  // ---------------------------------------------------------------------------
+  // Ringtone: one AudioContext for the provider's lifetime (C8)
+  // ---------------------------------------------------------------------------
+
+  const getAudioContext = useCallback((): AudioContext | null => {
+    if (typeof window === 'undefined') return null;
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) return null;
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      try {
+        audioContextRef.current = new Ctor();
+      } catch {
+        return null;
+      }
+    }
+    return audioContextRef.current;
+  }, []);
+
+  const ringTick = useCallback(() => {
+    ringTimerRef.current = null;
+    if (!ringingRef.current || !mountedRef.current) return;
+    const ctx = audioContextRef.current;
+    if (!ctx || ctx.state !== 'running') {
+      setSoundBlocked(true);
+      return;
+    }
+    try {
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.frequency.setValueAtTime(RINGTONE_FREQUENCY_HZ, ctx.currentTime);
+      oscillator.type = 'sine';
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.1);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.5);
+    } catch (err) {
+      console.warn('[calls] ringtone failed:', err);
+      ringingRef.current = false;
+      return;
+    }
+    ringTimerRef.current = setTimeout(ringTick, RINGTONE_INTERVAL_MS);
   }, []);
 
   const playRingtone = useCallback(() => {
-    if (isRingtonePlayingRef.current) return;
-    isRingtonePlayingRef.current = true;
-    createRingtone();
-  }, [createRingtone]);
+    if (ringingRef.current) return;
+    ringingRef.current = true;
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const start = () => {
+      if (!ringingRef.current) return;
+      if (ctx.state === 'running') {
+        setSoundBlocked(false);
+        if (!ringTimerRef.current) ringTick();
+      } else {
+        setSoundBlocked(true);
+      }
+    };
+    if (ctx.state === 'running') {
+      start();
+    } else {
+      ctx.resume().then(start, () => setSoundBlocked(true));
+    }
+  }, [getAudioContext, ringTick]);
 
   const stopRingtone = useCallback(() => {
-    isRingtonePlayingRef.current = false;
-
-    if (ringtoneTimeoutRef.current) {
-      clearTimeout(ringtoneTimeoutRef.current);
-      ringtoneTimeoutRef.current = null;
-    }
-
-    if (audioContextRef.current) {
-      audioContextRef.current.close().catch(console.warn);
-      audioContextRef.current = null;
+    ringingRef.current = false;
+    if (ringTimerRef.current) {
+      clearTimeout(ringTimerRef.current);
+      ringTimerRef.current = null;
     }
   }, []);
 
+  /** Resume the shared AudioContext from a user gesture (autoplay policy). */
+  const unlockSound = useCallback(() => {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const done = () => {
+      if (!mountedRef.current) return;
+      const running = ctx.state === 'running';
+      setSoundBlocked(!running);
+      if (running && ringingRef.current && !ringTimerRef.current) ringTick();
+    };
+    if (ctx.state === 'running') {
+      done();
+    } else {
+      ctx.resume().then(done, done);
+    }
+  }, [getAudioContext, ringTick]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onGesture = () => {
+      unlockSound();
+      window.removeEventListener('pointerdown', onGesture);
+      window.removeEventListener('keydown', onGesture);
+    };
+    window.addEventListener('pointerdown', onGesture, { passive: true });
+    window.addEventListener('keydown', onGesture);
+    return () => {
+      window.removeEventListener('pointerdown', onGesture);
+      window.removeEventListener('keydown', onGesture);
+    };
+  }, [unlockSound]);
+
+  useEffect(
+    () => () => {
+      stopRingtone();
+      const ctx = audioContextRef.current;
+      audioContextRef.current = null;
+      if (ctx && ctx.state !== 'closed') ctx.close().catch(() => {});
+    },
+    [stopRingtone]
+  );
+
   // ---------------------------------------------------------------------------
-  // SIP initialisation
+  // Call-log bookkeeping: UI first, writes in the background (C1)
   // ---------------------------------------------------------------------------
+
+  /**
+   * Register a call before its log exists so status writes that arrive
+   * early (a callee answering before the INVITE promise settles) queue
+   * instead of being dropped.
+   */
+  const reserveLog = useCallback((callId: string): LogTracker => {
+    const existing = logsRef.current.get(callId);
+    if (existing) return existing;
+    let resolve: (id: number | null) => void = () => {};
+    const logId = new Promise<number | null>((r) => {
+      resolve = r;
+    });
+    const tracker: LogTracker = { logId, resolve, chain: Promise.resolve() };
+    logsRef.current.set(callId, tracker);
+    return tracker;
+  }, []);
+
+  const startLog = useCallback(
+    (callId: string, create: () => Promise<CallLog>, onCreated?: (log: CallLog) => void) => {
+      const tracker = reserveLog(callId);
+      create().then(
+        (log) => {
+          onCreated?.(log);
+          tracker.resolve(log.id);
+        },
+        (err) => {
+          console.error('[calls] call log write failed:', err);
+          setError({ key: 'logFailed' });
+          tracker.resolve(null);
+        }
+      );
+      tracker.logId.then((id) => {
+        updateCall((prev) => (prev && prev.id === callId ? { ...prev, logId: id, logPending: false } : prev));
+      });
+    },
+    [reserveLog, setError, updateCall]
+  );
+
+  /** The call never got a log (dialling failed): release queued writes. */
+  const abandonLog = useCallback((callId: string) => {
+    const tracker = logsRef.current.get(callId);
+    if (!tracker) return;
+    tracker.resolve(null);
+    logsRef.current.delete(callId);
+  }, []);
+
+  /**
+   * Run `write` once the log exists; writes for one call are serialised.
+   * Resolves to the write's result, or null when the call has no log (the
+   * write failed or was abandoned). Rejects when `write` does.
+   */
+  const enqueueLogWrite = useCallback(
+    <T,>(callId: string, write: (logId: number) => Promise<T>, final = false): Promise<T | null> => {
+      const tracker = logsRef.current.get(callId);
+      if (!tracker) return Promise.resolve(null);
+      const run = tracker.chain.then(() => tracker.logId).then((id) => (id === null ? null : write(id)));
+      tracker.chain = run.catch((err) => {
+        console.error('[calls] call log update failed:', err);
+      });
+      if (final) {
+        tracker.chain.finally(() => {
+          if (logsRef.current.get(callId) === tracker) logsRef.current.delete(callId);
+        });
+      }
+      return run;
+    },
+    []
+  );
+
+  /** Fire-and-forget `enqueueLogWrite`; failures are logged by the chain. */
+  const queueLogWrite = useCallback(
+    (callId: string, write: (logId: number) => Promise<unknown>, final = false) => {
+      enqueueLogWrite(callId, write, final).catch(() => {});
+    },
+    [enqueueLogWrite]
+  );
+
+  /** Resolve the backend log id of a call, waiting for a pending write. */
+  const awaitLogId = useCallback(async (callId: string): Promise<number | null> => {
+    const tracker = logsRef.current.get(callId);
+    if (tracker) return tracker.logId;
+    return activeCallRef.current?.id === callId ? activeCallRef.current.logId : null;
+  }, []);
+
+  const bumpCallEnded = useCallback(() => {
+    if (mountedRef.current) setCallEndedCounter((c) => c + 1);
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // Answered elsewhere (ringall)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Keep an ended leg matchable for `RECENT_ENDED_MS`: Asterisk CANCELs the
+   * losing ringall legs before the winner's browser has written `answered`,
+   * so the `call_event` that settles the leg can arrive after it is gone.
+   */
+  const rememberEnded = useCallback((call: ActiveCall, missed: MissedCall | null) => {
+    const map = recentEndedRef.current;
+    const prev = map.get(call.id);
+    if (prev) clearTimeout(prev.timer);
+    const timer = setTimeout(() => map.delete(call.id), RECENT_ENDED_MS);
+    map.set(call.id, { call, missed, timer });
+  }, []);
+
+  const setNotice = useCallback((next: AnsweredElsewhereNotice | null) => {
+    noticeRef.current = next;
+    if (mountedRef.current) setAnsweredElsewhereNotice(next);
+  }, []);
+
+  /**
+   * A ringall sibling took `call`: silence the ringtone, flag the leg (no
+   * missed / end_call write), retract a missed toast already raised for
+   * it and show the notice for `ANSWERED_ELSEWHERE_NOTICE_MS`.
+   */
+  const markAnsweredElsewhere = useCallback(
+    (call: ActiveCall, handledBy: number | null) => {
+      const existing = noticeRef.current;
+      const shown = existing?.callId === call.id;
+      if (shown && (handledBy === null || existing.handledBy === handledBy)) return;
+
+      stopRingtone();
+      updateCall((prev) => (prev && prev.id === call.id && !prev.answeredElsewhere ? { ...prev, answeredElsewhere: true } : prev));
+
+      const recent = recentEndedRef.current.get(call.id);
+      if (recent?.missed) {
+        const retract = recent.missed;
+        recent.missed = null;
+        setMissedCall((prev) => (prev === retract ? null : prev));
+      }
+
+      const notice: AnsweredElsewhereNotice = {
+        callId: call.id,
+        number: call.number,
+        handledBy: handledBy ?? (shown ? existing.handledBy : null),
+        time: shown ? existing.time : new Date(),
+      };
+      setNotice(notice);
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+      noticeTimerRef.current = setTimeout(() => {
+        noticeTimerRef.current = null;
+        if (noticeRef.current === notice) setNotice(null);
+      }, ANSWERED_ELSEWHERE_NOTICE_MS);
+    },
+    [setNotice, stopRingtone, updateCall]
+  );
+
+  /**
+   * The PBX cancelled an incoming leg nobody here answered. That is either
+   * a caller who gave up (missed) or a ringall sibling who won — and the
+   * CANCEL usually beats the sibling's `answered` write, so the backend's
+   * verdict decides: the leg stays `ending` until `end_call` answers
+   * `cancelled` (answered elsewhere, notice) or `missed` (toast).
+   */
+  const settleUnansweredLeg = useCallback(
+    (call: ActiveCall) => {
+      updateCall((prev) => (prev && prev.id === call.id && prev.status !== 'ending' ? { ...prev, status: 'ending' } : prev));
+      rememberEnded(call, null);
+
+      const finish = (verdict: string | null) => {
+        const live = activeCallRef.current;
+        const flagged = (live?.id === call.id && live.answeredElsewhere) || noticeRef.current?.callId === call.id;
+        if (verdict === 'cancelled' || flagged) {
+          markAnsweredElsewhere(call, null);
+        } else {
+          const missed: MissedCall = { number: call.number, time: new Date() };
+          const recent = recentEndedRef.current.get(call.id);
+          if (recent) recent.missed = missed;
+          setMissedCall(missed);
+        }
+        updateCall((prev) => (prev && prev.id === call.id ? null : prev));
+        bumpCallEnded();
+      };
+
+      const endCallWrite = (logId: number) => callLogsEndCallCreate(logId, { status: 'ended' });
+      const pending: Promise<CallLog | null> = logsRef.current.has(call.id)
+        ? enqueueLogWrite(call.id, endCallWrite, true)
+        : call.logId !== null
+          ? endCallWrite(call.logId)
+          : Promise.resolve(null);
+      pending.then(
+        (row) => finish(row?.status ?? null),
+        () => finish(null) // logged by the chain; without a verdict the leg counts as missed
+      );
+    },
+    [bumpCallEnded, enqueueLogWrite, markAnsweredElsewhere, rememberEnded, updateCall]
+  );
+
+  useEffect(
+    () => () => {
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+      recentEndedRef.current.forEach((entry) => clearTimeout(entry.timer));
+      recentEndedRef.current.clear();
+    },
+    []
+  );
+
+  // ---------------------------------------------------------------------------
+  // Registration retries (C4)
+  // ---------------------------------------------------------------------------
+
+  const clearRetry = useCallback(() => {
+    if (retryRef.current.timer) {
+      clearTimeout(retryRef.current.timer);
+      retryRef.current.timer = null;
+    }
+  }, []);
+
+  const scheduleReconnect = useCallback(
+    (kind: 'unregistered' | 'registration') => {
+      if (!mountedRef.current || !sipServiceRef.current) return;
+      if (retryRef.current.timer) return; // one retry in flight at a time
+      const max = kind === 'registration' ? REGISTRATION_RETRIES : UNREGISTERED_RETRIES;
+      const step = kind === 'registration' ? REGISTRATION_RETRY_STEP_MS : UNREGISTERED_RETRY_STEP_MS;
+      const attempt = retryRef.current.attempts + 1;
+      retryRef.current.attempts = attempt;
+      if (attempt > max) {
+        setSipState('failed');
+        setError({ key: kind === 'registration' ? 'registrationFailed' : 'networkFailed' });
+        return;
+      }
+      setSipState('reconnecting');
+      retryRef.current.timer = setTimeout(() => {
+        retryRef.current.timer = null;
+        const sip = sipServiceRef.current;
+        if (!mountedRef.current || !sip) return;
+        sip.reconnect().catch(() => {
+          // The failure events (onUnregistered / onRegistrationFailed) schedule
+          // the next attempt; this covers a transport that never came back.
+          if (!retryRef.current.timer) scheduleReconnect(kind);
+        });
+      }, attempt * step);
+    },
+    [setError, setSipState]
+  );
+
+  // ---------------------------------------------------------------------------
+  // SIP service lifecycle
+  // ---------------------------------------------------------------------------
+
+  const teardownSipService = useCallback(async () => {
+    clearRetry();
+    retryRef.current.attempts = 0;
+    const sip = sipServiceRef.current;
+    sipServiceRef.current = null;
+    stopRingtone();
+    if (sip) {
+      sip.removeAllListeners();
+      try {
+        await sip.disconnect();
+      } catch (err) {
+        console.warn('[calls] disconnect failed:', err);
+      }
+    }
+    if (localAudioRef.current) localAudioRef.current.srcObject = null;
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+  }, [clearRetry, stopRingtone]);
 
   const initializeSipService = useCallback(
-    async (config: SipConfigurationDetail) => {
-      try {
-        if (!localAudioRef.current || !remoteAudioRef.current) {
-          throw new Error('Audio elements not ready');
+    async (config: SoftphoneConfig) => {
+      if (!localAudioRef.current || !remoteAudioRef.current) {
+        setError({ key: 'initFailed' });
+        setSipState('failed');
+        return;
+      }
+      if (sipServiceRef.current) {
+        await teardownSipService();
+      }
+
+      const sip = new SipService(localAudioRef.current, remoteAudioRef.current);
+      // Set before initialize() so cleanup and retries during the handshake
+      // always see the service (C3).
+      sipServiceRef.current = sip;
+      const isCurrent = () => mountedRef.current && sipServiceRef.current === sip;
+      setSipState('connecting');
+
+      sip.on('onRegistered', () => {
+        if (!isCurrent()) return;
+        clearRetry();
+        retryRef.current.attempts = 0;
+        setSipState('registered');
+        setErrorState((prev) => (prev && CONNECTION_ERROR_KEYS.has(prev.key) ? null : prev));
+      });
+
+      sip.on('onUnregistered', () => {
+        if (!isCurrent()) return;
+        if (sipStateRef.current === 'offline') return;
+        scheduleReconnect('unregistered');
+      });
+
+      sip.on('onRegistrationFailed', (err) => {
+        if (!isCurrent()) return;
+        setError(err);
+        scheduleReconnect('registration');
+      });
+
+      sip.on('onTransportState', (state) => {
+        if (!isCurrent()) return;
+        if (state === 'disconnected' && sipStateRef.current === 'registered') {
+          setSipState('reconnecting');
         }
+      });
 
-        setSipConnecting(true);
+      sip.on('onIncomingCall', (invitation: Invitation) => {
+        if (!isCurrent()) return;
+        const info = sip.getIncomingInfo(invitation);
+        const callId = newCallId('in', info.sipCallId);
+        playRingtone();
 
-        const sipService = new SipService(localAudioRef.current, remoteAudioRef.current);
-
-        // --- event handlers (read from refs, not stale closure) ---
-
-        sipService.on('onRegistered', () => {
-          setSipRegistered(true);
-          setSipConnecting(false);
-          setError('');
-          reconnectAttemptsRef.current = 0;
+        // UI first: accept / decline never wait for the backend (C1).
+        updateCall({
+          id: callId,
+          sipCallId: info.sipCallId,
+          pbxCallId: info.pbxCallId,
+          logId: null,
+          logPending: true,
+          number: info.number,
+          callerName: info.displayName,
+          direction: 'incoming',
+          status: 'ringing',
+          isOnHold: false,
+          isMuted: false,
+          transferPhase: 'idle',
+          consultationCall: null,
+          answeredElsewhere: false,
         });
 
-        sipService.on('onUnregistered', () => {
-          if (!mountedRef.current) return;
-          setSipRegistered(false);
-          setSipConnecting(false);
-
-          // Auto-reconnect with backoff (only if no active call)
-          if (!activeCallRef.current) {
-            const retryCount = (reconnectAttemptsRef.current || 0) + 1;
-            reconnectAttemptsRef.current = retryCount;
-            if (retryCount <= 5) {
-              const delay = retryCount * 5000;
-              console.warn(`SIP disconnected, retrying in ${delay / 1000}s (attempt ${retryCount}/5)`);
-              if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-              reconnectTimeoutRef.current = setTimeout(() => {
-                if (mountedRef.current && activeSipConfigRef.current && sipServiceRef.current) {
-                  sipServiceRef.current.register?.().catch(() => {});
-                }
-              }, delay);
+        const config = activeSipConfigRef.current;
+        const body: IncomingLogRequest = {
+          caller_number: info.number || 'anonymous',
+          recipient_number: config?.phone_number || config?.username || '',
+          direction: 'inbound',
+          sip_call_id: info.sipCallId,
+          ...(info.pbxCallId ? { pbx_call_id: info.pbxCallId } : {}),
+        };
+        // A 200 (the backend already has this sip_call_id) carries the same
+        // row as a 201; the generated client returns the body either way.
+        startLog(
+          callId,
+          () => callLogsLogIncomingCallCreate(body),
+          (log) => {
+            if (log.client_name) {
+              updateCall((prev) =>
+                prev && prev.id === callId && !prev.callerName ? { ...prev, callerName: log.client_name } : prev
+              );
             }
           }
-        });
+        );
+      });
 
-        sipService.on('onRegistrationFailed', (err) => {
-          if (!mountedRef.current) return;
-          console.error('SIP registration failed:', err);
-          setSipRegistered(false);
-          setSipConnecting(false);
-          setError(`SIP registration failed: ${err || 'Unknown error'}`);
+      sip.on('onCallProgress', () => {
+        if (!isCurrent()) return;
+        updateCall((prev) =>
+          prev && prev.direction === 'outgoing' && prev.status === 'connecting' ? { ...prev, status: 'ringing' } : prev
+        );
+      });
 
-          // Auto-retry registration failures too (with longer backoff)
-          const retryCount = (reconnectAttemptsRef.current || 0) + 1;
-          reconnectAttemptsRef.current = retryCount;
-          if (retryCount <= 3) {
-            const delay = retryCount * 10000;
-            if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-            reconnectTimeoutRef.current = setTimeout(() => {
-              if (mountedRef.current && activeSipConfigRef.current && sipServiceRef.current) {
-                sipServiceRef.current.register?.().catch(() => {});
-              }
-            }, delay);
+      sip.on('onCallAccepted', () => {
+        if (!isCurrent()) return;
+        stopRingtone();
+        const current = activeCallRef.current;
+        if (!current) return;
+        updateCall((prev) => (prev ? { ...prev, status: 'active', startTime: new Date() } : prev));
+        queueLogWrite(current.id, (logId) => callLogsUpdateStatusPartialUpdate(logId, { status: 'answered' }));
+      });
+
+      sip.on('onCallHeld', (held) => {
+        if (!isCurrent()) return;
+        updateCall((prev) => (prev && prev.isOnHold !== held ? { ...prev, isOnHold: held } : prev));
+      });
+
+      sip.on('onCallFailed', (err) => {
+        if (!isCurrent()) return;
+        setError(err);
+      });
+
+      sip.on('onCallQualityWarning', (warning) => {
+        if (!isCurrent()) return;
+        setError(warning);
+      });
+
+      sip.on('onCallBusyRejected', (info) => {
+        if (!isCurrent()) return;
+        const time = new Date();
+        setBusyRejected({ number: info.number, time });
+        setMissedCall({ number: info.number, time });
+      });
+
+      sip.on('onCallEnded', (reason: CallEndReason) => {
+        if (!isCurrent()) return;
+        stopRingtone();
+        const current = activeCallRef.current;
+        if (!current) return;
+
+        // `status` may already be 'ending'; the start time says whether it was ever answered.
+        const wasActive = current.status === 'active' || Boolean(current.startTime);
+        const unansweredIncoming = current.direction === 'incoming' && !wasActive;
+        let write: ((logId: number) => Promise<unknown>) | null = null;
+        let status: StatusB9eEnum | null = null;
+
+        if (current.answeredElsewhere || reason === 'transferred') {
+          // The backend already settled this leg (cancelled by the answering
+          // sibling, or complete_attended_transfer).
+          if (current.answeredElsewhere) rememberEnded(current, null);
+        } else if (reason === 'ended') {
+          if (unansweredIncoming) {
+            settleUnansweredLeg(current); // stays `ending` until the backend's verdict
+            return;
           }
-        });
+          write = (logId) => callLogsEndCallCreate(logId, { status: 'ended' });
+        } else if (reason === 'rejected') {
+          status = 'cancelled';
+        } else if (reason === 'busy') {
+          status = 'busy';
+        } else if (reason === 'no_answer') {
+          status = 'no_answer'; // the Calls "Missed" tab counts no_answer, not failed
+        } else if (reason === 'failed') {
+          if (wasActive) write = (logId) => callLogsEndCallCreate(logId, { status: 'failed' });
+          else status = 'failed';
+        }
+        if (!write && status) {
+          const finalStatus = status;
+          write = (logId) => callLogsUpdateStatusPartialUpdate(logId, { status: finalStatus });
+        }
+        if (write) queueLogWrite(current.id, write, true);
+        else logsRef.current.delete(current.id);
 
-        sipService.on('onIncomingCall', async (invitation: Invitation) => {
-          playRingtone();
+        updateCall(null);
+        bumpCallEnded();
+      });
 
-          const phoneNumber = invitation.remoteIdentity.uri.user || 'Unknown Number';
+      sip.on('onConsultationProgress', () => {
+        if (!isCurrent()) return;
+        updateCall((prev) =>
+          prev?.consultationCall && prev.consultationCall.status === 'connecting'
+            ? { ...prev, consultationCall: { ...prev.consultationCall, status: 'ringing' } }
+            : prev
+        );
+      });
 
-          try {
-            const logResponse = await callLogsLogIncomingCallCreate({
-              caller_number: phoneNumber,
-              recipient_number: activeSipConfigRef.current?.username || '',
-              direction: 'inbound' as unknown as DirectionEnum,
-            });
+      sip.on('onConsultationAccepted', () => {
+        if (!isCurrent()) return;
+        updateCall((prev) =>
+          prev?.consultationCall
+            ? { ...prev, consultationCall: { ...prev.consultationCall, status: 'active', startTime: new Date() } }
+            : prev
+        );
+      });
 
-            setActiveCall({
-              id: invitation.id,
-              logId: logResponse.id,
-              number: phoneNumber,
-              callerName: (logResponse as CallLogCreate & { client_name?: string }).client_name || undefined,
-              direction: 'incoming',
-              status: 'ringing',
-              duration: 0,
-              invitation,
-              transferPhase: 'idle',
-              consultationCall: null,
-            });
-          } catch (err) {
-            console.error('Failed to log incoming call:', err);
-          }
-        });
+      const resetConsultation = () => {
+        updateCall((prev) =>
+          prev && (prev.transferPhase !== 'idle' || prev.consultationCall)
+            ? { ...prev, transferPhase: 'idle', consultationCall: null }
+            : prev
+        );
+        sip.cancelConsultation().catch(() => {});
+      };
 
-        sipService.on('onCallAccepted', async () => {
-          stopRingtone();
-          if (!mountedRef.current) return;
+      sip.on('onConsultationEnded', () => {
+        if (!isCurrent()) return;
+        if (activeCallRef.current?.transferPhase === 'consulting') resetConsultation();
+      });
 
-          const current = activeCallRef.current;
-          if (current) {
-            setActiveCall((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    status: 'active',
-                    startTime: new Date(),
-                  }
-                : null
-            );
+      sip.on('onConsultationFailed', (err) => {
+        if (!isCurrent()) return;
+        setError(err);
+        resetConsultation();
+      });
 
-            try {
-              await callLogsUpdateStatusPartialUpdate(current.logId, {
-                status: 'answered',
-              });
-            } catch (err) {
-              console.error('Failed to update call status:', err);
-            }
-          }
-        });
-
-        sipService.on('onCallEnded', async () => {
-          stopRingtone();
-          if (!mountedRef.current) return;
-
-          const current = activeCallRef.current;
-
-          // Detect missed call: incoming + never answered (still ringing)
-          if (current && current.direction === 'incoming' && current.status === 'ringing') {
-            setMissedCall({ number: current.number, time: new Date() });
-          }
-
-          if (current) {
-            try {
-              await callLogsEndCallCreate(current.logId, {
-                status: 'ended',
-              });
-            } catch (err) {
-              console.error('Failed to end call log:', err);
-            }
-          }
-
-          setActiveCall(null);
-          setCallDuration(0);
-          setCallEndedCounter(c => c + 1);
-        });
-
-        sipService.on('onCallFailed', async (callError) => {
-          console.error('Call failed:', callError);
-          stopRingtone();
-          if (!mountedRef.current) return;
-
-          const current = activeCallRef.current;
-          if (current) {
-            try {
-              await callLogsUpdateStatusPartialUpdate(current.logId, {
-                status: 'failed',
-              });
-            } catch (err) {
-              console.error('Failed to update call status:', err);
-            }
-          }
-
-          setActiveCall(null);
-          setCallDuration(0);
-          setCallEndedCounter(c => c + 1);
-          setError(`Call failed: ${callError || 'Unknown error'}`);
-        });
-
-        // Consultation call events (for attended transfer)
-        sipService.on('onConsultationAccepted', () => {
-          setActiveCall(prev => prev ? {
-            ...prev,
-            consultationCall: prev.consultationCall ? {
-              ...prev.consultationCall,
-              status: 'active',
-              startTime: new Date(),
-            } : null,
-          } : null);
-        });
-
-        sipService.on('onConsultationEnded', () => {
-          // If still in consulting phase, auto-cancel and resume original
-          const current = activeCallRef.current;
-          if (current?.transferPhase === 'consulting') {
-            setActiveCall(prev => prev ? {
-              ...prev,
-              isOnHold: false,
-              transferPhase: 'idle',
-              consultationCall: null,
-            } : null);
-            // Resume original call audio
-            try { sipService.cancelConsultation(); } catch {}
-          }
-        });
-
-        sipService.on('onConsultationFailed', (err) => {
-          console.error('Consultation call failed:', err);
-          setActiveCall(prev => prev ? {
-            ...prev,
-            isOnHold: false,
-            transferPhase: 'idle',
-            consultationCall: null,
-          } : null);
-          setError(`Consultation failed: ${err}`);
-          // Resume original call
-          try { sipService.cancelConsultation(); } catch {}
-        });
-
-        await sipService.initialize(config);
-
-        sipServiceRef.current = sipService;
-      } catch (err: unknown) {
-        console.error('Failed to initialize SIP service:', err);
-        setSipConnecting(false);
-        setError(`Failed to initialize SIP: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      try {
+        await sip.initialize(config);
+      } catch (err) {
+        console.error('[calls] SIP initialisation failed:', err);
+        if (isCurrent()) {
+          setError(toCallError(err, 'initFailed'));
+          setSipState('failed');
+        }
+        // Leave nothing behind: the UA (and its reconnect timers) is stopped
+        // and `reconnect()` re-initialises from the config.
+        try {
+          await sip.disconnect();
+        } finally {
+          if (sipServiceRef.current === sip) sipServiceRef.current = null;
+        }
       }
     },
-    [playRingtone, stopRingtone]
+    [
+      bumpCallEnded,
+      clearRetry,
+      playRingtone,
+      queueLogWrite,
+      rememberEnded,
+      scheduleReconnect,
+      setError,
+      setSipState,
+      settleUnansweredLeg,
+      startLog,
+      stopRingtone,
+      teardownSipService,
+      updateCall,
+    ]
   );
 
   const loadSipConfiguration = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-
-      // Try user's personal phone assignment first
+      // The user's own phone assignment first
       try {
-        const { default: axios } = await import('@/api/axios');
-        const myConfigRes = await axios.get('/api/sip-configurations/my_config/');
-        const myConfig = myConfigRes.data;
-
-        if (myConfig && myConfig.sip_configuration) {
-          if (myConfig.sip_enabled === false || !myConfig.extension) {
-            // No credentials this user may register with: skip SIP.
+        const my = (await sipConfigurationsMyConfigRetrieve()) as MyConfigResponse;
+        if (my && my.sip_configuration) {
+          if (my.sip_enabled === false || !my.extension) {
             setActiveSipConfig(null);
             return;
           }
-          // User has a personal assignment — use their extension credentials
-          const sipConfig = myConfig.sip_configuration;
-          // Override username/password with the user's extension credentials
-          sipConfig.username = myConfig.extension;
-          sipConfig.password = myConfig.extension_password;
-          setActiveSipConfig(sipConfig);
+          const base = my.sip_configuration;
+          setActiveSipConfig({
+            ...base,
+            username: my.extension,
+            password: my.extension_password,
+            phone_number: my.phone_number || base.phone_number,
+            wss_url: my.wss_url ?? base.wss_url ?? null,
+            ice_servers: my.ice_servers ?? base.ice_servers ?? null,
+          });
           return;
         }
       } catch {
-        // No personal assignment, fall back to default config
+        // No personal assignment: fall back to the tenant default below.
       }
 
-      // Fallback: use default SIP config
-      const response = await sipConfigurationsList();
-      const defaultConfig = response.results.find((c: any) => c.is_default);
+      const list = await sipConfigurationsList();
+      const defaultConfig = list.results.find((c) => c.is_default);
       if (!defaultConfig) {
-        setError('No default SIP configuration found. Please configure SIP settings.');
-        setLoading(false);
+        setActiveSipConfig(null);
+        setError({ key: 'configMissing' });
         return;
       }
-
-      const webrtcConfig = await sipConfigurationsWebrtcConfigRetrieve(defaultConfig.id);
-      // Agents without an extension get blank credentials and
-      // sip_enabled=false: registering would only fail and retry, so skip it.
-      if (!isSipEnabled(webrtcConfig)) {
+      const webrtc = (await sipConfigurationsWebrtcConfigRetrieve(defaultConfig.id)) as WebrtcConfigResponse;
+      if (!isSipEnabled(webrtc)) {
         setActiveSipConfig(null);
         return;
       }
-      setActiveSipConfig(webrtcConfig);
-    } catch (err: unknown) {
-      console.error('Failed to load SIP configuration:', err);
-      setError('Failed to load SIP configuration');
+      setActiveSipConfig(webrtc);
+    } catch (err) {
+      console.error('[calls] failed to load the SIP configuration:', err);
+      setActiveSipConfig(null);
+      setError({ key: 'configLoadFailed' });
     } finally {
+      if (mountedRef.current) setLoading(false);
+    }
+  }, [setError]);
+
+  // Load (and reload on user change) while the user may use the softphone.
+  useEffect(() => {
+    if (!canUseSoftphone || !userId) {
       setLoading(false);
+      setActiveSipConfig(null);
+      return;
     }
-  }, []);
+    loadSipConfiguration();
+    return () => {
+      setActiveSipConfig(null);
+    };
+  }, [canUseSoftphone, userId, loadSipConfiguration]);
+
+  // Connect when a usable configuration is known; disconnect when it goes away.
+  useEffect(() => {
+    if (activeSipConfig && isSipEnabled(activeSipConfig)) {
+      if (!sipServiceRef.current) initializeSipService(activeSipConfig);
+      return;
+    }
+    if (sipServiceRef.current) {
+      teardownSipService();
+      updateCall(null);
+    }
+    setSipState('off');
+  }, [activeSipConfig, initializeSipService, teardownSipService, updateCall, setSipState]);
+
+  // Unmount: drop everything.
+  useEffect(
+    () => () => {
+      teardownSipService();
+    },
+    [teardownSipService]
+  );
 
   // ---------------------------------------------------------------------------
-  // Call action handlers
+  // Actions
   // ---------------------------------------------------------------------------
 
-  const makeCall = useCallback(async () => {
-    if (!dialNumber || !sipServiceRef.current) return;
-
-    if (!isDialpadOpen) {
-      setIsDialpadOpen(true);
+  const reconnect = useCallback(async () => {
+    clearRetry();
+    retryRef.current.attempts = 0;
+    const sip = sipServiceRef.current;
+    if (!sip) {
+      const config = activeSipConfigRef.current;
+      if (config && isSipEnabled(config)) await initializeSipService(config);
+      return;
     }
-
+    setSipState('connecting');
     try {
-      const logResponse = await callLogsInitiateCallCreate({
-        recipient_number: dialNumber,
-      });
+      await sip.reconnect();
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setSipState('failed');
+      setError(toCallError(err, 'networkFailed'));
+    }
+  }, [clearRetry, initializeSipService, setError, setSipState]);
 
-      setActiveCall({
-        id: logResponse.call_id,
-        logId: logResponse.id,
-        number: dialNumber,
+  const reconnectRef = useRef(reconnect);
+  useEffect(() => {
+    reconnectRef.current = reconnect;
+  }, [reconnect]);
+
+  // Network and tab visibility drive reconnects (C4).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onOnline = () => {
+      if (sipServiceRef.current || activeSipConfigRef.current) reconnectRef.current();
+    };
+    const onOffline = () => {
+      clearRetry();
+      if (sipServiceRef.current) setSipState('offline');
+    };
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') return;
+      const state = sipStateRef.current;
+      if ((state === 'failed' || state === 'reconnecting' || state === 'offline') && navigator.onLine !== false) {
+        reconnectRef.current();
+      }
+    };
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [clearRetry, setSipState]);
+
+  const openRail = useCallback(
+    (opts?: OpenRailOptions) => {
+      const number = opts?.number?.trim() || null;
+      if (number) setDialNumber(number);
+      updateRail((r) => ({
+        mode: 'open',
+        prefill: number ?? r.prefill,
+        autoDial: Boolean(number && opts?.autoDial),
+      }));
+    },
+    [setDialNumber, updateRail]
+  );
+
+  const closeRail = useCallback(() => {
+    if (activeCallRef.current) return; // only when idle
+    updateRail(() => ({ mode: 'closed', prefill: null, autoDial: false }));
+  }, [updateRail]);
+
+  const minimiseRail = useCallback(() => {
+    if (!activeCallRef.current) return; // only during a call
+    updateRail((r) => (r.mode === 'minimised' ? r : { ...r, mode: 'minimised' }));
+  }, [updateRail]);
+
+  const makeCall = useCallback(
+    async (number?: string) => {
+      const target = (number ?? dialNumberRef.current).trim();
+      if (!target) return;
+      const sip = sipServiceRef.current;
+      if (!sip || sipStateRef.current !== 'registered') {
+        setError({ key: 'notRegistered' });
+        return;
+      }
+      if (activeCallRef.current) {
+        setError({ key: 'callInProgress' });
+        return;
+      }
+
+      const callId = newCallId('out', '');
+      updateCall({
+        id: callId,
+        sipCallId: '',
+        logId: null,
+        logPending: true,
+        number: target,
         direction: 'outgoing',
         status: 'connecting',
-        duration: 0,
+        isOnHold: false,
+        isMuted: false,
         transferPhase: 'idle',
         consultationCall: null,
+        answeredElsewhere: false,
       });
-
-      await sipServiceRef.current.makeCall(dialNumber);
-
-      setActiveCall((prev) => (prev ? { ...prev, status: 'ringing' } : null));
-
+      updateRail((r) => ({ ...r, mode: 'open', autoDial: false }));
       setDialNumber('');
-    } catch (err: unknown) {
-      console.error('Failed to make call:', err);
-      setError(`Failed to make call: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      setActiveCall(null);
-    }
-  }, [dialNumber, isDialpadOpen]);
+      reserveLog(callId);
 
-  const handleAcceptCall = useCallback(async () => {
-    if (sipServiceRef.current) {
+      // Dial first; the log is written once the INVITE is on its way (C6).
+      let sipCallId: string;
       try {
-        await sipServiceRef.current.acceptCall();
-        stopRingtone();
-      } catch (err: unknown) {
-        console.error('Failed to accept call:', err);
-        setError(`Failed to accept call: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        const result = await sip.makeCall(target);
+        sipCallId = result.sipCallId;
+      } catch (err) {
+        setError(toCallError(err, 'callFailed'));
+        abandonLog(callId);
+        updateCall((prev) => (prev && prev.id === callId ? null : prev));
+        bumpCallEnded();
+        return;
       }
-    }
-  }, [stopRingtone]);
+      if (readActiveCall()?.id !== callId) return; // already ended
+      updateCall((prev) => (prev && prev.id === callId ? { ...prev, sipCallId } : prev));
+      // `sip_call_id` is the contract field (the generated type lags behind).
+      const body: CallInitiateRequest & { sip_call_id?: string } = { recipient_number: target, sip_call_id: sipCallId };
+      startLog(callId, () => callLogsInitiateCallCreate(body));
+    },
+    [abandonLog, bumpCallEnded, readActiveCall, reserveLog, setDialNumber, setError, startLog, updateCall, updateRail]
+  );
 
-  const handleRejectCall = useCallback(async () => {
+  // Click-to-call with autoDial: dial once the rail is open.
+  const makeCallRef = useRef(makeCall);
+  useEffect(() => {
+    makeCallRef.current = makeCall;
+  }, [makeCall]);
+  useEffect(() => {
+    if (rail.mode !== 'open' || !rail.autoDial || !rail.prefill) return;
+    if (activeCall || sipState !== 'registered') return;
+    const number = rail.prefill;
+    updateRail((r) => ({ ...r, autoDial: false }));
+    makeCallRef.current(number);
+  }, [rail, activeCall, sipState, updateRail]);
+
+  const acceptCall = useCallback(async () => {
+    const sip = sipServiceRef.current;
     const current = activeCallRef.current;
-    if (sipServiceRef.current && current) {
-      try {
-        await sipServiceRef.current.rejectCall();
-        stopRingtone();
-        setActiveCall(null);
-        setCallEndedCounter(c => c + 1);
-
-        await callLogsUpdateStatusPartialUpdate(current.logId, {
-          status: 'cancelled',
-        });
-      } catch (err: unknown) {
-        console.error('Failed to reject call:', err);
-      }
-    }
-  }, [stopRingtone]);
-
-  const handleEndCall = useCallback(async () => {
-    if (sipServiceRef.current) {
-      try {
-        await sipServiceRef.current.endCall();
-        stopRingtone();
-      } catch (err: unknown) {
-        console.error('Failed to end call:', err);
-      }
-    }
-  }, [stopRingtone]);
-
-  const handleToggleHold = useCallback(async () => {
-    if (!sipServiceRef.current || !activeCallRef.current) return;
-    const current = activeCallRef.current;
-    const newHoldState = !current.isOnHold;
+    if (!sip || !current || current.direction !== 'incoming' || current.status !== 'ringing') return;
+    stopRingtone();
     try {
-      await sipServiceRef.current.toggleHold(newHoldState);
-      setActiveCall(prev => prev ? { ...prev, isOnHold: newHoldState } : null);
+      await sip.acceptCall();
     } catch (err) {
-      console.error('Failed to toggle hold:', err);
+      setError(toCallError(err, 'callFailed'));
     }
-  }, []);
+  }, [setError, stopRingtone]);
 
-  const handleToggleMute = useCallback(() => {
-    if (!sipServiceRef.current) return;
-    const isMuted = sipServiceRef.current.toggleMute();
-    setActiveCall(prev => prev ? { ...prev, isMuted } : null);
-  }, []);
+  const rejectCall = useCallback(async () => {
+    const sip = sipServiceRef.current;
+    const current = activeCallRef.current;
+    if (!sip || !current || current.direction !== 'incoming' || current.status !== 'ringing') return;
+    stopRingtone();
+    try {
+      await sip.rejectCall();
+    } catch (err) {
+      setError(toCallError(err, 'callFailed'));
+    }
+  }, [setError, stopRingtone]);
 
-  const toggleDialpad = useCallback(() => {
-    setIsDialpadOpen((prev) => !prev);
-  }, []);
+  const endCall = useCallback(async () => {
+    const sip = sipServiceRef.current;
+    if (!sip || !activeCallRef.current) return;
+    stopRingtone();
+    updateCall((prev) => (prev && prev.status !== 'ending' ? { ...prev, status: 'ending' } : prev));
+    try {
+      await sip.endCall();
+    } catch (err) {
+      setError(toCallError(err, 'callFailed'));
+    }
+  }, [setError, stopRingtone, updateCall]);
+
+  const toggleHold = useCallback(async () => {
+    const sip = sipServiceRef.current;
+    const current = activeCallRef.current;
+    if (!sip || !current || current.status !== 'active') return;
+    try {
+      await sip.toggleHold(!current.isOnHold);
+    } catch (err) {
+      setError(toCallError(err, 'holdFailed'));
+    }
+  }, [setError]);
+
+  const toggleMute = useCallback(() => {
+    const sip = sipServiceRef.current;
+    if (!sip || !activeCallRef.current) return;
+    const isMuted = sip.toggleMute();
+    updateCall((prev) => (prev && prev.isMuted !== isMuted ? { ...prev, isMuted } : prev));
+  }, [updateCall]);
 
   const sendDTMF = useCallback((tone: string): boolean => {
-    if (!sipServiceRef.current) return false;
-    return sipServiceRef.current.sendDTMF(tone);
+    const sip = sipServiceRef.current;
+    if (!sip) return false;
+    return sip.sendDTMF(tone);
   }, []);
 
-  const clearMissedCall = useCallback(() => setMissedCall(null), []);
+  const failWith = useCallback(
+    (err: unknown, fallbackKey: string): never => {
+      const callError = toCallError(err, fallbackKey);
+      setError(callError);
+      throw err instanceof Error ? err : new SipCallError(callError.key, callError.params, err);
+    },
+    [setError]
+  );
 
-  const transferCall = useCallback(async (targetNumber: string) => {
-    if (!sipServiceRef.current) throw new Error('No SIP service');
-    await sipServiceRef.current.transferCall(targetNumber);
-  }, []);
+  const transferCall = useCallback(
+    async (targetNumber: string) => {
+      const sip = sipServiceRef.current;
+      const current = activeCallRef.current;
+      if (!sip || !current || current.status !== 'active') {
+        failWith(new SipCallError('noActiveCall'), 'transferFailed');
+      }
+      const callId = current!.id;
+      try {
+        // Once the PBX accepted the REFER, settle our leg as transferred
+        // before the SIP leg ends (its 'transferred' end writes nothing).
+        await sip!.transferCall(targetNumber, () =>
+          queueLogWrite(callId, (logId) => callLogsTransferCallCreate(logId, { transfer_to: targetNumber }), true)
+        );
+      } catch (err) {
+        failWith(err, 'transferFailed');
+      }
+    },
+    [failWith, queueLogWrite]
+  );
 
-  const startAttendedTransfer = useCallback(async (targetNumber: string, targetName?: string) => {
-    if (!sipServiceRef.current || !activeCallRef.current) throw new Error('No active call');
+  const startAttendedTransfer = useCallback(
+    async (targetNumber: string, targetName?: string) => {
+      const sip = sipServiceRef.current;
+      const current = activeCallRef.current;
+      if (!sip || !current || current.status !== 'active') {
+        failWith(new SipCallError('noActiveCall'), 'consultationFailed');
+      }
+      const call = current!;
+      const logId = await awaitLogId(call.id);
+      if (logId === null) {
+        failWith(new SipCallError('logFailed'), 'consultationFailed');
+      }
 
-    const current = activeCallRef.current;
+      try {
+        // 1. Log the consultation on the backend
+        const res = await callLogsInitiateConsultationCreate(logId!, { target_number: targetNumber });
 
-    try {
-      // 1. Log consultation on backend FIRST (before SIP)
-      const { default: axios } = await import('@/api/axios');
-      const res = await axios.post(`/api/call-logs/${current.logId}/initiate_consultation/`, {
-        target_number: targetNumber,
-      });
-      const consultationLogId = res.data.consultation_log_id;
+        // 2. Reflect it in the UI
+        updateCall((prev) =>
+          prev && prev.id === call.id
+            ? {
+                ...prev,
+                transferPhase: 'consulting',
+                consultationCall: {
+                  targetNumber,
+                  targetName,
+                  status: 'connecting',
+                  logId: res.consultation_log_id,
+                },
+              }
+            : prev
+        );
 
-      // 2. Update state to consulting
-      setActiveCall(prev => prev ? {
-        ...prev,
-        isOnHold: true,
-        transferPhase: 'consulting',
-        consultationCall: {
-          targetNumber,
-          targetName,
-          status: 'connecting',
-          duration: 0,
-          logId: consultationLogId,
-        },
-      } : null);
-
-      // 3. Start SIP consultation call (puts original on hold internally)
-      await sipServiceRef.current.startConsultation(targetNumber);
-
-      // 4. Update status to ringing
-      setActiveCall(prev => prev ? {
-        ...prev,
-        consultationCall: prev.consultationCall ? {
-          ...prev.consultationCall,
-          status: 'ringing',
-        } : null,
-      } : null);
-    } catch (err) {
-      console.error('Failed to start attended transfer:', err);
-      // Revert state — SIP session cleanup handled by SipService on failure
-      setActiveCall(prev => prev ? {
-        ...prev,
-        isOnHold: false,
-        transferPhase: 'idle',
-        consultationCall: null,
-      } : null);
-      throw err;
-    }
-  }, []);
+        // 3. Hold the main call and dial the target (hold state arrives via onCallHeld)
+        await sip!.startConsultation(targetNumber);
+      } catch (err) {
+        updateCall((prev) =>
+          prev && prev.id === call.id ? { ...prev, transferPhase: 'idle', consultationCall: null } : prev
+        );
+        failWith(err, 'consultationFailed');
+      }
+    },
+    [awaitLogId, failWith, updateCall]
+  );
 
   const completeTransfer = useCallback(async () => {
-    if (!sipServiceRef.current || !activeCallRef.current) return;
-
+    const sip = sipServiceRef.current;
     const current = activeCallRef.current;
-    if (!current.consultationCall?.logId) {
-      setError('Cannot complete transfer: consultation not properly logged');
-      return;
+    if (!sip || !current) return;
+    const consultation = current.consultationCall;
+    if (!consultation || consultation.logId === null || consultation.logId === undefined) {
+      failWith(new SipCallError('noConsultation'), 'transferFailed');
     }
-
+    const logId = await awaitLogId(current.id);
     try {
-      await sipServiceRef.current.completeAttendedTransfer();
-
-      // Log on backend
-      const { default: axios } = await import('@/api/axios');
-      await axios.post(`/api/call-logs/${current.logId}/complete_attended_transfer/`, {
-        consultation_log_id: current.consultationCall.logId,
-        target_number: current.consultationCall.targetNumber,
-      });
-
-      setActiveCall(null);
-      setCallDuration(0);
-      setCallEndedCounter(c => c + 1);
-    } catch (err) {
-      console.error('Failed to complete transfer:', err);
-      setError('Transfer failed. Try again or cancel.');
-    }
-  }, []);
-
-  const mergeConference = useCallback(async () => {
-    if (!sipServiceRef.current || !activeCallRef.current) return;
-
-    const current = activeCallRef.current;
-    try {
-      // Tell backend to merge channels via AMI into ConfBridge
-      const { default: axios } = await import('@/api/axios');
-      await axios.post(`/api/call-logs/${current.logId}/merge_conference/`, {
-        consultation_log_id: current.consultationCall?.logId,
-      });
-
-      // End both local SIP sessions — the ConfBridge handles audio now
-      // Agent disconnects, customer and transfer target stay in conference
-      await sipServiceRef.current.endCall();
-
-      setActiveCall(null);
-      setCallDuration(0);
-      setCallEndedCounter(c => c + 1);
-    } catch (err) {
-      console.error('Failed to merge conference:', err);
-      setError('Failed to merge calls into conference');
-    }
-  }, []);
-
-  const cancelTransfer = useCallback(async () => {
-    if (!sipServiceRef.current || !activeCallRef.current) return;
-
-    const current = activeCallRef.current;
-    try {
-      await sipServiceRef.current.cancelConsultation();
-
-      // Log on backend
-      if (current.consultationCall?.logId) {
-        const { default: axios } = await import('@/api/axios');
-        await axios.post(`/api/call-logs/${current.logId}/cancel_consultation/`, {
-          consultation_log_id: current.consultationCall.logId,
+      await sip.completeAttendedTransfer();
+      if (logId !== null) {
+        await callLogsCompleteAttendedTransferCreate(logId, {
+          consultation_log_id: consultation!.logId as number,
+          target_number: consultation!.targetNumber,
         });
       }
-
-      setActiveCall(prev => prev ? {
-        ...prev,
-        isOnHold: false,
-        transferPhase: 'idle',
-        consultationCall: null,
-      } : null);
+      logsRef.current.delete(current.id);
+      // The PBX's BYE may already have ended the call through onCallEnded('transferred').
+      if (readActiveCall()?.id === current.id) {
+        updateCall(null);
+        bumpCallEnded();
+      }
     } catch (err) {
-      console.error('Failed to cancel transfer:', err);
+      failWith(err, 'transferFailed');
     }
+  }, [awaitLogId, bumpCallEnded, failWith, readActiveCall, updateCall]);
+
+  const mergeConference = useCallback(async () => {
+    const sip = sipServiceRef.current;
+    const current = activeCallRef.current;
+    if (!sip || !current) return;
+    const consultation = current.consultationCall;
+    if (!consultation || consultation.logId === null || consultation.logId === undefined) {
+      failWith(new SipCallError('noConsultation'), 'mergeFailed');
+    }
+    const logId = await awaitLogId(current.id);
+    if (logId === null) {
+      failWith(new SipCallError('logFailed'), 'mergeFailed');
+    }
+    try {
+      // The backend bridges both channels into a ConfBridge via AMI; our
+      // legs then hang up without a further log write.
+      await callLogsMergeConferenceCreate(logId!, { consultation_log_id: consultation!.logId as number });
+      logsRef.current.delete(current.id);
+      updateCall((prev) => (prev && prev.id === current.id ? null : prev));
+      await sip.endCall();
+      bumpCallEnded();
+    } catch (err) {
+      failWith(err, 'mergeFailed');
+    }
+  }, [awaitLogId, bumpCallEnded, failWith, updateCall]);
+
+  const cancelTransfer = useCallback(async () => {
+    const sip = sipServiceRef.current;
+    const current = activeCallRef.current;
+    if (!sip || !current) return;
+    const consultation = current.consultationCall;
+    try {
+      await sip.cancelConsultation();
+      if (consultation?.logId !== null && consultation?.logId !== undefined) {
+        const logId = await awaitLogId(current.id);
+        if (logId !== null) {
+          await callLogsCancelConsultationCreate(logId, { consultation_log_id: consultation.logId });
+        }
+      }
+    } catch (err) {
+      failWith(err, 'transferFailed');
+    } finally {
+      updateCall((prev) =>
+        prev && prev.id === current.id && (prev.transferPhase !== 'idle' || prev.consultationCall)
+          ? { ...prev, transferPhase: 'idle', consultationCall: null }
+          : prev
+      );
+    }
+  }, [awaitLogId, failWith, updateCall]);
+
+  const clearMissedCall = useCallback(() => {
+    setMissedCall(null);
+    setBusyRejected(null);
   }, []);
 
   // ---------------------------------------------------------------------------
-  // Effects
+  // Backend call events: answered elsewhere + list refresh
   // ---------------------------------------------------------------------------
 
-  // Check user's group-level feature keys (same logic as sidebar)
-  const userHasIpCalling = useMemo(() => {
-    if (user?.is_staff || user?.is_superuser) return true;
-    const profile = userProfile as Record<string, unknown> | undefined;
-    if (!profile?.feature_keys) return false;
-    let keys: string[] = [];
-    if (typeof profile.feature_keys === 'string') {
-      try { keys = JSON.parse(profile.feature_keys); } catch { return false; }
-    } else if (Array.isArray(profile.feature_keys)) {
-      keys = profile.feature_keys;
-    }
-    return keys.includes('ip_calling');
-  }, [user, userProfile]);
+  useEffect(
+    () =>
+      onCallEvent((call: CallEventPayload) => {
+        queryClient.invalidateQueries({ queryKey: ['calls'] });
 
-  // On mount: check feature & load SIP config
-  useEffect(() => {
-    if (!userHasIpCalling) {
-      setLoading(false);
-      return;
-    }
+        const me = userIdRef.current;
+        const byOther = call.handled_by !== null && call.handled_by !== undefined && call.handled_by !== me;
+        const answeredByOther = call.status === 'answered' && byOther;
+        const sameSip = (leg: ActiveCall) => Boolean(call.sip_call_id && leg.sipCallId && call.sip_call_id === leg.sipCallId);
+        const samePbx = (leg: ActiveCall) => Boolean(call.pbx_call_id && leg.pbxCallId && call.pbx_call_id === leg.pbxCallId);
+        // Our own leg relabelled `cancelled`, or a sibling's `answered`.
+        const settlesElsewhere = (leg: ActiveCall) =>
+          (sameSip(leg) || samePbx(leg)) && (answeredByOther || (call.status === 'cancelled' && sameSip(leg)));
+        const handledBy = answeredByOther ? (call.handled_by as number) : null;
 
-    loadSipConfiguration();
+        const current = activeCallRef.current;
+        if (current && (sameSip(current) || samePbx(current))) {
+          if (current.status === 'active') return; // we are on this call ourselves
+          if (settlesElsewhere(current)) markAnsweredElsewhere(current, handledBy);
+          return;
+        }
 
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
-      }
-      if (sipServiceRef.current) {
-        sipServiceRef.current.disconnect();
-        sipServiceRef.current = null;
-      }
-      // Clean up audio elements to prevent media stream leaks
-      if (localAudioRef.current) {
-        localAudioRef.current.srcObject = null;
-      }
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = null;
-      }
-      stopRingtone();
-      if (callTimerRef.current) {
-        clearInterval(callTimerRef.current);
-        callTimerRef.current = null;
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userHasIpCalling]);
-
-  // When activeSipConfig changes and audio refs are ready, initialise SIP
-  useEffect(() => {
-    if (
-      activeSipConfig &&
-      isSipEnabled(activeSipConfig) &&
-      localAudioRef.current &&
-      remoteAudioRef.current &&
-      !sipServiceRef.current
-    ) {
-      initializeSipService(activeSipConfig);
-    }
-  }, [activeSipConfig, initializeSipService]);
-
-  // Call duration timer
-  useEffect(() => {
-    if (activeCall?.status === 'active' && activeCall.startTime) {
-      const startMs = activeCall.startTime.getTime();
-      callTimerRef.current = setInterval(() => {
-        setCallDuration(Math.floor((Date.now() - startMs) / 1000));
-      }, 1000);
-    } else {
-      if (callTimerRef.current) {
-        clearInterval(callTimerRef.current);
-        callTimerRef.current = null;
-      }
-      setCallDuration(0);
-    }
-
-    return () => {
-      if (callTimerRef.current) {
-        clearInterval(callTimerRef.current);
-      }
-    };
-  }, [activeCall?.status, activeCall?.startTime]);
+        // The leg is already gone (CANCEL before the event): settle it late.
+        for (const recent of recentEndedRef.current.values()) {
+          if (recent.call.status === 'active' || Boolean(recent.call.startTime)) continue;
+          if (settlesElsewhere(recent.call)) markAnsweredElsewhere(recent.call, handledBy);
+        }
+      }),
+    [markAnsweredElsewhere, queryClient]
+  );
 
   // ---------------------------------------------------------------------------
-  // Context value
+  // Context values
   // ---------------------------------------------------------------------------
 
-  const contextValue: CallContextValue = {
-    activeCall,
-    callDuration,
-    sipRegistered,
-    sipConnecting,
-    activeSipConfig,
-    dialNumber,
-    error,
-    loading,
-    isDialpadOpen,
-    setDialNumber,
-    makeCall,
-    handleAcceptCall,
-    handleRejectCall,
-    handleEndCall,
-    handleToggleHold,
-    handleToggleMute,
-    setError,
-    setIsDialpadOpen,
-    toggleDialpad,
-    callEndedCounter,
-    sendDTMF,
-    transferCall,
-    startAttendedTransfer,
-    completeTransfer,
-    cancelTransfer,
-    mergeConference,
-    missedCall,
-    clearMissedCall,
-  };
+  const stateValue = useMemo<CallStateValue>(
+    () => ({
+      activeCall,
+      sipState,
+      activeSipConfig,
+      dialNumber,
+      error,
+      loading,
+      rail,
+      callEndedCounter,
+      missedCall,
+      busyRejected,
+      answeredElsewhereNotice,
+      soundBlocked,
+    }),
+    [
+      activeCall,
+      sipState,
+      activeSipConfig,
+      dialNumber,
+      error,
+      loading,
+      rail,
+      callEndedCounter,
+      missedCall,
+      busyRejected,
+      answeredElsewhereNotice,
+      soundBlocked,
+    ]
+  );
+
+  const actionsValue = useMemo<CallActionsValue>(
+    () => ({
+      setDialNumber,
+      makeCall,
+      acceptCall,
+      rejectCall,
+      endCall,
+      toggleHold,
+      toggleMute,
+      sendDTMF,
+      transferCall,
+      startAttendedTransfer,
+      completeTransfer,
+      cancelTransfer,
+      mergeConference,
+      openRail,
+      closeRail,
+      minimiseRail,
+      reconnect,
+      clearMissedCall,
+      clearError,
+      unlockSound,
+    }),
+    [
+      setDialNumber,
+      makeCall,
+      acceptCall,
+      rejectCall,
+      endCall,
+      toggleHold,
+      toggleMute,
+      sendDTMF,
+      transferCall,
+      startAttendedTransfer,
+      completeTransfer,
+      cancelTransfer,
+      mergeConference,
+      openRail,
+      closeRail,
+      minimiseRail,
+      reconnect,
+      clearMissedCall,
+      clearError,
+      unlockSound,
+    ]
+  );
 
   return (
-    <CallContext.Provider value={contextValue}>
-      {children}
-      {/* Hidden audio elements for SIP — must live in the provider so they
-          persist across page navigations. */}
-      <audio ref={localAudioRef} autoPlay muted style={{ display: 'none' }} />
-      <audio ref={remoteAudioRef} autoPlay style={{ display: 'none' }} />
-    </CallContext.Provider>
+    <CallActionsContext.Provider value={actionsValue}>
+      <CallStateContext.Provider value={stateValue}>
+        {children}
+        {/* Hidden audio elements for SIP: they live in the provider so they
+            persist across page navigations. */}
+        <audio ref={localAudioRef} autoPlay muted style={{ display: 'none' }} />
+        <audio ref={remoteAudioRef} autoPlay style={{ display: 'none' }} />
+      </CallStateContext.Provider>
+    </CallActionsContext.Provider>
   );
 };
 
 // ---------------------------------------------------------------------------
-// Hook
+// Hooks
 // ---------------------------------------------------------------------------
 
-export const useCall = (): CallContextValue => {
-  const context = useContext(CallContext);
+export function useCallState(): CallStateValue {
+  const context = useContext(CallStateContext);
   if (context === undefined) {
-    throw new Error('useCall must be used within a CallProvider');
+    throw new Error('useCallState must be used within a CallProvider');
   }
   return context;
-};
+}
+
+export function useCallActions(): CallActionsValue {
+  const context = useContext(CallActionsContext);
+  if (context === undefined) {
+    throw new Error('useCallActions must be used within a CallProvider');
+  }
+  return context;
+}

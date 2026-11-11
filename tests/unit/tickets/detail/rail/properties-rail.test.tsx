@@ -14,6 +14,10 @@ vi.mock("next/navigation", async () => (await import("../helpers")).navigationMo
 vi.mock("@/api/axios", () => ({ default: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }));
 vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/services/auth", () => ({ authService: { isAuthenticated: () => true } }));
+vi.mock("@/hooks/useClickToCall", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/useClickToCall")>()),
+  useClickToCall: () => ({ enabled: false, call: vi.fn() }),
+}));
 vi.mock("@/app/(tenant)/tickets/_contexts/tickets-realtime-context", () => ({
   useTicketsRealtime: () => ({
     wsReady: true,

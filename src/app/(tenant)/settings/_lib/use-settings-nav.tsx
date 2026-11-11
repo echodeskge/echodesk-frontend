@@ -7,6 +7,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { useUserProfile } from "@/hooks/useUserProfile"
 import { profileHasPermission } from "@/lib/backendPermissions"
+import { parseFeatureKeys } from "@/lib/calling-access"
 import {
   activeSettingsId,
   filterSettingsNav,
@@ -29,12 +30,9 @@ export function useSettingsNav() {
 
   const isStaffOrAdmin = Boolean(user?.is_staff || user?.is_superuser)
 
-  // Use feature_keys from user profile (same as main sidebar)
-  const userFeatureKeys: string[] = userProfile?.feature_keys
-    ? typeof userProfile.feature_keys === "string"
-      ? JSON.parse(userProfile.feature_keys)
-      : userProfile.feature_keys
-    : []
+  // Use feature_keys from user profile (same as main sidebar); a bad value
+  // gives [] instead of throwing out of the settings shell.
+  const userFeatureKeys: string[] = parseFeatureKeys(userProfile?.feature_keys)
 
   const hasFeatureAccess = (keyOrKeys: string | string[]): boolean => {
     if (Array.isArray(keyOrKeys)) return keyOrKeys.some((key) => hasFeatureAccess(key))

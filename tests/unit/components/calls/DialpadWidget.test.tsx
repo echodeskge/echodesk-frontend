@@ -1,533 +1,237 @@
 /**
- * Tests for DialpadWidget component.
- * Verifies feature gating (ip_calling), SIP config requirement,
- * phone icon button, status indicators, missed call notification,
- * callback behavior, and dismiss functionality.
+ * DialpadWidget: the phone launcher (visibility, states, dock offset next to
+ * the call rail), the missed-call toast ("Call back" opens the rail with the
+ * number) and the toast stack. The softphone itself is the call rail.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { NextIntlClientProvider } from "next-intl";
+import React from "react";
 
-// ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
+import en from "@/i18n/messages/en.json";
+import type { CallActionsValue, CallStateValue } from "@/contexts/call-types";
 
-vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string, values?: Record<string, unknown>) => {
-    const translations: Record<string, string> = {
-      missedCall: "Missed Call",
-      callBack: "Call Back",
-      dismiss: "Dismiss",
-      openPhone: "Open phone",
-      closePhone: "Close phone",
-      phoneInCall: "Call in progress",
-      phoneRinging: "Incoming call",
-      phoneReady: "Ready for calls",
-      phoneOffline: "Not registered",
-      missedCount: "{count} missed",
-    };
-    let out = translations[key] || key;
-    for (const [k, v] of Object.entries(values ?? {})) out = out.replace(`{${k}}`, String(v));
-    return out;
-  },
+const h = vi.hoisted(() => ({
+  state: null as unknown as CallStateValue,
+  actions: null as unknown as CallActionsValue,
+  access: { canUseSoftphone: true, canViewCalls: true, tenantHasCalling: true, userHasCalling: true },
 }));
-
-const mockToggleDialpad = vi.fn();
-const mockSetDialNumber = vi.fn();
-const mockSetIsDialpadOpen = vi.fn();
-const mockClearMissedCall = vi.fn();
-
-const mockCallContextValue = {
-  activeCall: null as any,
-  callDuration: 0,
-  sipRegistered: false,
-  sipConnecting: false,
-  activeSipConfig: null as any,
-  dialNumber: "",
-  error: "",
-  loading: false,
-  isDialpadOpen: false,
-  setDialNumber: mockSetDialNumber,
-  makeCall: vi.fn(),
-  handleAcceptCall: vi.fn(),
-  handleRejectCall: vi.fn(),
-  handleEndCall: vi.fn(),
-  handleToggleHold: vi.fn(),
-  handleToggleMute: vi.fn(),
-  setError: vi.fn(),
-  setIsDialpadOpen: mockSetIsDialpadOpen,
-  toggleDialpad: mockToggleDialpad,
-  callEndedCounter: 0,
-  sendDTMF: vi.fn(),
-  transferCall: vi.fn(),
-  startAttendedTransfer: vi.fn(),
-  completeTransfer: vi.fn(),
-  cancelTransfer: vi.fn(),
-  mergeConference: vi.fn(),
-  missedCall: null as { number: string; time: Date } | null,
-  clearMissedCall: mockClearMissedCall,
-};
 
 vi.mock("@/contexts/CallContext", () => ({
-  useCall: () => mockCallContextValue,
+  useCallState: () => h.state,
+  useCallActions: () => h.actions,
 }));
-
-const mockAuthUser = {
-  id: 1,
-  is_staff: false,
-  is_superuser: false,
-};
-
-vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({
-    user: mockAuthUser,
-    token: "token",
-    isAuthenticated: true,
-    loading: false,
-    login: vi.fn(),
-    logout: vi.fn(),
-    checkAuth: vi.fn(),
-  }),
-}));
-
-let mockUserProfile: Record<string, any> | null = null;
-
-vi.mock("@/hooks/useUserProfile", () => ({
-  useUserProfile: () => ({
-    data: mockUserProfile,
-    isLoading: false,
-    error: null,
-  }),
-}));
-
-let mockSidebarOpen = false;
-
-vi.mock("@/contexts/IncomingCallSidebarContext", () => ({
-  useIncomingCallSidebar: () => ({ isOpen: mockSidebarOpen }),
-}));
-
-// Mock the DialpadPopup (heavy component we don't need to test here)
-vi.mock("@/components/calls/DialpadPopup", () => ({
-  DialpadPopup: ({ onClose }: { onClose: () => void }) => (
-    <div data-testid="dialpad-popup">
-      <button onClick={onClose}>Close Dialpad</button>
-    </div>
-  ),
-}));
-
-// Mock IncomingCallNotification (tested separately)
+vi.mock("@/lib/calling-access", () => ({ useCallingAccess: () => h.access }));
 vi.mock("@/components/calls/IncomingCallNotification", () => ({
-  IncomingCallNotification: () => (
-    <div data-testid="incoming-call-notification" />
-  ),
-}));
-
-// Mock date-fns format
-vi.mock("date-fns", () => ({
-  format: (date: Date, formatStr: string) => {
-    if (formatStr === "HH:mm") {
-      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-    }
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? "PM" : "AM";
-    const displayHours = hours % 12 || 12;
-    return `${displayHours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
-  },
+  IncomingCallNotification: () => <div data-testid="incoming-call-notification" />,
 }));
 
 import DialpadWidget from "@/components/calls/DialpadWidget";
+import { __resetDockForTests, getDockState, setCallRailWidth } from "@/components/TeamChat/floatingDock";
+import { makeActions, makeActiveCall, makeState } from "./rail/rail-test-utils";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+const closedRail = { mode: "closed" as const, prefill: null, autoDial: false };
+const openRail = { mode: "open" as const, prefill: null, autoDial: false };
 
-function makeSipConfig() {
-  return {
-    id: 1,
-    name: "Test PBX",
-    sip_server: "pbx.echodesk.ge",
-    sip_port: 8089,
-    username: "100",
-    password: "testpass",
-    realm: "pbx.echodesk.ge",
-    is_active: true,
-    is_default: true,
-    user_assignments: [],
-  };
+function renderWidget() {
+  return render(
+    <NextIntlClientProvider locale="en" messages={en}>
+      <DialpadWidget />
+    </NextIntlClientProvider>
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+const trigger = () => document.querySelector("[data-dialpad-trigger]") as HTMLElement;
 
-describe("DialpadWidget", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+beforeEach(() => {
+  __resetDockForTests();
+  h.state = makeState({ rail: closedRail });
+  h.actions = makeActions();
+  h.access.canUseSoftphone = true;
+});
 
-    // Reset to defaults
-    mockCallContextValue.activeCall = null;
-    mockCallContextValue.sipRegistered = false;
-    mockCallContextValue.activeSipConfig = null;
-    mockCallContextValue.isDialpadOpen = false;
-    mockCallContextValue.missedCall = null;
-    mockAuthUser.is_staff = false;
-    mockAuthUser.is_superuser = false;
-    mockUserProfile = null;
-    mockSidebarOpen = false;
+describe("visibility", () => {
+  it("renders nothing without softphone access", () => {
+    h.access.canUseSoftphone = false;
+    const { container } = renderWidget();
+    expect(container.firstChild).toBeNull();
+    expect(getDockState().dialpadPresent).toBe(false);
   });
 
-  // -----------------------------------------------------------------------
-  // Feature gating
-  // -----------------------------------------------------------------------
-
-  describe("feature gating", () => {
-    it("returns null when user does not have ip_calling feature", () => {
-      mockUserProfile = { feature_keys: [] };
-      mockCallContextValue.activeSipConfig = makeSipConfig();
-
-      const { container } = render(<DialpadWidget />);
-      expect(container.firstChild).toBeNull();
-    });
-
-    it("returns null when feature_keys is missing", () => {
-      mockUserProfile = {};
-      mockCallContextValue.activeSipConfig = makeSipConfig();
-
-      const { container } = render(<DialpadWidget />);
-      expect(container.firstChild).toBeNull();
-    });
-
-    it("renders for staff users even without explicit ip_calling", () => {
-      mockAuthUser.is_staff = true;
-      mockUserProfile = { feature_keys: [] };
-      mockCallContextValue.activeSipConfig = makeSipConfig();
-
-      const { container } = render(<DialpadWidget />);
-      expect(container.firstChild).not.toBeNull();
-    });
-
-    it("renders for superuser even without explicit ip_calling", () => {
-      mockAuthUser.is_superuser = true;
-      mockUserProfile = { feature_keys: [] };
-      mockCallContextValue.activeSipConfig = makeSipConfig();
-
-      const { container } = render(<DialpadWidget />);
-      expect(container.firstChild).not.toBeNull();
-    });
-
-    it("renders when user has ip_calling in feature_keys array", () => {
-      mockUserProfile = { feature_keys: ["ip_calling"] };
-      mockCallContextValue.activeSipConfig = makeSipConfig();
-
-      const { container } = render(<DialpadWidget />);
-      expect(container.firstChild).not.toBeNull();
-    });
-
-    it("renders when user has ip_calling in feature_keys JSON string", () => {
-      mockUserProfile = {
-        feature_keys: JSON.stringify(["ip_calling", "other"]),
-      };
-      mockCallContextValue.activeSipConfig = makeSipConfig();
-
-      const { container } = render(<DialpadWidget />);
-      expect(container.firstChild).not.toBeNull();
-    });
+  it("renders nothing without a SIP config", () => {
+    h.state = makeState({ rail: closedRail, activeSipConfig: null });
+    const { container } = renderWidget();
+    expect(container.firstChild).toBeNull();
   });
 
-  // -----------------------------------------------------------------------
-  // SIP config requirement
-  // -----------------------------------------------------------------------
+  it("publishes its presence to the dock while visible", () => {
+    const { unmount } = renderWidget();
+    expect(trigger()).not.toBeNull();
+    expect(getDockState().dialpadPresent).toBe(true);
+    unmount();
+    expect(getDockState().dialpadPresent).toBe(false);
+  });
+});
 
-  describe("SIP config requirement", () => {
-    it("returns null when no SIP config is loaded", () => {
-      mockAuthUser.is_staff = true;
-      mockUserProfile = { feature_keys: ["ip_calling"] };
-      mockCallContextValue.activeSipConfig = null;
-
-      const { container } = render(<DialpadWidget />);
-      expect(container.firstChild).toBeNull();
-    });
+describe("launcher", () => {
+  it("opens the rail when closed", async () => {
+    const user = userEvent.setup();
+    renderWidget();
+    expect(trigger()).toHaveAttribute("aria-expanded", "false");
+    await user.click(trigger());
+    expect(h.actions.openRail).toHaveBeenCalledTimes(1);
+    expect(h.actions.closeRail).not.toHaveBeenCalled();
   });
 
-  // -----------------------------------------------------------------------
-  // Phone icon button
-  // -----------------------------------------------------------------------
+  it("closes the open rail when idle and minimises it during a call", async () => {
+    const user = userEvent.setup();
+    h.state = makeState({ rail: openRail });
+    const { rerender } = renderWidget();
+    expect(trigger()).toHaveAttribute("aria-expanded", "true");
+    expect(trigger()).toHaveAccessibleName("Close phone · Ready for calls");
+    await user.click(trigger());
+    expect(h.actions.closeRail).toHaveBeenCalledTimes(1);
 
-  describe("phone icon button", () => {
-    beforeEach(() => {
-      mockAuthUser.is_staff = true;
-      mockUserProfile = { feature_keys: ["ip_calling"] };
-      mockCallContextValue.activeSipConfig = makeSipConfig();
-    });
-
-    it("renders floating phone button", () => {
-      render(<DialpadWidget />);
-
-      // The button should have data-dialpad-trigger attribute
-      const trigger = document.querySelector("[data-dialpad-trigger]");
-      expect(trigger).not.toBeNull();
-    });
-
-    it("calls toggleDialpad when clicked", async () => {
-      const user = userEvent.setup();
-      render(<DialpadWidget />);
-
-      const trigger = document.querySelector(
-        "[data-dialpad-trigger]"
-      ) as HTMLElement;
-      await user.click(trigger);
-
-      expect(mockToggleDialpad).toHaveBeenCalledTimes(1);
-    });
+    h.state = makeState({ rail: openRail, activeCall: makeActiveCall() });
+    rerender(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <DialpadWidget />
+      </NextIntlClientProvider>
+    );
+    await user.click(trigger());
+    expect(h.actions.minimiseRail).toHaveBeenCalledTimes(1);
+    expect(h.actions.closeRail).toHaveBeenCalledTimes(1);
   });
 
-  // -----------------------------------------------------------------------
-  // Status indicators
-  // -----------------------------------------------------------------------
-
-  describe("status indicators", () => {
-    beforeEach(() => {
-      mockAuthUser.is_staff = true;
-      mockUserProfile = { feature_keys: ["ip_calling"] };
-      mockCallContextValue.activeSipConfig = makeSipConfig();
-    });
-
-    const trigger = () => document.querySelector("[data-dialpad-trigger]") as HTMLElement;
-
-    it("shows the green ready dot when SIP is registered and no active call", () => {
-      mockCallContextValue.sipRegistered = true;
-      mockCallContextValue.activeCall = null;
-
-      render(<DialpadWidget />);
-
-      expect(trigger()).toHaveAttribute("data-phone-state", "ready");
-      expect(screen.getByTestId("phone-ready-dot")).toHaveClass("bg-ed-green");
-      expect(trigger()).toHaveAccessibleName("Open phone · Ready for calls");
-    });
-
-    it("turns green with a red dot during an active call (not ringing)", () => {
-      mockCallContextValue.sipRegistered = true;
-      mockCallContextValue.activeCall = {
-        id: "test",
-        logId: 1,
-        number: "+995555123456",
-        direction: "outgoing",
-        status: "active",
-        duration: 0,
-        transferPhase: "idle",
-        consultationCall: null,
-      };
-
-      render(<DialpadWidget />);
-
-      expect(trigger()).toHaveAttribute("data-phone-state", "in-call");
-      expect(trigger()).toHaveClass("bg-ed-green");
-      expect(screen.getByTestId("phone-in-call-dot")).toHaveClass("bg-destructive");
-      expect(trigger()).toHaveAccessibleName("Open phone · Call in progress");
-    });
-
-    it("rings (ed-ring halo on the button) during an incoming call", () => {
-      mockCallContextValue.sipRegistered = true;
-      mockCallContextValue.activeCall = {
-        id: "test",
-        logId: 1,
-        number: "+995555123456",
-        direction: "incoming",
-        status: "ringing",
-        duration: 0,
-        transferPhase: "idle",
-        consultationCall: null,
-      };
-
-      render(<DialpadWidget />);
-
-      expect(trigger()).toHaveAttribute("data-phone-state", "ringing");
-      expect(trigger().className).toContain("motion-safe:animate-ed-ring");
-      expect(trigger().style.getPropertyValue("--ring-c")).toBe("var(--green)");
-      expect(document.querySelector(".animate-ping")).toBeNull();
-    });
-
-    it("does not show the ready dot when not registered", () => {
-      mockCallContextValue.sipRegistered = false;
-      mockCallContextValue.activeCall = null;
-
-      render(<DialpadWidget />);
-
-      expect(trigger()).toHaveAttribute("data-phone-state", "offline");
-      expect(screen.queryByTestId("phone-ready-dot")).toBeNull();
-      expect(trigger()).toHaveAccessibleName("Open phone · Not registered");
-    });
-
-    it("reports the popup state through aria-expanded", () => {
-      mockCallContextValue.isDialpadOpen = true;
-      render(<DialpadWidget />);
-      expect(trigger()).toHaveAttribute("aria-expanded", "true");
-      expect(trigger().tagName).toBe("BUTTON");
-    });
-
-    it("counts missed calls on a destructive badge until the phone is opened", () => {
-      mockCallContextValue.sipRegistered = true;
-      mockCallContextValue.missedCall = { number: "+995555999888", time: new Date(2026, 3, 15, 14, 30) };
-      const { rerender } = render(<DialpadWidget />);
-      expect(screen.getByTestId("phone-missed-badge")).toHaveTextContent("1");
-      expect(screen.queryByTestId("phone-ready-dot")).toBeNull();
-
-      mockCallContextValue.missedCall = { number: "+995555111222", time: new Date(2026, 3, 15, 14, 40) };
-      rerender(<DialpadWidget />);
-      expect(screen.getByTestId("phone-missed-badge")).toHaveTextContent("2");
-      expect(trigger()).toHaveAccessibleName("Open phone · Ready for calls · 2 missed");
-
-      mockCallContextValue.isDialpadOpen = true;
-      rerender(<DialpadWidget />);
-      expect(screen.queryByTestId("phone-missed-badge")).toBeNull();
-    });
+  it("sits left of the open call rail (dock offset)", () => {
+    renderWidget();
+    expect(trigger().style.right).toBe("12px");
+    act(() => setCallRailWidth(320));
+    expect(trigger().style.right).toBe("332px");
   });
 
-  // -----------------------------------------------------------------------
-  // Missed call notification
-  // -----------------------------------------------------------------------
-
-  describe("missed call notification", () => {
-    beforeEach(() => {
-      mockAuthUser.is_staff = true;
-      mockUserProfile = { feature_keys: ["ip_calling"] };
-      mockCallContextValue.activeSipConfig = makeSipConfig();
-    });
-
-    it("shows missed call notification with number and time", () => {
-      const missedTime = new Date(2026, 3, 15, 14, 30); // 2:30 PM
-      mockCallContextValue.missedCall = {
-        number: "+995555999888",
-        time: missedTime,
-      };
-
-      render(<DialpadWidget />);
-
-      expect(screen.getByText("Missed Call")).toBeInTheDocument();
-      expect(screen.getByText("+995555999888 · 14:30")).toBeInTheDocument();
-      expect(screen.getByTestId("missed-call-toast")).toHaveAttribute("role", "status");
-    });
-
-    it("shows Call Back button", () => {
-      mockCallContextValue.missedCall = {
-        number: "+995555999888",
-        time: new Date(),
-      };
-
-      render(<DialpadWidget />);
-
-      expect(screen.getByText("Call Back")).toBeInTheDocument();
-    });
-
-    it("Call Back button sets dial number and opens dialpad", async () => {
-      const user = userEvent.setup();
-      mockCallContextValue.missedCall = {
-        number: "+995555999888",
-        time: new Date(),
-      };
-
-      render(<DialpadWidget />);
-
-      await user.click(screen.getByText("Call Back"));
-
-      expect(mockSetDialNumber).toHaveBeenCalledWith("+995555999888");
-      expect(mockSetIsDialpadOpen).toHaveBeenCalledWith(true);
-      expect(mockClearMissedCall).toHaveBeenCalledTimes(1);
-    });
-
-    it("dismiss button clears missed call", async () => {
-      const user = userEvent.setup();
-      mockCallContextValue.missedCall = {
-        number: "+995555999888",
-        time: new Date(),
-      };
-
-      render(<DialpadWidget />);
-
-      const dismissButton = screen.getByRole("button", { name: "Dismiss" });
-
-      await user.click(dismissButton);
-      expect(mockClearMissedCall).toHaveBeenCalledTimes(1);
-    });
-
-    it("does not show missed call notification when missedCall is null", () => {
-      mockCallContextValue.missedCall = null;
-
-      render(<DialpadWidget />);
-
-      expect(screen.queryByText("Missed Call")).not.toBeInTheDocument();
-    });
+  it("shows the green ready dot when registered and idle", () => {
+    renderWidget();
+    expect(trigger()).toHaveAttribute("data-phone-state", "ready");
+    expect(screen.getByTestId("phone-ready-dot")).toHaveClass("bg-ed-green");
+    expect(trigger()).toHaveAccessibleName("Open phone · Ready for calls");
   });
 
-  // -----------------------------------------------------------------------
-  // DialpadPopup
-  // -----------------------------------------------------------------------
+  it("turns green with a red dot during a call and rings on an incoming call", () => {
+    h.state = makeState({ rail: closedRail, activeCall: makeActiveCall({ direction: "outgoing" }) });
+    const { unmount } = renderWidget();
+    expect(trigger()).toHaveAttribute("data-phone-state", "in-call");
+    expect(trigger()).toHaveClass("bg-ed-green");
+    expect(screen.getByTestId("phone-in-call-dot")).toHaveClass("bg-destructive");
+    unmount();
 
-  describe("dialpad popup", () => {
-    beforeEach(() => {
-      mockAuthUser.is_staff = true;
-      mockUserProfile = { feature_keys: ["ip_calling"] };
-      mockCallContextValue.activeSipConfig = makeSipConfig();
-    });
-
-    it("shows DialpadPopup when dialpad is open", () => {
-      mockCallContextValue.isDialpadOpen = true;
-
-      render(<DialpadWidget />);
-
-      expect(screen.getByTestId("dialpad-popup")).toBeInTheDocument();
-    });
-
-    it("suppresses DialpadPopup while the incoming-call sidebar is open", () => {
-      mockCallContextValue.isDialpadOpen = true;
-      mockSidebarOpen = true;
-
-      render(<DialpadWidget />);
-
-      expect(screen.queryByTestId("dialpad-popup")).not.toBeInTheDocument();
-    });
-
-    it("does not show DialpadPopup when dialpad is closed", () => {
-      mockCallContextValue.isDialpadOpen = false;
-
-      render(<DialpadWidget />);
-
-      expect(screen.queryByTestId("dialpad-popup")).not.toBeInTheDocument();
-    });
+    h.state = makeState({ rail: closedRail, activeCall: makeActiveCall({ status: "ringing" }) });
+    renderWidget();
+    expect(trigger()).toHaveAttribute("data-phone-state", "ringing");
+    expect(trigger().className).toContain("motion-safe:animate-ed-ring");
+    expect(trigger().style.getPropertyValue("--ring-c")).toBe("var(--green)");
   });
 
-  // -----------------------------------------------------------------------
-  // IncomingCallNotification inclusion
-  // -----------------------------------------------------------------------
+  it("is offline when SIP is not registered", () => {
+    h.state = makeState({ rail: closedRail, sipState: "failed" });
+    renderWidget();
+    expect(trigger()).toHaveAttribute("data-phone-state", "offline");
+    expect(screen.queryByTestId("phone-ready-dot")).toBeNull();
+    expect(trigger()).toHaveAccessibleName("Open phone · Not registered");
+  });
 
-  describe("IncomingCallNotification", () => {
-    beforeEach(() => {
-      mockAuthUser.is_staff = true;
-      mockUserProfile = { feature_keys: ["ip_calling"] };
-      mockCallContextValue.activeSipConfig = makeSipConfig();
+  it("counts missed calls on a destructive badge until the rail is opened", () => {
+    h.state = makeState({ rail: closedRail, missedCall: { number: "+995555999888", time: new Date(2026, 3, 15, 14, 30) } });
+    const { rerender } = renderWidget();
+    expect(screen.getByTestId("phone-missed-badge")).toHaveTextContent("1");
+    expect(screen.queryByTestId("phone-ready-dot")).toBeNull();
+
+    h.state = makeState({ rail: closedRail, missedCall: { number: "+995555111222", time: new Date(2026, 3, 15, 14, 40) } });
+    rerender(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <DialpadWidget />
+      </NextIntlClientProvider>
+    );
+    expect(screen.getByTestId("phone-missed-badge")).toHaveTextContent("2");
+    expect(trigger()).toHaveAccessibleName("Open phone · Ready for calls · 2 missed calls");
+
+    h.state = makeState({ rail: openRail, missedCall: h.state.missedCall });
+    rerender(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <DialpadWidget />
+      </NextIntlClientProvider>
+    );
+    expect(screen.queryByTestId("phone-missed-badge")).toBeNull();
+  });
+});
+
+describe("missed-call toast", () => {
+  const missed = { number: "+995555999888", time: new Date(2026, 3, 15, 14, 30) };
+
+  it("shows the number and time", () => {
+    h.state = makeState({ rail: closedRail, missedCall: missed });
+    renderWidget();
+    expect(screen.getByText("Missed call")).toBeInTheDocument();
+    expect(screen.getByText("+995555999888 · 14:30")).toBeInTheDocument();
+    expect(screen.getByTestId("missed-call-toast")).toHaveAttribute("role", "status");
+  });
+
+  it("Call back opens the rail with the number and clears the missed call", async () => {
+    const user = userEvent.setup();
+    h.state = makeState({ rail: closedRail, missedCall: missed });
+    renderWidget();
+    await user.click(screen.getByText("Call back"));
+    expect(h.actions.openRail).toHaveBeenCalledWith({ number: "+995555999888" });
+    expect(h.actions.clearMissedCall).toHaveBeenCalledTimes(1);
+  });
+
+  it("Dismiss clears the missed call", async () => {
+    const user = userEvent.setup();
+    h.state = makeState({ rail: closedRail, missedCall: missed });
+    renderWidget();
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(h.actions.clearMissedCall).toHaveBeenCalledTimes(1);
+  });
+
+  it("stacks the incoming-call and missed-call toasts in one top-right column", () => {
+    h.state = makeState({ rail: closedRail, missedCall: missed });
+    renderWidget();
+    const stack = screen.getByTestId("call-toasts");
+    expect(stack.className).toContain("fixed");
+    expect(stack.className).toContain("flex-col");
+    expect(stack).toContainElement(screen.getByTestId("incoming-call-notification"));
+    const toast = screen.getByTestId("missed-call-toast");
+    expect(stack).toContainElement(toast);
+    expect(toast.className).not.toContain("fixed");
+  });
+
+  it("is absent without a missed call", () => {
+    renderWidget();
+    expect(screen.queryByText("Missed call")).toBeNull();
+  });
+
+  it("a call rejected with 486 (busyRejected) shows the missed-while-busy toast", async () => {
+    const user = userEvent.setup();
+    h.state = makeState({ rail: closedRail, missedCall: missed, busyRejected: { number: missed.number, time: missed.time } });
+    renderWidget();
+    expect(screen.queryByTestId("missed-call-toast")).toBeNull();
+    const toast = screen.getByTestId("busy-rejected-toast");
+    expect(toast).toHaveTextContent("Missed while you were on a call");
+    expect(toast).toHaveTextContent("+995555999888");
+    await user.click(screen.getByText("Call back"));
+    expect(h.actions.openRail).toHaveBeenCalledWith({ number: "+995555999888" });
+    expect(h.actions.clearMissedCall).toHaveBeenCalledTimes(1);
+  });
+
+  it("an older busyRejected does not relabel a newer missed call", () => {
+    h.state = makeState({
+      rail: closedRail,
+      missedCall: missed,
+      busyRejected: { number: "+995555000000", time: new Date(2026, 3, 15, 12, 0) },
     });
-
-    it("always renders IncomingCallNotification when widget is visible", () => {
-      render(<DialpadWidget />);
-
-      expect(
-        screen.getByTestId("incoming-call-notification")
-      ).toBeInTheDocument();
-    });
-
-    it("stacks the incoming-call and missed-call toasts in one top-right column", () => {
-      mockCallContextValue.missedCall = { number: "+995555999888", time: new Date(2026, 3, 15, 14, 30) };
-      render(<DialpadWidget />);
-
-      const stack = screen.getByTestId("call-toasts");
-      expect(stack.className).toContain("fixed");
-      expect(stack.className).toContain("flex-col");
-      expect(stack).toContainElement(screen.getByTestId("incoming-call-notification"));
-      const missed = screen.getByTestId("missed-call-toast");
-      expect(stack).toContainElement(missed);
-      // The toast itself is no longer positioned on its own (no overlap).
-      expect(missed.className).not.toContain("fixed");
-    });
+    renderWidget();
+    expect(screen.getByTestId("missed-call-toast")).toHaveTextContent("Missed call");
+    expect(screen.queryByTestId("busy-rejected-toast")).toBeNull();
   });
 });

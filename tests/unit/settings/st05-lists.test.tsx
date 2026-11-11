@@ -172,9 +172,11 @@ describe("ticket forms LIST PAGE", () => {
     expect(api.ticketFormsUpdate.mock.calls[0][0]).toBe(2)
     expect(api.ticketFormsUpdate.mock.calls[0][1]).toMatchObject({ id: 2, title: "Return", parent_form_id: 1, is_active: false })
 
-    fireEvent.click(screen.getByRole("button", { name: "Set Default" }))
+    // The edit sheet closes and the list refetches after Update; wait for the
+    // row actions to be back before clicking them (CI is slower than local).
+    fireEvent.click(await screen.findByRole("button", { name: "Set Default" }))
     await waitFor(() => expect(api.ticketFormsSetDefaultCreate).toHaveBeenCalledWith(2, FORMS[1]))
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Delete" }))
     expect(window.confirm).toHaveBeenCalled()
     await waitFor(() => expect(api.ticketFormsDestroy).toHaveBeenCalledWith(2))
   })

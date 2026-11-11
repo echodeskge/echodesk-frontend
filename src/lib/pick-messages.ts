@@ -17,6 +17,8 @@ export const GLOBAL_NAMESPACES = [
   'staleReminder',
   'notFound',
   'subscription',
+  // FeatureGate / LimitGate (components/subscription) render on any route.
+  'featureGate',
   'calls',
   'cookie',
   'footer',

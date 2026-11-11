@@ -6,8 +6,37 @@ import { useTranslations } from "next-intl"
 
 import { Button } from "@/components/ui/button"
 
+type NotFoundKey = "title" | "subtitle" | "description" | "homeButton"
+
+/** Mirrors `notFound.*` in src/i18n/messages/en.json. */
+const FALLBACK: Record<NotFoundKey, string> = {
+  title: "404",
+  subtitle: "Page Not Found",
+  description: "We couldn't find the page you're looking for. It might have been moved or doesn't exist.",
+  homeButton: "Home Page",
+}
+
+/**
+ * `useTranslations` throws when no NextIntlClientProvider is above us. That
+ * happens for the root not-found page on request paths where the root layout
+ * bails out of the provider tree (widget embed, booking site) and for method
+ * mismatches such as `POST /`, which Next answers with the 404 page before
+ * any provider renders (Sentry 1C). Fall back to the English copy then.
+ *
+ * Hook-order note: the provider either exists or not for the lifetime of a
+ * mount, so the number of hooks run inside `useTranslations` is the same on
+ * every render of that mount.
+ */
+function useNotFoundText(): (key: NotFoundKey) => string {
+  try {
+    return useTranslations("notFound")
+  } catch {
+    return (key) => FALLBACK[key]
+  }
+}
+
 export function NotFound404() {
-  const t = useTranslations("notFound")
+  const t = useNotFoundText()
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center gap-y-6 text-center text-foreground bg-background p-4">

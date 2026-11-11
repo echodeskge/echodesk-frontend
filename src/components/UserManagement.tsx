@@ -13,6 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, userKeys, type UserListFilters } from "@/hooks/api/useUsers";
 import { getApiErrorMessage } from "@/lib/utils";
+import { parseFeatureKeys } from "@/lib/feature-keys";
 import {
   formatBulkBlocked,
   formatRemovalBlocked,
@@ -276,12 +277,8 @@ export default function UserManagement() {
     setCurrentPage(1); // Reset to first page
   };
 
-  // Check if user has booking management feature
-  const userFeatureKeys = currentUserProfile?.feature_keys
-    ? typeof currentUserProfile.feature_keys === "string"
-      ? JSON.parse(currentUserProfile.feature_keys)
-      : currentUserProfile.feature_keys
-    : [];
+  // Check if user has booking management feature (guarded parse: bad JSON must not crash the page)
+  const userFeatureKeys = parseFeatureKeys(currentUserProfile?.feature_keys);
   const hasBookingManagement = userFeatureKeys.includes('booking_management');
 
   const header = {

@@ -11,9 +11,11 @@ import userEvent from "@testing-library/user-event";
 import { NextIntlClientProvider } from "next-intl";
 import React from "react";
 
-import en from "@/i18n/messages/en.json";
-import ka from "@/i18n/messages/ka.json";
 import { HeaderActionsProvider, useHeaderSlot } from "@/contexts/HeaderActionsContext";
+import { cl03Messages, lookup } from "../../calls/cl03-i18n";
+
+const en = cl03Messages.en as typeof import("@/i18n/messages/en.json");
+const ka = cl03Messages.ka as typeof import("@/i18n/messages/ka.json");
 
 const mockUseCallLogs = vi.fn();
 const mockCounts = vi.fn();
@@ -22,9 +24,12 @@ const mockAgents = vi.fn();
 const mockSaveNotes = vi.fn();
 const mockFetchNext = vi.fn();
 const mockOpenTicket = vi.fn();
-const mockSetDialNumber = vi.fn();
-const mockSetIsDialpadOpen = vi.fn();
+const mockOpenRail = vi.fn();
+const closedRail = { mode: "closed" as const, prefill: null, autoDial: false };
+const openRail = { mode: "open" as const, prefill: null, autoDial: false };
 let mockUser: { is_staff?: boolean; is_superuser?: boolean } = { is_staff: true };
+let mockProfile: Record<string, unknown> = { is_staff: true };
+let mockAccess = { tenantHasCalling: true, userHasCalling: true, canUseSoftphone: true, canViewCalls: true };
 let mockCall: Record<string, unknown> = {};
 
 vi.mock("next/link", () => ({
@@ -37,7 +42,9 @@ vi.mock("next/link", () => ({
 vi.mock("@/api/axios", () => ({ default: { get: vi.fn() } }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ user: mockUser }) }));
 vi.mock("@/contexts/TicketCreateContext", () => ({ useTicketCreate: () => ({ openTicketCreate: mockOpenTicket }) }));
-vi.mock("@/contexts/CallContext", () => ({ useCall: () => mockCall }));
+vi.mock("@/contexts/CallContext", () => ({ useCallState: () => mockCall, useCallActions: () => ({ openRail: mockOpenRail }) }));
+vi.mock("@/hooks/useUserProfile", () => ({ useUserProfile: () => ({ data: mockProfile }) }));
+vi.mock("@/lib/calling-access", () => ({ useCallingAccess: () => mockAccess }));
 vi.mock("@/app/(tenant)/calls/_components/use-call-logs", () => ({
   useCallLogs: (filters: unknown, refresh: number) => mockUseCallLogs(filters, refresh),
   useCallTabCounts: (...args: unknown[]) => ({ data: mockCounts(...args) }),
@@ -147,17 +154,16 @@ function logsResult(rows = logs, extra: Record<string, unknown> = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   mockUser = { is_staff: true };
+  mockProfile = { is_staff: true };
+  mockAccess = { tenantHasCalling: true, userHasCalling: true, canUseSoftphone: true, canViewCalls: true };
   mockCall = {
     activeCall: null,
-    sipRegistered: true,
-    sipConnecting: false,
+    sipState: "registered",
     activeSipConfig: { username: "101" },
     loading: false,
-    error: "",
+    error: null,
     callEndedCounter: 0,
-    isDialpadOpen: false,
-    setDialNumber: mockSetDialNumber,
-    setIsDialpadOpen: mockSetIsDialpadOpen,
+    rail: closedRail,
   };
   mockUseCallLogs.mockReturnValue(logsResult());
   mockCounts.mockReturnValue({ all: 24, missed: 7, incoming: 16, outgoing: 0 });
@@ -186,15 +192,58 @@ describe("CallsScreen — header bridge", () => {
 
   it("agents get no SIP settings link", () => {
     mockUser = {};
+    mockProfile = { is_staff: false, permissions_list: ["make_calls"], all_permissions: ["make_calls"] };
     renderScreen();
     expect(screen.queryByTestId("calls-sip-settings")).toBeNull();
   });
 
-  it("New call opens the softphone", async () => {
+  it("manage_settings admins (not staff) get the SIP settings link and Configure SIP", () => {
+    mockUser = {};
+    mockProfile = { is_staff: false, permissions_list: ["manage_settings"], all_permissions: ["manage_settings"] };
+    mockCall = { ...mockCall, activeSipConfig: null };
+    renderScreen();
+    expect(screen.getByTestId("calls-sip-settings")).toHaveAttribute("href", "/settings/calls");
+    expect(within(screen.getByTestId("calls-no-config")).getByRole("link", { name: /Configure SIP/ })).toBeInTheDocument();
+  });
+
+  it("New call opens the rail", async () => {
     const user = userEvent.setup();
     renderScreen();
     await user.click(screen.getByTestId("calls-new-call"));
-    expect(mockSetIsDialpadOpen).toHaveBeenCalledWith(true);
+    expect(mockOpenRail).toHaveBeenCalledTimes(1);
+    expect(mockOpenRail.mock.calls[0]).toEqual([]);
+  });
+
+  it("New call opens the rail while SIP is still connecting (the rail shows the state)", async () => {
+    const user = userEvent.setup();
+    mockCall = { ...mockCall, sipState: "connecting" };
+    renderScreen();
+    expect(within(screen.getByTestId("header-meta")).getByTestId("sip-status")).toHaveAttribute("data-sip-state", "connecting");
+    await user.click(screen.getByTestId("calls-new-call"));
+    expect(mockOpenRail).toHaveBeenCalledTimes(1);
+  });
+
+  it("without softphone access: view-only notice, no SIP pill, New call explains instead of opening", async () => {
+    const user = userEvent.setup();
+    mockAccess = { ...mockAccess, canUseSoftphone: false };
+    renderScreen();
+    expect(screen.getByTestId("calls-view-only")).toHaveTextContent(lookup(en, "calls.access.viewOnly") as string);
+    expect(within(screen.getByTestId("header-meta")).queryByTestId("sip-status")).toBeNull();
+    expect(screen.queryByTestId("calls-no-config")).toBeNull();
+    await user.click(screen.getByTestId("calls-new-call"));
+    expect(mockOpenRail).not.toHaveBeenCalled();
+    expect(screen.getByTestId("calls-toast")).toHaveTextContent(lookup(en, "calls.access.noSoftphone") as string);
+    await user.click(within(screen.getAllByTestId("call-row")[1]).getByTestId("row-callback"));
+    expect(mockOpenRail).not.toHaveBeenCalled();
+  });
+
+  it("the loading-config toast while the configuration loads", async () => {
+    const user = userEvent.setup();
+    mockCall = { ...mockCall, activeSipConfig: null, loading: true };
+    renderScreen();
+    await user.click(screen.getByTestId("calls-new-call"));
+    expect(screen.getByTestId("calls-toast")).toHaveTextContent(en.calls.page.loadingConfig);
+    expect(mockOpenRail).not.toHaveBeenCalled();
   });
 
   it("without a SIP configuration: no pill, a notice (admins can configure) and New call explains", async () => {
@@ -205,14 +254,18 @@ describe("CallsScreen — header bridge", () => {
     const notice = screen.getByTestId("calls-no-config");
     expect(within(notice).getByRole("link", { name: /Configure SIP/ })).toHaveAttribute("href", "/settings/calls");
     await user.click(screen.getByTestId("calls-new-call"));
-    expect(mockSetIsDialpadOpen).not.toHaveBeenCalled();
+    expect(mockOpenRail).not.toHaveBeenCalled();
     expect(screen.getByTestId("calls-toast")).toHaveTextContent(en.calls.page.noConfig);
   });
 
-  it("shows CallContext errors while the softphone is closed", () => {
-    mockCall = { ...mockCall, error: "SIP registration failed" };
+  it("shows CallContext errors while the rail is closed, not while it is open", () => {
+    mockCall = { ...mockCall, error: { key: "registrationFailed" } };
+    const { unmount } = renderScreen();
+    expect(screen.getByRole("alert")).toHaveTextContent(lookup(en, "calls.errors.registrationFailed") as string);
+    unmount();
+    mockCall = { ...mockCall, rail: openRail };
     renderScreen();
-    expect(screen.getByRole("alert")).toHaveTextContent("SIP registration failed");
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 });
 
@@ -302,12 +355,11 @@ describe("CallsScreen — list", () => {
     expect(within(outbound).getByTestId("call-sub")).toHaveTextContent("Ended");
   });
 
-  it("call back fills the softphone; blocked during a call", async () => {
+  it("call back opens the rail with the number; blocked during a call", async () => {
     const user = userEvent.setup();
     const { unmount } = renderScreen();
     await user.click(within(screen.getAllByTestId("call-row")[1]).getByTestId("row-callback"));
-    expect(mockSetDialNumber).toHaveBeenCalledWith("+995599000222");
-    expect(mockSetIsDialpadOpen).toHaveBeenCalledWith(true);
+    expect(mockOpenRail).toHaveBeenCalledWith({ number: "+995599000222" });
     unmount();
 
     vi.clearAllMocks();
@@ -315,7 +367,7 @@ describe("CallsScreen — list", () => {
     mockCall = { ...mockCall, activeCall: { id: "x" } };
     renderScreen();
     await user.click(within(screen.getAllByTestId("call-row")[1]).getByTestId("row-callback"));
-    expect(mockSetDialNumber).not.toHaveBeenCalled();
+    expect(mockOpenRail).not.toHaveBeenCalled();
     expect(screen.getByTestId("calls-toast")).toHaveTextContent("Finish the current call first");
   });
 
