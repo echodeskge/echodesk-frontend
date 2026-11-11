@@ -2,162 +2,126 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+import { ArrowRight, CalendarClock, CheckCircle2, CreditCard, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Footer } from '@/components/landing/Footer';
+import {
+  formatTrialDate,
+  readRegistrationResult,
+  TRIAL_DAYS,
+  type RegistrationResult,
+} from '@/lib/registration-result';
 
+/**
+ * Shown right after `POST /api/register/` succeeds: the workspace exists and
+ * the 30-day free trial has started. No card was taken, so there is nothing
+ * about payments here — only when the trial ends and how to add a card then.
+ */
 export default function RegistrationSuccessPage() {
-  const [processing, setProcessing] = useState(true);
+  const t = useTranslations('auth.trialSuccess');
+  const tAuth = useTranslations('auth');
+  const locale = useLocale();
+  const [result, setResult] = useState<RegistrationResult | null>(null);
+  const [ready, setReady] = useState(false);
 
+  // sessionStorage is client-only; read it after mount.
   useEffect(() => {
-    // Simulate processing time (webhook should complete within a few seconds)
-    const timer = setTimeout(() => {
-      setProcessing(false);
-    }, 5000);
-
-    return () => clearTimeout(timer);
+    setResult(readRegistrationResult());
+    setReady(true);
   }, []);
 
+  const trialEnd = result?.trial_ends_at ?? new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const date = formatTrialDate(trialEnd, locale);
+  const workspaceUrl = result?.frontend_url ?? null;
+  const workspaceHost = workspaceUrl ? workspaceUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') : null;
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #2A2B7C 0%, #1a1b5e 100%)',
-      padding: '20px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
-      <div style={{
-        background: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-        padding: '40px',
-        width: '100%',
-        maxWidth: '600px',
-        textAlign: 'center'
-      }}>
-        {processing ? (
-          <>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              border: '4px solid #f3f3f3',
-              borderTop: '4px solid #2FB282',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto 20px'
-            }} />
-            <h1 style={{
-              color: '#333',
-              fontSize: '24px',
-              fontWeight: '700',
-              marginBottom: '15px'
-            }}>
-              Payment Successful!
-            </h1>
-            <p style={{ color: '#666', fontSize: '16px', marginBottom: '20px' }}>
-              We&apos;re setting up your EchoDesk tenant...
-            </p>
-            <p style={{ color: '#888', fontSize: '14px' }}>
-              This usually takes just a few seconds. Please wait while we:
-            </p>
-            <ul style={{
-              listStyle: 'none',
-              padding: 0,
-              margin: '20px 0',
-              textAlign: 'left',
-              display: 'inline-block'
-            }}>
-              <li style={{ padding: '8px 0', color: '#555', fontSize: '14px' }}>
-                ✓ Create your dedicated workspace
-              </li>
-              <li style={{ padding: '8px 0', color: '#555', fontSize: '14px' }}>
-                ✓ Set up your subscription
-              </li>
-              <li style={{ padding: '8px 0', color: '#555', fontSize: '14px' }}>
-                ✓ Configure your admin account
-              </li>
-              <li style={{ padding: '8px 0', color: '#555', fontSize: '14px' }}>
-                ✓ Deploy your frontend
-              </li>
-            </ul>
-          </>
-        ) : (
-          <>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              background: '#2FB282',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px',
-              fontSize: '40px',
-              color: 'white'
-            }}>
-              ✓
+    <div className="min-h-screen bg-background">
+      <div className="container py-16">
+        <div className="mx-auto max-w-2xl space-y-8" data-testid="registration-success" aria-busy={!ready}>
+          <div className="space-y-4 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success">
+              <CheckCircle2 className="h-9 w-9" aria-hidden />
             </div>
-            <h1 style={{
-              color: '#333',
-              fontSize: '28px',
-              fontWeight: '700',
-              marginBottom: '15px'
-            }}>
-              Welcome to EchoDesk!
-            </h1>
-            <p style={{ color: '#666', fontSize: '16px', marginBottom: '30px' }}>
-              Your tenant has been created successfully.
-              You can now access your EchoDesk dashboard.
+            <h1 className="text-4xl font-bold">{t('title')}</h1>
+            <p className="text-lg text-muted-foreground" data-testid="success-subtitle">
+              {result?.company_name ? t('subtitle', { company: result.company_name }) : t('genericSubtitle')}
             </p>
-
-            <div style={{
-              background: '#f8f9fa',
-              padding: '20px',
-              borderRadius: '8px',
-              marginBottom: '30px'
-            }}>
-              <p style={{ color: '#333', fontSize: '14px', marginBottom: '10px' }}>
-                <strong>What&apos;s next?</strong>
-              </p>
-              <ol style={{
-                textAlign: 'left',
-                paddingLeft: '20px',
-                margin: 0,
-                color: '#555',
-                fontSize: '14px'
-              }}>
-                <li style={{ marginBottom: '8px' }}>Check your email for login credentials</li>
-                <li style={{ marginBottom: '8px' }}>Access your unique tenant URL</li>
-                <li style={{ marginBottom: '8px' }}>Complete your profile setup</li>
-                <li>Start using EchoDesk!</li>
-              </ol>
-            </div>
-
-            <Link
-              href="/"
-              style={{
-                display: 'inline-block',
-                background: '#2FB282',
-                color: 'white',
-                padding: '12px 30px',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '16px',
-                fontWeight: '600',
-                textDecoration: 'none',
-                cursor: 'pointer'
-              }}
+            <p
+              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-1.5 text-sm font-medium"
+              data-testid="trial-ends"
             >
-              Go to Homepage
-            </Link>
-          </>
-        )}
+              <CalendarClock className="h-4 w-4 text-muted-foreground" aria-hidden />
+              {t('trialEnds', { date })}
+            </p>
+          </div>
+
+          {workspaceUrl && (
+            <Card data-testid="workspace-card">
+              <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 space-y-1">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">{t('workspaceUrl')}</div>
+                  <div className="truncate font-semibold" data-testid="workspace-host">
+                    {workspaceHost}
+                  </div>
+                  {result?.admin_email && (
+                    <p className="text-sm text-muted-foreground">{t('signInHint', { email: result.admin_email })}</p>
+                  )}
+                </div>
+                <Button asChild size="lg" className="shrink-0">
+                  <a href={workspaceUrl} data-testid="open-workspace">
+                    {t('openWorkspace')}
+                    <ExternalLink className="ml-2 h-4 w-4" aria-hidden />
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="border-secondary/30 bg-secondary/5" data-testid="day30-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <CreditCard className="h-5 w-5" aria-hidden />
+                {t('day30Title')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">{t('day30Body', { date })}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">{t('nextStepsTitle')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
+                <li>{t('step1')}</li>
+                <li>{t('step2')}</li>
+                <li>{t('step3', { date })}</li>
+              </ol>
+            </CardContent>
+          </Card>
+
+          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+            {workspaceUrl ? (
+              <Button asChild size="lg">
+                <a href={workspaceUrl}>
+                  {t('openWorkspace')}
+                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+                </a>
+              </Button>
+            ) : null}
+            <Button asChild variant="ghost" size="lg">
+              <Link href="/">{tAuth('backToHome')}</Link>
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+      <Footer />
     </div>
   );
 }
