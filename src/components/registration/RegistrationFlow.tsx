@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { FeatureSelection } from './FeatureSelection';
@@ -8,9 +8,20 @@ import { RegistrationFormStep } from './RegistrationFormStep';
 import { PaymentProviderSelection, type PaymentProviderType } from './PaymentProviderSelection';
 import { Footer } from '@/components/landing/Footer';
 import { featuresList, registerTenantWithPayment } from '@/api/generated/api';
-import type { TenantRegistrationRequest } from '@/api/generated/interfaces';
 import type { Feature } from '@/types/package';
 import { PricingModel } from '@/types/package';
+import type { PackSlug } from '@/data/packs';
+import {
+  MIN_EMPLOYEES,
+  clampEmployees,
+  defaultModuleKeys,
+  expandSelection,
+  keysToIds,
+  matchPack,
+  parseRegistrationParams,
+  priceByKey,
+  toggleModule,
+} from '@/lib/pricing';
 import { usePaddle } from '@/hooks/usePaddle';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -39,18 +50,18 @@ export function RegistrationFlow() {
   const router = useRouter();
   const t = useTranslations('auth');
   const tSub = useTranslations('subscription');
-  const { openCheckout, isLoaded: paddleLoaded } = usePaddle();
+  const { openCheckout } = usePaddle();
 
-  // Required features that cannot be unchecked
-  const REQUIRED_FEATURE_KEYS = ['user_management', 'settings'];
-
-  // Steps: 1 = Feature Selection, 2 = Payment Provider, 3 = Registration Form
+  // Steps: 1 = Review / build plan, 2 = Payment provider, 3 = Registration form
   const [step, setStep] = useState(1);
   const [features, setFeatures] = useState<Feature[]>([]);
-  const [selectedFeatureIds, setSelectedFeatureIds] = useState<number[]>([]);
-  const [agentCount, setAgentCount] = useState(5);
+  // Selected module KEYS (workspace + zero-price stubs are added at submit).
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [pack, setPack] = useState<PackSlug | null>(null);
+  const [autoNotice, setAutoNotice] = useState<string | null>(null);
+  const [employees, setEmployees] = useState(MIN_EMPLOYEES);
   const [paymentProvider, setPaymentProvider] = useState<PaymentProviderType>('bog');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
   const [formData, setFormData] = useState<RegistrationFormData>({
@@ -59,7 +70,7 @@ export function RegistrationFlow() {
     description: '',
     feature_ids: [],
     pricing_model: 'agent' as PricingModel,
-    agent_count: 5,
+    agent_count: MIN_EMPLOYEES,
     admin_email: '',
     admin_password: '',
     admin_first_name: '',
@@ -68,86 +79,63 @@ export function RegistrationFlow() {
     is_custom: true,
   });
 
-  // Load features on mount
+  const prices = useMemo(() => priceByKey(features), [features]);
+  const payloadKeys = useMemo(() => expandSelection(selectedKeys, features), [selectedKeys, features]);
+  const payloadIds = useMemo(() => keysToIds(payloadKeys, features), [payloadKeys, features]);
+  const selectedFeatures = useMemo(
+    () => features.filter((f) => payloadKeys.includes(f.key)),
+    [features, payloadKeys],
+  );
+
+  // Load the catalogue, then apply `?pack=` / `?modules=` / `?employees=`
+  // (or the legacy `?features=<ids>&agents=`) from the landing CTAs. A
+  // pre-built plan skips straight to the payment-provider step.
   useEffect(() => {
-    loadFeatures();
-  }, []);
-
-  // Check for pre-selected features from URL params (from homepage pricing)
-  useEffect(() => {
-    const featuresParam = searchParams.get('features');
-    const agentsParam = searchParams.get('agents');
-
-    if (featuresParam && agentsParam) {
-      const featureIds = featuresParam.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
-      const agents = parseInt(agentsParam, 10);
-
-      if (featureIds.length > 0 && agents >= 5 && agents <= 200) {
-        const requiredIds = features
-          .filter(f => REQUIRED_FEATURE_KEYS.includes(f.key))
-          .map(f => f.id);
-        const allFeatureIds = [...new Set([...requiredIds, ...featureIds])];
-
-        setSelectedFeatureIds(allFeatureIds);
-        setAgentCount(agents);
-        setFormData(prev => ({
-          ...prev,
-          feature_ids: allFeatureIds,
-          agent_count: agents,
-        }));
-        setStep(2);
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        const data = await featuresList();
+        if (cancelled) return;
+        const all = (data.results || []) as Feature[];
+        setFeatures(all);
+        const parsed = parseRegistrationParams(searchParams, all);
+        const keys = parsed.preselected ? parsed.moduleKeys : defaultModuleKeys(all);
+        setSelectedKeys(keys);
+        setPack(parsed.pack ?? matchPack(keys, all));
+        setEmployees(parsed.employees);
+        if (parsed.preselected) setStep(2);
+      } catch (err) {
+        console.error('Failed to load features:', err);
+        if (!cancelled) setError('Failed to load features');
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams]);
 
-  const loadFeatures = async () => {
-    try {
-      setLoading(true);
-      const data = await featuresList();
-      const allFeatures = (data.results || []) as Feature[];
-      setFeatures(allFeatures);
-
-      const requiredIds = allFeatures
-        .filter(f => REQUIRED_FEATURE_KEYS.includes(f.key))
-        .map(f => f.id);
-      setSelectedFeatureIds(requiredIds);
-    } catch (error) {
-      console.error('Failed to load features:', error);
-      setError('Failed to load features');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFeatureToggle = (featureId: number) => {
-    const feature = features.find(f => f.id === featureId);
-    if (feature && REQUIRED_FEATURE_KEYS.includes(feature.key)) {
-      return;
-    }
-
-    setSelectedFeatureIds((prev) =>
-      prev.includes(featureId)
-        ? prev.filter((id) => id !== featureId)
-        : [...prev, featureId]
-    );
-  };
-
-  const handleAgentCountChange = (count: number) => {
-    setAgentCount(count);
-  };
-
-  const handleFeatureSelectionContinue = () => {
+  // Keep the submit payload in sync with the plan.
+  useEffect(() => {
     setFormData((prev) => ({
       ...prev,
-      feature_ids: selectedFeatureIds,
-      agent_count: agentCount,
+      feature_ids: payloadIds,
+      agent_count: employees,
       is_custom: true,
     }));
-    setStep(2);
+  }, [payloadIds, employees]);
+
+  const handleFeatureToggle = (key: string) => {
+    const { keys, autoEnabled } = toggleModule(selectedKeys, key);
+    setSelectedKeys(keys);
+    setAutoNotice(autoEnabled[0] ?? null);
+    setPack(matchPack(keys, features));
   };
 
-  const handleProviderContinue = () => {
-    setStep(3);
+  const handleEmployeesChange = (count: number) => {
+    setEmployees(clampEmployees(count));
   };
 
   const handleFormSubmit = async (data: RegistrationFormData) => {
@@ -207,11 +195,14 @@ export function RegistrationFlow() {
           <FeatureSelection
             features={features}
             loading={loading}
-            selectedFeatureIds={selectedFeatureIds}
-            agentCount={agentCount}
-            onFeatureToggle={handleFeatureToggle}
-            onAgentCountChange={handleAgentCountChange}
-            onContinue={handleFeatureSelectionContinue}
+            selectedKeys={selectedKeys}
+            prices={prices}
+            employees={employees}
+            pack={pack}
+            autoNotice={autoNotice}
+            onToggle={handleFeatureToggle}
+            onEmployeesChange={handleEmployeesChange}
+            onContinue={() => setStep(2)}
             onBack={() => router.push('/')}
           />
         )}
@@ -235,7 +226,7 @@ export function RegistrationFlow() {
             />
 
             <div className="flex justify-end">
-              <Button size="lg" onClick={handleProviderContinue} className="min-w-[200px]">
+              <Button size="lg" onClick={() => setStep(3)} className="min-w-[200px]">
                 {t('continue')}
               </Button>
             </div>
@@ -246,9 +237,9 @@ export function RegistrationFlow() {
           <RegistrationFormStep
             formData={formData}
             setFormData={setFormData}
-            selectedPackage={null}
-            features={features.filter((f) => selectedFeatureIds.includes(f.id))}
-            agentCount={agentCount}
+            features={selectedFeatures}
+            agentCount={employees}
+            pack={pack}
             loading={loading}
             error={error}
             onSubmit={handleFormSubmit}

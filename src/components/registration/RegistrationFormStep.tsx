@@ -10,45 +10,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Feature, PricingModel } from '@/types/package';
+import type { Feature } from '@/types/package';
+import type { PackSlug } from '@/data/packs';
+import { EMPLOYEE_STEP, MAX_EMPLOYEES, MIN_EMPLOYEES, formatGel, priceOf } from '@/lib/pricing';
 import type { RegistrationFormData } from './RegistrationFlow';
-
-// Define package types locally since they're not in the generated API
-interface DynamicFeature {
-  id: number;
-  key: string;
-  name: string;
-  description: string;
-  category: string;
-  category_display: string;
-  icon?: string;
-  price_per_user_gel: string;
-  price_unlimited_gel: string;
-  sort_order: number;
-  is_highlighted: boolean;
-}
-
-interface PackageListExtended {
-  id: number;
-  name: string;
-  display_name?: string;
-  description?: string;
-  pricing_model: PricingModel;
-  price_gel?: string;
-  price_per_user_gel?: string;
-  price_unlimited_gel?: string;
-  max_users?: number;
-  dynamic_features: DynamicFeature[];
-  features_list?: string[];
-  is_highlighted?: boolean;
-}
 
 interface RegistrationFormStepProps {
   formData: RegistrationFormData;
   setFormData: React.Dispatch<React.SetStateAction<RegistrationFormData>>;
-  selectedPackage?: PackageListExtended | null; // Optional for backward compat
-  features?: Feature[]; // New: selected features
-  agentCount?: number; // New: agent count
+  /** Selected features (incl. workspace + zero-price stubs). */
+  features: Feature[];
+  agentCount: number;
+  /** Matched pack for the plan line; null = custom plan. */
+  pack: PackSlug | null;
   loading: boolean;
   error: string;
   onSubmit: (data: RegistrationFormData) => void;
@@ -58,23 +32,19 @@ interface RegistrationFormStepProps {
 export function RegistrationFormStep({
   formData,
   setFormData,
-  selectedPackage,
   features,
   agentCount,
+  pack,
   loading,
   error,
   onSubmit,
   onBack,
 }: RegistrationFormStepProps) {
   const t = useTranslations('auth');
-  const tCommon = useTranslations('common');
+  const tp = useTranslations('landing.pricing');
 
-  // Calculate monthly cost for feature-based model
-  const monthlyTotal = features && agentCount
-    ? features.reduce((sum, f) => sum + parseFloat(f.price_per_user_gel || '0'), 0) * agentCount
-    : selectedPackage
-    ? Number(selectedPackage.price_gel) * formData.agent_count
-    : 0;
+  const monthlyTotal = features.reduce((sum, f) => sum + priceOf(f), 0) * agentCount;
+  const planName = pack ? tp(`packs.${pack}.name`) : tp('registration.customPlan');
 
   // Auto-generate domain from company name
   useEffect(() => {
@@ -108,8 +78,6 @@ export function RegistrationFormStep({
     onSubmit(formData);
   };
 
-  const isAgentBased = formData.pricing_model === 'agent';
-
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
@@ -119,18 +87,8 @@ export function RegistrationFormStep({
           {t('backToPlans')}
         </Button>
         <h1 className="text-4xl font-bold">{t('completeRegistration')}</h1>
-        <p className="text-lg text-muted-foreground">
-          {features && agentCount ? (
-            <>
-              Your plan: <span className="font-semibold text-foreground">{features.length} features for {agentCount} agents</span> - {monthlyTotal.toFixed(2)}₾/month
-            </>
-          ) : selectedPackage ? (
-            <>
-              {t('youSelected')}: <span className="font-semibold text-foreground">{selectedPackage.display_name}</span> - {selectedPackage.price_gel}₾/{formData.pricing_model === 'agent' ? 'agent/' : ''}month
-            </>
-          ) : (
-            <>Complete your registration</>
-          )}
+        <p className="text-lg text-muted-foreground" data-testid="plan-line">
+          {tp('registration.planLine', { plan: planName, n: agentCount, total: formatGel(monthlyTotal) })}
         </p>
       </div>
 
@@ -195,27 +153,24 @@ export function RegistrationFormStep({
               />
             </div>
 
-            {/* Show agent count for feature-based OR legacy agent-based */}
-            {(features && agentCount) || isAgentBased ? (
-              <div className="space-y-2">
-                <Label htmlFor="agent_count">{t('numberOfAgents')} *</Label>
-                <Input
-                  id="agent_count"
-                  name="agent_count"
-                  type="number"
-                  min="5"
-                  step="5"
-                  max="200"
-                  value={formData.agent_count}
-                  onChange={handleInputChange}
-                  required
-                  disabled={!!(features && agentCount)} // Disable if coming from feature selection
-                />
-                <p className="text-sm text-muted-foreground">
-                  {t('totalCost')}: {monthlyTotal.toFixed(2)}₾/month
-                </p>
-              </div>
-            ) : null}
+            <div className="space-y-2">
+              <Label htmlFor="agent_count">{tp('registration.employees')} *</Label>
+              <Input
+                id="agent_count"
+                name="agent_count"
+                type="number"
+                min={MIN_EMPLOYEES}
+                step={EMPLOYEE_STEP}
+                max={MAX_EMPLOYEES}
+                value={formData.agent_count}
+                onChange={handleInputChange}
+                required
+                disabled
+              />
+              <p className="text-sm text-muted-foreground">
+                {t('totalCost')}: {formatGel(monthlyTotal)} ₾ / {tp('perMonth')}
+              </p>
+            </div>
           </CardContent>
         </Card>
 
