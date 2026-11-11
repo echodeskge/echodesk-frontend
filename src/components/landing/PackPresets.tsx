@@ -71,12 +71,13 @@ export function PackPresets({ features, employees, onLoad }: PackPresetsProps) {
                 <span className="min-w-0 flex-1 text-[15px] font-bold leading-5 tracking-[-.01em]">
                   {t(`packs.${pack.slug}.name`)}
                 </span>
-                {pack.highlight && (
-                  <span className="shrink-0 rounded bg-secondary/10 px-1.5 text-[11px] font-semibold leading-[18px] text-secondary">
-                    {t('packs.mostPopular')}
-                  </span>
-                )}
               </div>
+              {/* Own line: next to a long Georgian pack name the badge would collide with the title. */}
+              {pack.highlight && (
+                <span className="w-fit rounded bg-secondary/10 px-1.5 text-[11px] font-semibold leading-[18px] text-secondary">
+                  {t('packs.mostPopular')}
+                </span>
+              )}
               <p className="text-[13px] leading-[18px] text-muted-foreground">{t(`packs.${pack.slug}.audience`)}</p>
               <div className="flex flex-col">
                 <span className="flex flex-wrap items-baseline gap-x-1.5">
