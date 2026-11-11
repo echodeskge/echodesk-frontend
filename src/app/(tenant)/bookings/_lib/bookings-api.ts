@@ -4,6 +4,7 @@
  * filter is named at the call site and list loads never stop at the
  * backend's default 20 rows.
  */
+import axios from "@/api/axios"
 import {
   bookingsAdminAvailabilityCreate,
   bookingsAdminAvailabilityList,
@@ -14,6 +15,7 @@ import {
   bookingsAdminBookingsCheckPaymentStatusRetrieve,
   bookingsAdminBookingsCompleteCreate,
   bookingsAdminBookingsConfirmCreate,
+  bookingsAdminBookingsCreate,
   bookingsAdminBookingsNoShowCreate,
   bookingsAdminBookingsPartialUpdate,
   bookingsAdminBookingsRecordPaymentCreate,
@@ -48,6 +50,7 @@ import {
   bookingsAdminStaffPartialUpdate,
 } from "@/api/generated"
 import type {
+  AdminBookingCreateRequest,
   AdminSlotsResponse,
   AvailableUser,
   BookingCancelResponse,
@@ -171,6 +174,9 @@ export async function fetchActiveServicesCount(): Promise<number> {
 
 export const fetchBooking = (id: number): Promise<BookingDetail> => bookingsAdminBookingsRetrieve(id)
 
+/** Book for a customer by hand (`bookings/` POST): an existing `client_id` or the new customer's fields. */
+export const createBooking = (data: AdminBookingCreateRequest): Promise<BookingDetail> => bookingsAdminBookingsCreate(data)
+
 export const confirmBooking = (id: number, force = false): Promise<BookingDetail> =>
   bookingsAdminBookingsConfirmCreate(id, force ? { force: true } : {})
 
@@ -232,6 +238,100 @@ export const fetchClientBookings = (id: number, lang?: string): Promise<BookingL
   bookingsAdminClientsBookingsRetrieve(id, lang, true)
 
 export const DEFAULT_TIMEZONE = "Asia/Tbilisi"
+
+// ---------------------------------------------------------------------------
+// Calendar range (BKG-02): `admin/calendar/` is not in the generated client
+// yet, so it is called through the shared axios instance (same base URL,
+// token and error handling as the generated functions).
+// ---------------------------------------------------------------------------
+
+/** One weekly row of a staff member's hours (`day_of_week` 0 = Monday). */
+export interface CalendarAvailability {
+  id: number
+  day_of_week: number
+  start_time: string
+  end_time: string
+  is_available: boolean
+  break_start: string | null
+  break_end: string | null
+}
+
+/** A day the staff member is off or has special hours (only days inside the requested range). */
+export interface CalendarException {
+  id: number
+  date: string
+  start_time: string | null
+  end_time: string | null
+  is_available: boolean
+  reason: string
+}
+
+export interface CalendarStaff {
+  id: number
+  user_id: number
+  full_name: string
+  profile_image: string | null
+  is_active_for_bookings: boolean
+  availability: CalendarAvailability[]
+  exceptions: CalendarException[]
+}
+
+/** A booking of the calendar payload: the slim row plus `staff_id` and the notes. */
+export interface CalendarBooking {
+  id: number
+  booking_number: string
+  client: { id: number; full_name: string; phone_number: string; email: string }
+  service: { id: number; name_display: string; duration_minutes: number; buffer_time_minutes: number }
+  staff_id: number | null
+  date: string
+  start_time: string
+  end_time: string
+  status: BookingRow["status"]
+  payment_status: BookingRow["payment_status"]
+  payment_method?: string
+  total_amount: string
+  deposit_amount: string
+  paid_amount: string
+  client_notes: string
+  staff_notes: string
+  created_at: string
+}
+
+export interface CalendarRange {
+  date_from: string
+  date_to: string
+  /** IANA zone the dates and times are in (the business timezone). */
+  timezone: string
+  staff: CalendarStaff[]
+  bookings: CalendarBooking[]
+}
+
+/** The calendar endpoint refuses ranges longer than this many days. */
+export const CALENDAR_MAX_DAYS = 62
+
+export interface CalendarRangeParams {
+  dateFrom: string
+  dateTo: string
+  /** Only these staff members (and their bookings). */
+  staff?: number[]
+  lang?: string
+}
+
+/**
+ * Staff roster with hours + every booking of `[dateFrom, dateTo]` (at most
+ * 62 days) in one request: `GET admin/calendar/?date_from&date_to&staff&lang`.
+ */
+export async function fetchCalendarRange(p: CalendarRangeParams): Promise<CalendarRange> {
+  const res = await axios.get<CalendarRange>("/api/bookings/admin/calendar/", {
+    params: {
+      date_from: p.dateFrom,
+      date_to: p.dateTo,
+      staff: p.staff && p.staff.length > 0 ? p.staff.join(",") : undefined,
+      lang: p.lang || undefined,
+    },
+  })
+  return res.data
+}
 
 /** The business timezone from the booking settings (everyone with the feature may read them). */
 export async function fetchBusinessTimezone(): Promise<string> {
