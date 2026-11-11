@@ -218,6 +218,8 @@ describe("BKG-03 services page", () => {
     renderBookings(<ServicesPage />, "ka")
     const rows = await screen.findAllByTestId("bkg-table-row")
     expect(rows[0]).toHaveTextContent("45 წთ")
+    // The list is fetched without ?lang (name_display is English): the ka name wins.
+    expect(rows[0]).toHaveTextContent("კბილების წმენდა")
     expect(within(rows[0]).getByTestId("bkg-service-status-pill")).toHaveTextContent("აქტიური")
     expect(screen.getByTestId("bkg-services-add")).toHaveTextContent("სერვისის დამატება")
   })

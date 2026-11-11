@@ -1,8 +1,11 @@
 /**
  * Display names for the localized booking objects (BKG-00 foundation).
- * `name_display` comes from the API in the request's `?lang`; when it is
- * missing (older payloads, nested objects) the `{en, ka}` name is resolved in
- * the UI locale. Replaces the `name.en` reads of the old screens.
+ * The `{en, ka}` name is resolved in the UI locale first: `name_display` is
+ * the backend's pick for the request's `?lang`, which the catalog lists and
+ * nested objects (a booking's service) fetch without, so it is English there.
+ * `name_display` is used when the object has no name for the locale (slim
+ * rows carry only `name_display`), then the other language. Replaces the
+ * `name.en` reads of the old screens.
  */
 import { localizedName } from "@/lib/utils"
 
@@ -15,9 +18,11 @@ export function displayName(
   fallback = "—"
 ): string {
   if (!obj) return fallback
-  if (obj.name_display) return obj.name_display
   const name = obj.name
-  if (typeof name === "string") return name || fallback
+  if (typeof name === "string") return name || obj.name_display || fallback
+  const own = name && (locale === "ka" ? name.ka : name.en)
+  if (own) return own
+  if (obj.name_display) return obj.name_display
   return localizedName(name ?? null, locale) || fallback
 }
 

@@ -20,7 +20,7 @@ import {
 } from "@/app/(tenant)/bookings/_components/ui/format"
 import { displayName, staffName } from "@/app/(tenant)/bookings/_components/ui/name"
 import { pageRange } from "@/app/(tenant)/bookings/_components/ui/pagination"
-import { dashboardTiles } from "@/app/(tenant)/bookings/page"
+import { dashboardTiles } from "@/app/(tenant)/bookings/_lib/dashboard-tiles"
 import { flatten, messages } from "./bkg00-helpers"
 
 describe("BKG-00 booking status rules (mirror views_admin.py)", () => {
@@ -96,8 +96,12 @@ describe("BKG-00 formatting", () => {
     expect(dateFilterRange("past", "2026-11-10")).toEqual({ dateTo: "2026-11-09" })
   })
 
-  it("names: name_display first, then the locale, then English", () => {
-    expect(displayName({ name_display: "Whitening", name: { en: "X", ka: "Y" } }, "ka")).toBe("Whitening")
+  it("names: the locale's own name first, then name_display, then the other language", () => {
+    // Catalog lists and nested objects are fetched without ?lang, so name_display is English there.
+    expect(displayName({ name_display: "Whitening", name: { en: "X", ka: "Y" } }, "ka")).toBe("Y")
+    expect(displayName({ name_display: "Whitening", name: { en: "X", ka: "Y" } }, "en")).toBe("X")
+    expect(displayName({ name_display: "გათეთრება", name: { en: "Whitening" } }, "ka")).toBe("გათეთრება")
+    expect(displayName({ name_display: "Whitening" }, "ka")).toBe("Whitening")
     expect(displayName({ name: { en: "Whitening", ka: "გათეთრება" } }, "ka")).toBe("გათეთრება")
     expect(displayName({ name: { en: "Whitening" } }, "ka")).toBe("Whitening")
     expect(displayName({ name: "Plain" }, "en")).toBe("Plain")

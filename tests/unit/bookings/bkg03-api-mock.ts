@@ -42,10 +42,17 @@ export function page<T>(results: T[]) {
   return { count: results.length, next: null, previous: null, results }
 }
 
+/** Real payloads keep `name` and `name_display` consistent: a `name_display` override without `name` names both languages. */
+function consistentName(over: Record<string, unknown>, fallback: { en: string; ka: string }) {
+  if (over.name) return over.name
+  const nd = over.name_display
+  return typeof nd === "string" ? { en: nd, ka: nd } : fallback
+}
+
 export function makeCategory(id: number, over: Record<string, unknown> = {}) {
   return {
     id,
-    name: { en: `Category ${id}`, ka: `კატეგორია ${id}` },
+    name: consistentName(over, { en: `Category ${id}`, ka: `კატეგორია ${id}` }),
     description: { en: `Description ${id}`, ka: `აღწერა ${id}` },
     icon: "",
     display_order: id,
@@ -74,7 +81,7 @@ export function makeStaff(id: number, over: Record<string, unknown> = {}) {
 export function makeService(id: number, over: Record<string, unknown> = {}) {
   return {
     id,
-    name: { en: `Service ${id}`, ka: `სერვისი ${id}` },
+    name: consistentName(over, { en: `Service ${id}`, ka: `სერვისი ${id}` }),
     description: { en: "", ka: "" },
     category: null,
     base_price: "120.00",
