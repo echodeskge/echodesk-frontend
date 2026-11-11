@@ -1,449 +1,280 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { useTranslations } from "next-intl"
-import {
-  bookingsAdminStaffList,
-  bookingsAdminStaffCreate,
-  bookingsAdminStaffPartialUpdate,
-  bookingsAdminStaffDestroy,
-  bookingsAdminStaffAvailableUsersRetrieve,
-  bookingsAdminServicesList,
-} from "@/api/generated"
-import { BookingStaff, ServiceList } from "@/api/generated/interfaces"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Search, UserCheck, Mail, Phone, Plus, Edit, Trash2, Clock } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useLocale, useTranslations } from "next-intl"
+import { toast } from "sonner"
+import { Clock, Mail, Plus, SearchX, UserCheck } from "lucide-react"
+import type { BookingStaff, ServiceList } from "@/api/generated/interfaces"
 import { useMyAccess } from "@/hooks/useMyAccess"
 import { getApiErrorMessage } from "@/lib/utils"
+import { createStaff, deleteStaff, fetchAllServices, fetchAllStaff, updateStaff } from "../_lib/bookings-api"
+import {
+  BookingsEmptyState,
+  BookingsHeaderBridge,
+  BookingsPage,
+  BookingsTable,
+  PersonCell,
+  SectionCard,
+  TonePill,
+  ToolbarSearch,
+  displayName,
+  rdButton,
+  staffName,
+  type BookingsColumn,
+} from "../_components/ui"
+import { ActivePill, DeleteDialog, RowActions, matchesSearch } from "../_components/catalog"
+import { StaffFormSheet, staffToCreatePayload, staffToUpdatePayload, type StaffFormState } from "./_components/staff-form"
 
-interface AvailableUser {
-  id: number
-  email: string
-  first_name: string
-  last_name: string
-  full_name: string
-}
+const VISIBLE_SERVICE_PILLS = 2
 
 export default function StaffPage() {
   const t = useTranslations("bookingsStaff")
-  const { toast } = useToast()
-  // Staff writes are limited to booking admins (staff, admin or manager role).
+  const tUi = useTranslations("bookingsUi")
+  const locale = useLocale()
   const { isBookingAdmin } = useMyAccess()
-  const [staff, setStaff] = useState<BookingStaff[]>([])
+
+  const [staff, setStaff] = useState<BookingStaff[] | undefined>(undefined)
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingStaff, setEditingStaff] = useState<BookingStaff | null>(null)
-  const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([])
-  const [services, setServices] = useState<ServiceList[]>([])
+  const [error, setError] = useState<unknown>(null)
+  const [search, setSearch] = useState("")
+  const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState<BookingStaff | null>(null)
   const [saving, setSaving] = useState(false)
+  const [services, setServices] = useState<ServiceList[]>([])
+  const [servicesLoaded, setServicesLoaded] = useState(false)
+  const [servicesLoading, setServicesLoading] = useState(false)
+  const [deleting, setDeleting] = useState<BookingStaff | null>(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
 
-  const [formData, setFormData] = useState({
-    user_id: "",
-    bio: "",
-    is_active_for_bookings: true,
-    service_ids: [] as number[],
-  })
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
-
-  useEffect(() => {
-    fetchStaff()
-    fetchServices()
-  }, [])
-
-  const fetchStaff = async () => {
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
     try {
-      setLoading(true)
-      const response = await bookingsAdminStaffList()
-      setStaff((response.results || response) as BookingStaff[])
-    } catch (error) {
-      console.error("Failed to fetch staff:", error)
-      toast({ title: t("error"), description: t("fetchFailed"), variant: "destructive" })
+      setStaff(await fetchAllStaff())
+    } catch (e) {
+      setError(e)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const fetchServices = async () => {
+  useEffect(() => {
+    load()
+  }, [load])
+
+  // The services checklist needs every service (not the first page): loaded when the form first opens.
+  const loadServices = useCallback(async () => {
+    if (servicesLoaded || servicesLoading) return
+    setServicesLoading(true)
     try {
-      const response = await bookingsAdminServicesList()
-      setServices((response.results || response) as ServiceList[])
-    } catch (error) {
-      console.error("Failed to fetch services:", error)
+      setServices(await fetchAllServices())
+      setServicesLoaded(true)
+    } catch (e) {
+      toast.error(getApiErrorMessage(e, t("servicesFailed")))
+    } finally {
+      setServicesLoading(false)
     }
+  }, [servicesLoaded, servicesLoading, t])
+
+  const openForm = (member: BookingStaff | null) => {
+    setEditing(member)
+    setFormOpen(true)
+    loadServices()
   }
 
-  const fetchAvailableUsers = async () => {
+  const submit = async (form: StaffFormState) => {
+    setSaving(true)
     try {
-      const response = await bookingsAdminStaffAvailableUsersRetrieve()
-      setAvailableUsers(response as unknown as AvailableUser[])
-    } catch (error) {
-      console.error("Failed to fetch available users:", error)
-      setAvailableUsers([])
-    }
-  }
-
-  const handleOpenDialog = async (staffMember?: BookingStaff) => {
-    if (staffMember) {
-      setEditingStaff(staffMember)
-      setFormData({
-        user_id: staffMember.user.id.toString(),
-        bio: staffMember.bio || "",
-        is_active_for_bookings: staffMember.is_active_for_bookings ?? true,
-        service_ids: staffMember.services?.map(s => s.id) || [],
-      })
-    } else {
-      setEditingStaff(null)
-      await fetchAvailableUsers()
-      setFormData({
-        user_id: "",
-        bio: "",
-        is_active_for_bookings: true,
-        service_ids: [],
-      })
-    }
-    setIsDialogOpen(true)
-  }
-
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {}
-    if (!editingStaff && !formData.user_id) errors.user_id = t("userRequired")
-    if (formData.service_ids.length === 0) errors.service_ids = t("servicesRequired")
-    setFormErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
-  const handleSave = async () => {
-    if (!validateForm()) return
-    try {
-      setSaving(true)
-      if (editingStaff) {
-        await bookingsAdminStaffPartialUpdate(editingStaff.id, {
-          bio: formData.bio,
-          is_active_for_bookings: formData.is_active_for_bookings,
-          service_ids: formData.service_ids,
-        })
-        toast({ title: t("success"), description: t("staffUpdated") })
+      if (editing) {
+        await updateStaff(editing.id, staffToUpdatePayload(form))
+        toast.success(t("staffUpdated"))
       } else {
-        await bookingsAdminStaffCreate({
-          user_id: parseInt(formData.user_id),
-          bio: formData.bio,
-          is_active_for_bookings: formData.is_active_for_bookings,
-          service_ids: formData.service_ids,
-        })
-        toast({ title: t("success"), description: t("staffCreated") })
+        await createStaff(staffToCreatePayload(form))
+        toast.success(t("staffCreated"))
       }
-      setIsDialogOpen(false)
-      fetchStaff()
-    } catch (error) {
-      console.error("Failed to save staff:", error)
-      toast({ title: t("error"), description: getApiErrorMessage(error, t("saveFailed")), variant: "destructive" })
+      setFormOpen(false)
+      await load()
+    } catch (e) {
+      toast.error(getApiErrorMessage(e, t("saveFailed")))
     } finally {
       setSaving(false)
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t("confirmDelete"))) return
-
+  const confirmDelete = async () => {
+    if (!deleting) return
+    setDeleteBusy(true)
     try {
-      await bookingsAdminStaffDestroy(id)
-      toast({ title: t("success"), description: t("staffDeleted") })
-      fetchStaff()
-    } catch (error) {
-      console.error("Failed to delete staff:", error)
-      toast({ title: t("error"), description: getApiErrorMessage(error, t("deleteFailed")), variant: "destructive" })
+      await deleteStaff(deleting.id)
+      toast.success(t("staffDeleted"))
+      setDeleting(null)
+      await load()
+    } catch (e) {
+      toast.error(getApiErrorMessage(e, t("deleteFailed")))
+    } finally {
+      setDeleteBusy(false)
     }
   }
 
-  const toggleService = (serviceId: number) => {
-    setFormData(prev => ({
-      ...prev,
-      service_ids: prev.service_ids.includes(serviceId)
-        ? prev.service_ids.filter(id => id !== serviceId)
-        : [...prev.service_ids, serviceId],
-    }))
-  }
+  const filtered = useMemo(
+    () => (staff ?? []).filter((m) => matchesSearch(search, staffName(m), m.user?.email)),
+    [staff, search]
+  )
 
-  const getServiceName = (service: ServiceList): string => {
-    if (typeof service.name === "string") return service.name
-    return service.name?.en || service.name_display || ""
-  }
+  const columns: BookingsColumn<BookingStaff>[] = useMemo(
+    () => [
+      {
+        id: "name",
+        header: t("name"),
+        width: "minmax(0,1.4fr)",
+        mobile: "title",
+        cell: (m) => <PersonCell name={staffName(m) || m.user?.email || "—"} size={28} />,
+      },
+      {
+        id: "email",
+        header: t("email"),
+        width: "minmax(0,1.4fr)",
+        mobile: "meta",
+        muted: true,
+        cell: (m) => (
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+            <span className="truncate">{m.user?.email || t("na")}</span>
+          </span>
+        ),
+      },
+      {
+        id: "services",
+        header: t("services"),
+        width: "minmax(0,1.8fr)",
+        mobile: "meta",
+        cell: (m) => {
+          const list = m.services ?? []
+          if (list.length === 0) return <span className="text-xs text-muted-foreground">{t("noServices")}</span>
+          const extra = list.length - VISIBLE_SERVICE_PILLS
+          return (
+            <span className="flex min-w-0 flex-wrap items-center gap-1" data-testid="bkg-staff-services-cell" title={list.map((s) => displayName(s, locale)).join(", ")}>
+              {list.slice(0, VISIBLE_SERVICE_PILLS).map((s) => (
+                <TonePill key={s.id} tone="neutral" className="max-w-[160px]">
+                  {displayName(s, locale)}
+                </TonePill>
+              ))}
+              {extra > 0 && (
+                <TonePill tone="neutral" testId="bkg-staff-services-more">
+                  +{extra}
+                </TonePill>
+              )}
+            </span>
+          )
+        },
+      },
+      {
+        id: "status",
+        header: t("status"),
+        width: "100px",
+        mobile: "end",
+        cell: (m) => <ActivePill active={m.is_active_for_bookings ?? true} label={m.is_active_for_bookings ?? true ? t("active") : t("inactive")} testId="bkg-staff-status-pill" />,
+      },
+      ...(isBookingAdmin
+        ? [
+            {
+              id: "actions",
+              header: <span className="sr-only">{t("actions")}</span>,
+              width: "64px",
+              align: "end",
+              mobile: "actions",
+              cell: (m) => (
+                <RowActions
+                  onEdit={() => openForm(m)}
+                  onDelete={() => setDeleting(m)}
+                  editLabel={t("editAria", { name: staffName(m) })}
+                  deleteLabel={t("deleteAria", { name: staffName(m) })}
+                  testId="bkg-staff-actions"
+                />
+              ),
+            } satisfies BookingsColumn<BookingStaff>,
+          ]
+        : []),
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, locale, isBookingAdmin]
+  )
 
-  const filteredStaff = staff.filter((member) => {
-    const fullName = `${member.user.first_name} ${member.user.last_name}`.toLowerCase()
-    return fullName.includes(searchQuery.toLowerCase()) ||
-           member.user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  })
-
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-96 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    )
-  }
+  const count = staff && !error ? t("staffFound", { count: filtered.length }) : null
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">{t("title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
-        </div>
-        {/* Staff can only be booked online during their working hours */}
-        <Button asChild variant="outline">
-          <Link href="/bookings/staff/availability">
-            <Clock className="mr-2 h-4 w-4" />
-            {t("workingHours")}
-          </Link>
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div>
-              <CardTitle>{t("allStaff")}</CardTitle>
-              <CardDescription>{t("staffFound", { count: filteredStaff.length })}</CardDescription>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t("searchStaff")}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-              {isBookingAdmin && (
-                <Button onClick={() => handleOpenDialog()}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t("addStaff")}
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {filteredStaff.length === 0 ? (
-            <div className="text-center py-12">
-              <UserCheck className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">{t("noStaffFound")}</h3>
-              <p className="text-muted-foreground mt-2">{t("noStaffMatch")}</p>
-              {isBookingAdmin && (
-                <Button onClick={() => handleOpenDialog()} className="mt-4">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t("addStaff")}
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("name")}</TableHead>
-                    <TableHead>{t("email")}</TableHead>
-                    <TableHead>{t("services")}</TableHead>
-                    <TableHead>{t("status")}</TableHead>
-                    <TableHead className="text-right">{t("actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredStaff.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell className="font-medium">
-                        {member.user.first_name} {member.user.last_name}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Mail className="h-4 w-4" />
-                          {member.user.email || t("na")}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {member.services && member.services.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {member.services.slice(0, 2).map((service) => (
-                              <Badge key={service.id} variant="secondary" className="text-xs">
-                                {service.name_display}
-                              </Badge>
-                            ))}
-                            {member.services.length > 2 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{member.services.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">{t("noServices")}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={member.is_active_for_bookings ? "default" : "secondary"}>
-                          {member.is_active_for_bookings ? t("active") : t("inactive")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {isBookingAdmin && (
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenDialog(member)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(member.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {editingStaff ? t("editStaff") : t("addStaff")}
-            </DialogTitle>
-            <DialogDescription>
-              {editingStaff ? t("editStaffDescription") : t("addStaffDescription")}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {!editingStaff && (
-              <div className="space-y-2">
-                <Label>{t("selectUserLabel")}</Label>
-                <Select
-                  value={formData.user_id}
-                  onValueChange={(value) => { setFormData({ ...formData, user_id: value }); setFormErrors(prev => ({ ...prev, user_id: "" })) }}
-                >
-                  <SelectTrigger className={formErrors.user_id ? "border-destructive" : ""}>
-                    <SelectValue placeholder={t("selectUserPlaceholder")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableUsers.map((user) => (
-                      <SelectItem key={user.id} value={user.id.toString()}>
-                        {user.full_name || `${user.first_name} ${user.last_name}`} ({user.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {formErrors.user_id && <p className="text-sm text-destructive">{formErrors.user_id}</p>}
-                {!formErrors.user_id && availableUsers.length === 0 && (
-                  <p className="text-sm text-muted-foreground">{t("noAvailableUsers")}</p>
-                )}
-              </div>
-            )}
-
-            {editingStaff && (
-              <div className="space-y-2">
-                <Label>{t("staffMember")}</Label>
-                <div className="p-2 bg-muted rounded-md">
-                  <p className="font-medium">
-                    {editingStaff.user.first_name} {editingStaff.user.last_name}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{editingStaff.user.email}</p>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="bio">{t("bio")}</Label>
-              <Textarea
-                id="bio"
-                placeholder={t("bioPlaceholder")}
-                value={formData.bio}
-                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="is_active"
-                checked={formData.is_active_for_bookings}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, is_active_for_bookings: !!checked })
+    <BookingsPage testId="bkg-staff">
+      <BookingsHeaderBridge
+        sub={count}
+        primary={isBookingAdmin ? { label: t("addStaff"), icon: Plus, onClick: () => openForm(null), testId: "bkg-staff-add" } : null}
+        secondary={[{ label: t("workingHours"), icon: Clock, href: "/bookings/staff/availability", testId: "bkg-staff-hours" }]}
+      />
+      <SectionCard
+        title={t("allStaff")}
+        hint={count ?? undefined}
+        actions={<ToolbarSearch value={search} onChange={setSearch} placeholder={t("searchStaff")} clearLabel={tUi("clearSearch")} testId="bkg-staff-search" />}
+        testId="bkg-staff-card"
+      >
+        <BookingsTable
+          variant="flush"
+          density="comfortable"
+          columns={columns}
+          rows={staff ? filtered : undefined}
+          rowKey={(m) => m.id}
+          loading={loading}
+          error={error}
+          onRetry={load}
+          onRowClick={isBookingAdmin ? (m) => openForm(m) : undefined}
+          ariaLabel={t("allStaff")}
+          skeletonRows={4}
+          testId="bkg-staff-table"
+          empty={
+            search ? (
+              <BookingsEmptyState
+                icon={SearchX}
+                title={tUi("noMatches")}
+                description={t("noStaffMatch")}
+                action={
+                  <button type="button" className={rdButton.outlineSm} onClick={() => setSearch("")}>
+                    {tUi("clearFilters")}
+                  </button>
                 }
               />
-              <Label htmlFor="is_active" className="cursor-pointer">
-                {t("activeForBookings")}
-              </Label>
-            </div>
+            ) : (
+              <BookingsEmptyState
+                icon={UserCheck}
+                title={t("noStaffFound")}
+                description={t("noStaffYet")}
+                action={
+                  isBookingAdmin ? (
+                    <button type="button" className={rdButton.primary} onClick={() => openForm(null)}>
+                      <Plus className="h-3.5 w-3.5" aria-hidden />
+                      {t("addStaff")}
+                    </button>
+                  ) : undefined
+                }
+              />
+            )
+          }
+        />
+      </SectionCard>
 
-            <div className="space-y-2">
-              <Label>{t("assignServices")}</Label>
-              <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
-                {services.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{t("noServicesAvailable")}</p>
-                ) : (
-                  services.map((service) => (
-                    <div key={service.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`service-${service.id}`}
-                        checked={formData.service_ids.includes(service.id)}
-                        onCheckedChange={() => toggleService(service.id)}
-                      />
-                      <Label
-                        htmlFor={`service-${service.id}`}
-                        className="cursor-pointer text-sm flex-1"
-                      >
-                        {getServiceName(service)}
-                      </Label>
-                    </div>
-                  ))
-                )}
-              </div>
-              {formErrors.service_ids ? (
-                <p className="text-sm text-destructive">{formErrors.service_ids}</p>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  {t("servicesSelected", { count: formData.service_ids.length })}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              {t("cancel")}
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? t("saving") : editingStaff ? t("update") : t("create")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+      {isBookingAdmin && (
+        <>
+          <StaffFormSheet open={formOpen} onOpenChange={setFormOpen} staff={editing} services={services} servicesLoading={servicesLoading} onSubmit={submit} submitting={saving} />
+          <DeleteDialog
+            open={!!deleting}
+            onOpenChange={(o) => !o && setDeleting(null)}
+            title={t("deleteDialog.title")}
+            description={t("deleteDialog.description", { name: deleting ? staffName(deleting) : "" })}
+            cancelLabel={t("cancel")}
+            confirmLabel={t("deleteDialog.confirm")}
+            onConfirm={confirmDelete}
+            busy={deleteBusy}
+            testId="bkg-staff-delete"
+          />
+        </>
+      )}
+    </BookingsPage>
   )
 }
