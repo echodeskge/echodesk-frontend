@@ -14,12 +14,14 @@ export interface PickerUser {
   first_name?: string
   last_name?: string
   full_name?: string
+  /** SCHEMAS.md `context.users` rows carry `name` instead of first/last. */
+  name?: string
   role?: string
   is_active?: boolean
 }
 
 export function pickerUserLabel(u: PickerUser): string {
-  const name = u.full_name || [u.first_name, u.last_name].filter(Boolean).join(" ")
+  const name = u.full_name || u.name || [u.first_name, u.last_name].filter(Boolean).join(" ")
   return name.trim() || u.email
 }
 
