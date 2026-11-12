@@ -9440,6 +9440,7 @@
       "telegramVerify": "Verify",
       "emailSheetTitle": "Connect a mailbox",
       "emailSheetHint": "Pick a provider or enter the IMAP/SMTP servers.",
+      "createWidget": "Create website chat",
       "widgetDefaultLabel": "Website",
       "widgetCreated": "Website chat created. Paste the snippet on your site.",
       "widgetFailed": "Could not create the website chat.",

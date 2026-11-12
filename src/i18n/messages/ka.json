@@ -9440,6 +9440,7 @@
       "telegramVerify": "დადასტურება",
       "emailSheetTitle": "საფოსტო ყუთის დაკავშირება",
       "emailSheetHint": "აირჩიეთ პროვაიდერი ან შეიყვანეთ IMAP/SMTP სერვერები.",
+      "createWidget": "ვებსაიტის ჩატის შექმნა",
       "widgetDefaultLabel": "ვებსაიტი",
       "widgetCreated": "ვებსაიტის ჩატი შეიქმნა. ჩასვით კოდი თქვენს საიტზე.",
       "widgetFailed": "ვებსაიტის ჩატის შექმნა ვერ მოხერხდა.",
