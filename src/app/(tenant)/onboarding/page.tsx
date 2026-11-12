@@ -114,7 +114,13 @@ function OnboardingWizard() {
       const payload = def.prepare ? def.prepare(answers) : answers
       const res = await applyStep(step.key, payload)
       cache.setStep(res.step)
-      setDrafts((all) => ({ ...all, [step.key]: res.step.answers }))
+      // Drop the draft: the stored answers are the validated contract shape,
+      // not the step's draft shape, so the next visit re-runs `def.init`.
+      setDrafts((all) => {
+        const rest = { ...all }
+        delete rest[step.key]
+        return rest
+      })
       advance()
     } catch (err) {
       if (err instanceof OnboardingValidationError) {

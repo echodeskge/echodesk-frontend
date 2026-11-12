@@ -164,6 +164,29 @@ describe("onboarding wizard", () => {
     expect(screen.getByTestId("onb-company-name-input")).toHaveValue("Draft Co")
   })
 
+  it("after apply the step re-initialises from the stored answers (contract shape, not the draft shape)", async () => {
+    mocks.search = "step=tickets"
+    mocks.post.mockResolvedValueOnce({
+      data: {
+        step: {
+          ...STEPS[1],
+          status: "done",
+          answers: { purpose: "support", board_name: "Support", form_fields: ["phone", { label: "Plate", type: "string" }], tags: [], team_user_ids: [] },
+        },
+        result: { created: {}, updated: [], notes: [] },
+      },
+    })
+    renderOnb(<OnboardingPage />)
+    await screen.findByTestId("onb-step-tickets")
+    expect(screen.queryByTestId("onb-tickets-custom-row-0-label")).toBeNull()
+    fireEvent.click(screen.getByTestId("onb-apply"))
+    // ?step=tickets stays in the (mocked) URL, so the wizard re-renders the
+    // tickets step from the stored answers right after the apply.
+    await waitFor(() => expect(mocks.post).toHaveBeenCalled())
+    expect(await screen.findByTestId("onb-tickets-custom-row-0-label")).toHaveValue("Plate")
+    expect(screen.getByTestId("onb-rail-step-tickets")).toHaveAttribute("data-status", "done")
+  })
+
   it("shows the finish screen directly when nothing is pending", async () => {
     mocks.get.mockResolvedValue({ data: state([step("workspace", 0, { status: "done" }), step("tickets", 10, { status: "skipped" })]) })
     renderOnb(<OnboardingPage />)
