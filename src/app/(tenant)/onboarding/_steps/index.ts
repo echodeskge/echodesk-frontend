@@ -9,10 +9,23 @@ import { step as workspace } from "./workspace"
 import { step as tickets } from "./tickets"
 import { step as socialIntegrations } from "./social_integrations"
 import { step as bookingManagement } from "./booking_management"
+import { step as ecommerceCrm } from "./ecommerce_crm"
+import { step as invoiceManagement } from "./invoice_management"
+import { step as leaveManagement } from "./leave_management"
+import { step as ipCalling } from "./ip_calling"
 import { placeholderStep } from "./placeholder"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const STEPS: StepDefinition<any>[] = [workspace, tickets, socialIntegrations, bookingManagement]
+const STEPS: StepDefinition<any>[] = [
+  workspace,
+  tickets,
+  socialIntegrations,
+  bookingManagement,
+  ecommerceCrm,
+  invoiceManagement,
+  leaveManagement,
+  ipCalling,
+]
 
 const REGISTRY = new Map<string, StepDefinition>(STEPS.map((s) => [s.key, s as StepDefinition]))
 
