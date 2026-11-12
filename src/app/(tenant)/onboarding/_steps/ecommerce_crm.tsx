@@ -91,7 +91,8 @@ export interface ShopTax {
 
 export interface ShopLook {
   template: StorefrontTemplate
-  preset: VoltagePreset
+  /** Voltage swatch key, or a classic theme preset (`default` / `rounded` / `sharp` / `soft` / `custom`). */
+  preset: string
   color_mode: ColorMode
   primary_color: string
 }
@@ -126,6 +127,8 @@ export const VOLTAGE_PRESETS: Record<VoltagePreset, { accent: string; accent2: s
   rose: { accent: "#e35884", accent2: "#1a1a2e" },
 }
 const PRESET_KEYS = Object.keys(VOLTAGE_PRESETS) as VoltagePreset[]
+/** Classic storefront `theme_preset` choices (backend `EcommerceSettings`). */
+const CLASSIC_PRESET_KEYS = ["default", "rounded", "sharp", "soft", "custom"]
 
 const str = (v: unknown, fallback = ""): string => (typeof v === "string" ? v : fallback)
 const bool = (v: unknown, fallback: boolean): boolean => (typeof v === "boolean" ? v : fallback)
@@ -216,7 +219,7 @@ export function initShopAnswers(step: Pick<OnboardingStep, "answers" | "prefill"
     tax: { rate: money(tax.rate, "18.00"), inclusive: bool(tax.inclusive, true), label: str(tax.label, "VAT") },
     look: {
       template: template === "voltage" ? "voltage" : "classic",
-      preset: (PRESET_KEYS as string[]).includes(preset) ? (preset as VoltagePreset) : "refurb",
+      preset: preset || (template === "voltage" ? "refurb" : "default"),
       color_mode: mode === "dark" ? "dark" : "light",
       primary_color: str(look.primary_color),
     },
@@ -288,11 +291,24 @@ export function prepareShopAnswers(a: ShopAnswers): ShopAnswers {
   out.tax = { rate: money(a.tax.rate, "0.00"), inclusive: a.tax.inclusive, label: trim(a.tax.label) || "VAT" }
 
   const color = trim(a.look.primary_color)
+  const hex = /^#[0-9a-fA-F]{6}$/.test(color) ? color.toLowerCase() : null
+  // Each template validates its own preset list on the backend: a voltage
+  // swatch is rejected for classic (and vice versa).
+  const preset =
+    a.look.template === "voltage"
+      ? (PRESET_KEYS as string[]).includes(a.look.preset)
+        ? a.look.preset
+        : "refurb"
+      : CLASSIC_PRESET_KEYS.includes(a.look.preset)
+        ? a.look.preset
+        : hex
+          ? "custom"
+          : "default"
   out.look = {
     template: a.look.template,
-    preset: a.look.preset,
+    preset,
     color_mode: a.look.color_mode,
-    primary_color: /^#[0-9a-fA-F]{6}$/.test(color) ? color.toLowerCase() : null,
+    primary_color: hex,
   }
 
   const analytics = {
@@ -557,6 +573,7 @@ export function ShopStep({ answers, setAnswers, errors, context }: StepComponent
           testId="onb-shop-template"
         />
         <div className="grid gap-4 sm:grid-cols-3">
+          {answers.look.template === "voltage" && (
           <div className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium">{t("look.preset")}</span>
             <div role="radiogroup" aria-label={t("look.preset")} className="grid grid-cols-7 gap-2 sm:max-w-[260px]">
@@ -588,6 +605,8 @@ export function ShopStep({ answers, setAnswers, errors, context }: StepComponent
               </span>
             )}
           </div>
+          )}
+          {answers.look.template === "voltage" && (
           <div className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium">{t("look.mode")}</span>
             <Segmented
@@ -602,6 +621,7 @@ export function ShopStep({ answers, setAnswers, errors, context }: StepComponent
               testId="onb-shop-mode"
             />
           </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="onb-shop-color" className="text-[13px] font-medium">
               {t("look.color")}

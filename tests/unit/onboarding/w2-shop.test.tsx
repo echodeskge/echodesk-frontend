@@ -96,9 +96,13 @@ describe("shop answers", () => {
         quickshipper: null,
       },
       tax: { rate: "18.00", inclusive: true, label: "VAT" },
-      look: { template: "classic", preset: "refurb", color_mode: "light", primary_color: "#abcdef" },
+      // classic: a voltage swatch is not a classic theme preset → `custom` (a colour is given)
+      look: { template: "classic", preset: "custom", color_mode: "light", primary_color: "#abcdef" },
       deploy_now: true,
     })
+    expect(prepareShopAnswers({ ...a, look: { template: "classic", preset: "refurb", color_mode: "light", primary_color: "" } }).look.preset).toBe("default")
+    expect(prepareShopAnswers({ ...a, look: { template: "classic", preset: "rounded", color_mode: "light", primary_color: "" } }).look.preset).toBe("rounded")
+    expect(prepareShopAnswers({ ...a, look: { template: "voltage", preset: "default", color_mode: "light", primary_color: "" } }).look.preset).toBe("refurb")
 
     const qs = prepareShopAnswers({
       ...a,
