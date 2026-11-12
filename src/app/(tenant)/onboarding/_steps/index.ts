@@ -6,10 +6,13 @@
  */
 import type { StepDefinition } from "./types"
 import { step as workspace } from "./workspace"
+import { step as tickets } from "./tickets"
+import { step as socialIntegrations } from "./social_integrations"
+import { step as bookingManagement } from "./booking_management"
 import { placeholderStep } from "./placeholder"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const STEPS: StepDefinition<any>[] = [workspace]
+const STEPS: StepDefinition<any>[] = [workspace, tickets, socialIntegrations, bookingManagement]
 
 const REGISTRY = new Map<string, StepDefinition>(STEPS.map((s) => [s.key, s as StepDefinition]))
 

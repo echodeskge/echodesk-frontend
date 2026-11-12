@@ -52,10 +52,26 @@ export interface EditableTableProps<Row extends object> {
   testId?: string
 }
 
+/** First message of a cell error: `["msg"]`, `"msg"` or nested (`{ka: ["msg"]}` of an i18n cell). */
 function cellError(rowErrors: Record<string, unknown> | undefined, key: string): string | null {
-  const v = rowErrors?.[key]
-  if (typeof v === "string") return v
-  if (Array.isArray(v) && typeof v[0] === "string") return v[0]
+  return firstMessage(rowErrors?.[key])
+}
+
+function firstMessage(value: unknown): string | null {
+  if (typeof value === "string") return value || null
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const s = firstMessage(item)
+      if (s) return s
+    }
+    return null
+  }
+  if (value && typeof value === "object") {
+    for (const inner of Object.values(value as Record<string, unknown>)) {
+      const s = firstMessage(inner)
+      if (s) return s
+    }
+  }
   return null
 }
 

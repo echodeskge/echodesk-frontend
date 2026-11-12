@@ -5,6 +5,8 @@ import { fireEvent, screen, waitFor } from "@testing-library/react"
 
 const mocks = vi.hoisted(() => ({ post: vi.fn() }))
 vi.mock("@/api/axios", () => ({ default: { get: vi.fn(), post: (...a: unknown[]) => mocks.post(...a) } }))
+// The registry pulls in the bookings step, which reads the current user through useMyAccess.
+vi.mock("@/hooks/useMyAccess", () => ({ useMyAccess: () => ({ loaded: true, userId: 1, isStaff: true, isSuperuser: false, has: () => false }) }))
 
 import {
   WorkspaceStep,
@@ -36,8 +38,9 @@ describe("workspace answers", () => {
   it("registry: workspace has a component, unknown keys get the placeholder", () => {
     expect(hasStepComponent("workspace")).toBe(true)
     expect(getStepDefinition("workspace").titleKey).toBe("steps.workspace.title")
-    expect(hasStepComponent("tickets")).toBe(false)
-    expect(getStepDefinition("tickets").titleKey).toBe("steps.tickets.title")
+    expect(hasStepComponent("tickets")).toBe(true)
+    expect(hasStepComponent("ecommerce_crm")).toBe(false)
+    expect(getStepDefinition("ecommerce_crm").titleKey).toBe("steps.ecommerce_crm.title")
   })
 
   it("init takes prefill when nothing was applied, with safe defaults", () => {

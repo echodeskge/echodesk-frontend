@@ -21,14 +21,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  useDisconnectTelegram,
-  useTelegramSendCode,
-  useTelegramStatus,
-  useTelegramVerify,
-} from "@/hooks/api/useSocial";
+import { useDisconnectTelegram, useTelegramStatus } from "@/hooks/api/useSocial";
+import { TelegramLoginFields } from "@/components/telegram/TelegramLoginFields";
+import { useTelegramLogin } from "@/components/telegram/useTelegramLogin";
 
 export function TelegramIcon({ className }: { className?: string }) {
   return (
@@ -38,86 +33,29 @@ export function TelegramIcon({ className }: { className?: string }) {
   );
 }
 
-// E.164: + followed by 7-15 digits (matches the backend serializer's regex).
-const PHONE_RE = /^\+\d{7,15}$/;
-
-type WizardStep = "phone" | "code" | "password";
-
 export function TelegramConnection() {
   const t = useTranslations("social.telegram");
   const { data: status, isLoading, refetch, isRefetching } = useTelegramStatus();
-  const sendCode = useTelegramSendCode();
-  const verify = useTelegramVerify();
   const disconnect = useDisconnectTelegram();
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [step, setStep] = useState<WizardStep>("phone");
-  const [phone, setPhone] = useState("");
-  const [code, setCode] = useState("");
-  const [password, setPassword] = useState("");
-  const [loginToken, setLoginToken] = useState("");
+  // Phone → code → 2FA password; shared with the onboarding Inbox step.
+  const login = useTelegramLogin({
+    notify: { success: (m) => toast.success(m), error: (m) => toast.error(m) },
+    onConnected: () => {
+      setDialogOpen(false);
+      refetch();
+    },
+  });
+  const { step, phone } = login;
 
   const accounts = status?.accounts ?? [];
   const activeAccounts = accounts.filter((a) => a.is_active);
   const isConnected = !!status?.connected;
 
-  const resetWizard = () => {
-    setStep("phone");
-    setPhone("");
-    setCode("");
-    setPassword("");
-    setLoginToken("");
-  };
-
   const openWizard = () => {
-    resetWizard();
+    login.reset();
     setDialogOpen(true);
-  };
-
-  const errorMessage = (err: any): string => {
-    const data = err?.response?.data;
-    if (data?.error_code === "flood_wait") {
-      return t("floodWait", { seconds: data.retry_after ?? 60 });
-    }
-    return data?.error || err?.message || t("genericError");
-  };
-
-  const handleSendCode = async () => {
-    try {
-      const res = await sendCode.mutateAsync(phone.trim());
-      setLoginToken(res.login_token);
-      setStep("code");
-      toast.success(t("codeSent"));
-    } catch (err: any) {
-      toast.error(errorMessage(err));
-    }
-  };
-
-  const handleVerify = async (withPassword: boolean) => {
-    try {
-      const res = await verify.mutateAsync(
-        withPassword
-          ? { login_token: loginToken, password }
-          : { login_token: loginToken, code: code.trim() }
-      );
-      if (res.status === "password_required") {
-        setStep("password");
-        return;
-      }
-      toast.success(t("connectedSuccess"));
-      setDialogOpen(false);
-      resetWizard();
-      refetch();
-    } catch (err: any) {
-      const data = err?.response?.status;
-      // 410 = login state expired — restart from the phone step.
-      if (data === 410) {
-        toast.error(t("loginExpired"));
-        resetWizard();
-        return;
-      }
-      toast.error(errorMessage(err));
-    }
   };
 
   const handleDisconnect = async (accountId: number) => {
@@ -125,8 +63,9 @@ export function TelegramConnection() {
     try {
       await disconnect.mutateAsync(accountId);
       toast.success(t("disconnectedSuccess"));
-    } catch (err: any) {
-      toast.error(errorMessage(err));
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string } }; message?: string } | null;
+      toast.error(e?.response?.data?.error || e?.message || t("genericError"));
     }
   };
 
@@ -202,90 +141,20 @@ export function TelegramConnection() {
             </DialogDescription>
           </DialogHeader>
 
-          {step === "phone" && (
-            <div className="space-y-2">
-              <Label htmlFor="tg-phone">{t("phoneLabel")}</Label>
-              <Input
-                id="tg-phone"
-                type="tel"
-                placeholder="+995599123456"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/[^\d+]/g, ""))}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && PHONE_RE.test(phone.trim())) handleSendCode();
-                }}
-                autoFocus
-              />
-              <p className="text-xs text-muted-foreground">{t("phoneHint")}</p>
-            </div>
-          )}
-
-          {step === "code" && (
-            <div className="space-y-2">
-              <Label htmlFor="tg-code">{t("codeLabel")}</Label>
-              <Input
-                id="tg-code"
-                inputMode="numeric"
-                placeholder="12345"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && code.trim().length >= 4) handleVerify(false);
-                }}
-                autoFocus
-              />
-              <p className="text-xs text-muted-foreground">{t("codeHint")}</p>
-            </div>
-          )}
-
-          {step === "password" && (
-            <div className="space-y-2">
-              <Label htmlFor="tg-password">{t("passwordLabel")}</Label>
-              <Input
-                id="tg-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && password) handleVerify(true);
-                }}
-                autoFocus
-              />
-              <p className="text-xs text-muted-foreground">{t("passwordHint")}</p>
-            </div>
-          )}
+          <TelegramLoginFields login={login} idPrefix="tg" />
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               {t("cancel")}
             </Button>
-            {step === "phone" && (
-              <Button
-                onClick={handleSendCode}
-                disabled={!PHONE_RE.test(phone.trim()) || sendCode.isPending}
-                className="bg-[#229ED9] hover:bg-[#1d8dc4]"
-              >
-                {sendCode.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {step === "phone" ? (
+              <Button onClick={login.sendCode} disabled={!login.canSend} className="bg-[#229ED9] hover:bg-[#1d8dc4]">
+                {login.sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t("sendCode")}
               </Button>
-            )}
-            {step === "code" && (
-              <Button
-                onClick={() => handleVerify(false)}
-                disabled={code.trim().length < 4 || verify.isPending}
-                className="bg-[#229ED9] hover:bg-[#1d8dc4]"
-              >
-                {verify.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t("verify")}
-              </Button>
-            )}
-            {step === "password" && (
-              <Button
-                onClick={() => handleVerify(true)}
-                disabled={!password || verify.isPending}
-                className="bg-[#229ED9] hover:bg-[#1d8dc4]"
-              >
-                {verify.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            ) : (
+              <Button onClick={login.verify} disabled={!login.canVerify} className="bg-[#229ED9] hover:bg-[#1d8dc4]">
+                {login.verifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t("verify")}
               </Button>
             )}

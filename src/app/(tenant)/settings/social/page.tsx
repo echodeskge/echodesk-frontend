@@ -7,6 +7,7 @@ import { Bell, Loader2, Users, Play, MessageSquare, Wrench, Trash2, Mail, Sparkl
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMyAccess } from "@/hooks/useMyAccess";
 import { useSocialSettings, useUpdateSocialSettings, useClearPlatformHistory, useEmailStatus, AutoReplySettings, AwayHoursSchedule, PlatformAutoReplySettings, SocialSettings } from "@/hooks/api/useSocial";
 import { EmailSyncDebug } from "@/components/social/EmailSyncDebug";
 import { AICompanionTab } from "./AICompanionTab";
@@ -79,6 +80,7 @@ interface SocialSettingsForm {
   soundWhatsapp: string;
   soundEmail: string;
   soundWidget: string;
+  soundTelegram: string;
   soundTeamChat: string;
   soundSystem: string;
   timezone: string;
@@ -102,6 +104,7 @@ const INITIAL_FORM: SocialSettingsForm = {
   soundWhatsapp: 'mixkit-positive-notification-951.wav',
   soundEmail: 'mixkit-bell-notification-933.wav',
   soundWidget: 'mixkit-bubble-pop-up-alert-notification-2357.wav',
+  soundTelegram: 'mixkit-bubble-pop-up-alert-notification-2357.wav',
   soundTeamChat: 'mixkit-happy-bells-notification-937.wav',
   soundSystem: 'mixkit-confirmation-tone-2867.wav',
   timezone: 'UTC',
@@ -142,6 +145,7 @@ function fromSettings(settings: SocialSettings): SocialSettingsForm {
     soundWhatsapp: knownSound(settings.notification_sound_whatsapp, 'mixkit-positive-notification-951.wav'),
     soundEmail: knownSound(settings.notification_sound_email, 'mixkit-bell-notification-933.wav'),
     soundWidget: knownSound(settings.notification_sound_widget, 'mixkit-bubble-pop-up-alert-notification-2357.wav'),
+    soundTelegram: knownSound(settings.notification_sound_telegram, 'mixkit-bubble-pop-up-alert-notification-2357.wav'),
     soundTeamChat: knownSound(settings.notification_sound_team_chat, 'mixkit-happy-bells-notification-937.wav'),
     soundSystem: knownSound(settings.notification_sound_system, 'mixkit-confirmation-tone-2867.wav'),
     // Auto-reply settings
@@ -357,6 +361,8 @@ function NotificationsTab({
   setSoundEmail,
   soundWidget,
   setSoundWidget,
+  soundTelegram,
+  setSoundTelegram,
   soundTeamChat,
   setSoundTeamChat,
   soundSystem,
@@ -378,6 +384,8 @@ function NotificationsTab({
   setSoundEmail: (v: string) => void;
   soundWidget: string;
   setSoundWidget: (v: string) => void;
+  soundTelegram: string;
+  setSoundTelegram: (v: string) => void;
   soundTeamChat: string;
   setSoundTeamChat: (v: string) => void;
   soundSystem: string;
@@ -391,6 +399,7 @@ function NotificationsTab({
     { key: "whatsapp", label: t("settingsPage.notificationSounds.whatsapp") || "WhatsApp", dot: "bg-green-600", value: soundWhatsapp, set: setSoundWhatsapp },
     { key: "email", label: t("settingsPage.notificationSounds.email") || "Email", dot: "bg-red-600", value: soundEmail, set: setSoundEmail },
     { key: "widget", label: t("settingsPage.notificationSounds.widget") || "Website widget", dot: "bg-indigo-600", value: soundWidget, set: setSoundWidget },
+    { key: "telegram", label: t("settingsPage.notificationSounds.telegram") || "Telegram", dot: "bg-sky-500", value: soundTelegram, set: setSoundTelegram },
     { key: "team-chat", label: t("settingsPage.notificationSounds.teamChat") || "Team Chat", dot: "bg-purple-600", value: soundTeamChat, set: setSoundTeamChat },
     { key: "system", label: t("settingsPage.notificationSounds.system") || "System", dot: "bg-gray-600", value: soundSystem, set: setSoundSystem },
   ];
@@ -939,9 +948,11 @@ export default function SocialSettingsPage() {
   const t = useTranslations("social");
   const { toast } = useToast();
   const { user } = useAuth();
+  const access = useMyAccess();
 
-  // Check if user is superadmin (staff)
-  const isSuperAdmin = user?.is_staff === true;
+  // The management tabs (auto-reply, chat management, email, advanced, AI) are
+  // open to tenant admins and users with `manage_social_settings`, not only staff.
+  const isSuperAdmin = user?.is_staff === true || access.canManageSocialSettings;
 
   // Use React Query hooks for settings
   const { data: settings, isLoading: loading } = useSocialSettings();
@@ -1008,6 +1019,7 @@ export default function SocialSettingsPage() {
       notification_sound_whatsapp: form.soundWhatsapp,
       notification_sound_email: form.soundEmail,
       notification_sound_widget: form.soundWidget,
+      notification_sound_telegram: form.soundTelegram,
       notification_sound_team_chat: form.soundTeamChat,
       notification_sound_system: form.soundSystem,
       // Auto-reply settings
@@ -1081,6 +1093,8 @@ export default function SocialSettingsPage() {
           setSoundEmail={setField("soundEmail")}
           soundWidget={form.soundWidget}
           setSoundWidget={setField("soundWidget")}
+          soundTelegram={form.soundTelegram}
+          setSoundTelegram={setField("soundTelegram")}
           soundTeamChat={form.soundTeamChat}
           setSoundTeamChat={setField("soundTeamChat")}
           soundSystem={form.soundSystem}

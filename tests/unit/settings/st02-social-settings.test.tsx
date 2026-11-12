@@ -12,6 +12,10 @@ const mutate = vi.fn()
 const state: { staff: boolean; settings: Record<string, unknown> } = { staff: true, settings: {} }
 
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ user: { is_staff: state.staff } }) }))
+// The management tabs also open to tenant admins / `manage_social_settings` (ONB-W1); here: staff only.
+vi.mock("@/hooks/useMyAccess", () => ({
+  useMyAccess: () => ({ loaded: true, isStaff: state.staff, isSuperuser: false, canManageSocialSettings: state.staff, has: () => false }),
+}))
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: vi.fn() }) }))
 vi.mock("@/components/social/EmailSyncDebug", () => ({ EmailSyncDebug: () => <div data-testid="email-sync-debug-mock" /> }))
 vi.mock("@/app/(tenant)/settings/social/AICompanionTab", () => ({ AICompanionTab: () => <div data-testid="ai-tab-mock" /> }))
@@ -93,6 +97,7 @@ describe("Settings > Social (ST-02)", () => {
       notification_sound_whatsapp: "mixkit-positive-notification-951.wav",
       notification_sound_email: "mixkit-bell-notification-933.wav",
       notification_sound_widget: "mixkit-bubble-pop-up-alert-notification-2357.wav",
+      notification_sound_telegram: "mixkit-bubble-pop-up-alert-notification-2357.wav",
       notification_sound_team_chat: "mixkit-happy-bells-notification-937.wav",
       notification_sound_system: "mixkit-confirmation-tone-2867.wav",
       timezone: "Asia/Tbilisi",

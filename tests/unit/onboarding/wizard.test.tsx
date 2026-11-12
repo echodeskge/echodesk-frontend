@@ -121,7 +121,7 @@ describe("onboarding wizard", () => {
     renderOnb(<OnboardingPage />)
     await screen.findByTestId("onb-step-workspace")
     fireEvent.click(screen.getByTestId("onb-apply"))
-    await screen.findByTestId("onb-step-placeholder-tickets")
+    await screen.findByTestId("onb-step-tickets")
     expect(screen.getByTestId("onb-rail-step-workspace")).toHaveAttribute("data-status", "done")
     expect(screen.getByTestId("onb-progress")).toHaveTextContent("1 of 3")
     expect(mocks.replace).toHaveBeenCalledWith("/onboarding?step=tickets", { scroll: false })
@@ -137,7 +137,7 @@ describe("onboarding wizard", () => {
     await screen.findByTestId("onb-step-workspace")
 
     fireEvent.click(screen.getByTestId("onb-skip"))
-    await screen.findByTestId("onb-step-placeholder-tickets")
+    await screen.findByTestId("onb-step-tickets")
     expect(mocks.post).toHaveBeenCalledWith("/api/onboarding/workspace/skip/")
 
     fireEvent.click(screen.getByTestId("onb-skip"))
@@ -158,7 +158,7 @@ describe("onboarding wizard", () => {
     fireEvent.change(screen.getByTestId("onb-company-name-input"), { target: { value: "Draft Co" } })
     expect(screen.getByTestId("onb-back")).toBeDisabled()
     fireEvent.click(screen.getByTestId("onb-rail-step-tickets"))
-    await screen.findByTestId("onb-step-placeholder-tickets")
+    await screen.findByTestId("onb-step-tickets")
     fireEvent.click(screen.getByTestId("onb-back"))
     await screen.findByTestId("onb-step-workspace")
     expect(screen.getByTestId("onb-company-name-input")).toHaveValue("Draft Co")

@@ -170,11 +170,55 @@ function firstString(value: unknown): string | null {
   return null
 }
 
-/** Row errors of a nested list field (`errors.team[i]`), aligned with the rows. */
+/**
+ * Row errors of a nested list field (`errors.team[i]`), aligned with the rows.
+ * DRF lists arrive as `[{}, {email: [...]}]` or, for some serializers, as
+ * `{"1": {email: [...]}}`; both give an array aligned with the rows.
+ */
 export function rowErrorsOf(errors: FieldErrors | null | undefined, field: string): Array<Record<string, unknown>> {
-  const value = errors?.[field]
-  if (!Array.isArray(value)) return []
-  return value.map((row) => (row && typeof row === "object" && !Array.isArray(row) ? (row as Record<string, unknown>) : {}))
+  const value = resolvePath(errors, field)
+  if (Array.isArray(value)) {
+    return value.map((row) => (row && typeof row === "object" && !Array.isArray(row) ? (row as Record<string, unknown>) : {}))
+  }
+  if (value && typeof value === "object") {
+    const rec = value as Record<string, unknown>
+    const indexes = Object.keys(rec).filter((k) => /^\d+$/.test(k)).map(Number)
+    if (indexes.length === 0) return []
+    const out: Array<Record<string, unknown>> = []
+    for (const i of indexes) {
+      const row = rec[String(i)]
+      out[i] = row && typeof row === "object" && !Array.isArray(row) ? (row as Record<string, unknown>) : {}
+    }
+    for (let i = 0; i < out.length; i++) out[i] ??= {}
+    return out
+  }
+  return []
+}
+
+/** Walks `payment.bank_iban`, `services[2].price` or `hours.mon.from` through a nested error payload. */
+function resolvePath(errors: FieldErrors | null | undefined, path: string): unknown {
+  if (!errors) return undefined
+  const parts = path.replace(/\[(\d+)\]/g, ".$1").split(".").filter(Boolean)
+  let cur: unknown = errors
+  for (const part of parts) {
+    if (cur === null || cur === undefined || typeof cur !== "object") return undefined
+    cur = Array.isArray(cur) ? cur[Number(part)] : (cur as Record<string, unknown>)[part]
+  }
+  return cur
+}
+
+/**
+ * First message of a nested field error: `nestedError(errors, "payment.bank_iban")`,
+ * `nestedError(errors, "services[2].price")`. A plain field name works too.
+ */
+export function nestedError(errors: FieldErrors | null | undefined, path: string): string | null {
+  return firstString(resolvePath(errors, path))
+}
+
+/** The industry chosen in the workspace step (from the cached state), for per-industry presets. */
+export function useOnboardingIndustry(): Industry | null {
+  const query = useOnboardingState({ enabled: false })
+  return query.data?.industry ?? null
 }
 
 /** Replace one step in a cached state and recount the pending steps. */

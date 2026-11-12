@@ -1,0 +1,516 @@
+{
+  "en": {
+    "onboarding": {
+      "fields": {
+        "timezone": "Timezone",
+        "chips": {
+          "add": "Add",
+          "suggestions": "Suggestions"
+        },
+        "secret": {
+          "show": "Show",
+          "hide": "Hide"
+        }
+      },
+      "tickets": {
+        "purpose": "What will you track?",
+        "purposeHint": "Picks the board columns. You can rename them later.",
+        "purposes": {
+          "support": {
+            "label": "Customer requests",
+            "description": "Questions and problems from customers"
+          },
+          "tasks": {
+            "label": "Internal tasks",
+            "description": "Work for your own team"
+          },
+          "jobs": {
+            "label": "Orders and jobs",
+            "description": "Scheduled work with a deadline"
+          }
+        },
+        "preview": "Board preview",
+        "previewColumns": "{count, plural, one {# column} other {# columns}}",
+        "previewDefault": "default",
+        "previewClosed": "closed",
+        "previewTime": "tracks time",
+        "boardName": "Board name",
+        "boardNamePlaceholder": "e.g. Support",
+        "team": "Who works on tickets?",
+        "teamHint": "They join the “{board}” group and see this board.",
+        "fields": "Extra fields on a ticket",
+        "fieldsHint": "Optional. Added to the ticket form.",
+        "builtinFields": "Common fields",
+        "builtin": {
+          "phone": "Phone",
+          "address": "Address",
+          "site": "Object / site",
+          "deadline": "Deadline"
+        },
+        "customFields": "Custom fields",
+        "fieldLabel": "Label",
+        "fieldLabelPlaceholder": "e.g. Car plate",
+        "fieldType": "Type",
+        "fieldTypes": {
+          "string": "Short text",
+          "text": "Long text",
+          "number": "Number",
+          "date": "Date"
+        },
+        "addField": "Add field",
+        "customFieldsEmpty": "No custom fields.",
+        "tags": "Tags you use",
+        "tagsHint": "Type a tag and press Enter. Optional.",
+        "tagPlaceholder": "e.g. urgent",
+        "tagPresets": {
+          "salon": "VIP, Complaint, Reschedule",
+          "clinic": "Urgent, Follow-up, Insurance",
+          "real_estate": "Viewing, Contract, Defect",
+          "shop": "Return, Delivery, Warranty",
+          "call_centre": "Urgent, Callback, Complaint",
+          "logistics": "Delay, Damage, Pickup",
+          "services": "Urgent, Quote, Warranty",
+          "other": "Urgent, Question, Complaint"
+        },
+        "rules": "Rules",
+        "onlyAdminsDelete": "Only admins may delete tickets",
+        "onlyAdminsDeleteHint": "Agents can close tickets but not delete them.",
+        "minUsers": "Minimum people per ticket",
+        "minUsersHint": "0 = no minimum.",
+        "telegram": "Telegram alerts",
+        "telegramHint": "Optional. New tickets of this board are posted to a Telegram chat.",
+        "botToken": "Bot token",
+        "botTokenHint": "From @BotFather. Stored encrypted.",
+        "chatId": "Chat ID",
+        "chatIdHint": "The group or channel ID the bot posts to."
+      },
+      "social": {
+        "channels": {
+          "title": "Which channels?",
+          "hint": "Connect now or later from Settings → Connections.",
+          "facebook": {
+            "name": "Facebook and Instagram",
+            "description": "Page messages and Instagram direct messages"
+          },
+          "whatsapp": {
+            "name": "WhatsApp",
+            "description": "WhatsApp Business number"
+          },
+          "telegram": {
+            "name": "Telegram",
+            "description": "Direct messages of a Telegram account"
+          },
+          "email": {
+            "name": "E-mail",
+            "description": "A mailbox over IMAP/SMTP"
+          },
+          "widget": {
+            "name": "Website chat",
+            "description": "A chat bubble on your website"
+          }
+        },
+        "connectedCount": "{count, plural, one {# connected} other {# connected}}",
+        "notConnected": "Not connected",
+        "connect": "Connect",
+        "connectAnother": "Connect another",
+        "oauthFailed": "Could not start the connection.",
+        "cancel": "Cancel",
+        "telegramSendCode": "Send code",
+        "telegramVerify": "Verify",
+        "emailSheetTitle": "Connect a mailbox",
+        "emailSheetHint": "Pick a provider or enter the IMAP/SMTP servers.",
+        "widgetDefaultLabel": "Website",
+        "widgetCreated": "Website chat created. Paste the snippet on your site.",
+        "widgetFailed": "Could not create the website chat.",
+        "showSnippet": "Show snippet",
+        "hideSnippet": "Hide snippet",
+        "hours": {
+          "title": "When do you answer?",
+          "hint": "Outside these hours the away message is sent."
+        },
+        "messages": {
+          "title": "Automatic replies",
+          "hint": "One text for Facebook, Instagram and WhatsApp.",
+          "welcome": "Welcome message",
+          "welcomeHint": "Sent on the first message of a conversation. Leave empty to disable.",
+          "away": "After-hours message",
+          "awayHint": "Sent outside the hours above."
+        },
+        "assignment": {
+          "title": "How do agents share chats?",
+          "shared": "Everyone sees everything",
+          "sharedHint": "Any agent can reply in any chat.",
+          "claim": "Agent claims a chat",
+          "claimHint": "A chat is assigned to the agent who takes it; others see it as taken."
+        },
+        "rating": "Ask customers to rate the chat",
+        "ratingHint": "A rating link is sent when a chat is closed.",
+        "quickReplies": {
+          "title": "Quick replies",
+          "hint": "Canned answers agents insert with one click.",
+          "colTitle": "Title",
+          "titlePlaceholder": "e.g. Opening hours",
+          "colMessage": "Message",
+          "add": "Add reply",
+          "empty": "No quick replies yet."
+        },
+        "ai": {
+          "title": "AI assistant",
+          "hint": "Suggests replies to agents on the connected channels.",
+          "enabled": "Enable the AI assistant",
+          "enabledHint": "Agents review every suggestion before sending.",
+          "description": "About your company",
+          "descriptionPlaceholder": "What you do, your products, how you address customers…",
+          "descriptionHint": "The assistant uses this to answer in your voice.",
+          "language": "Reply language"
+        }
+      },
+      "bookings": {
+        "units": {
+          "hours": "h",
+          "days": "days"
+        },
+        "hours": {
+          "title": "Opening hours",
+          "hint": "Applied to every staff member you pick below."
+        },
+        "services": {
+          "title": "Your services",
+          "hint": "Name in Georgian and English, duration, price and deposit.",
+          "loadPresets": "Load suggestions",
+          "colName": "Service",
+          "colDuration": "Minutes",
+          "colPrice": "Price (GEL)",
+          "colDeposit": "Deposit %",
+          "colCategory": "Category",
+          "add": "Add service",
+          "empty": "No services yet."
+        },
+        "staff": {
+          "title": "Who takes bookings?",
+          "hint": "They get the opening hours above and all the services."
+        },
+        "payment": {
+          "title": "How do clients pay?",
+          "hint": "Shown on the public booking page.",
+          "method": "Payment method",
+          "manual": "Bank transfer / at the visit",
+          "bog": "Online card (Bank of Georgia)",
+          "cash": "Cash at the visit",
+          "card": "Card at the visit",
+          "deposit": "Require a deposit",
+          "depositHint": "The deposit % of each service is charged to confirm.",
+          "bankName": "Bank",
+          "iban": "IBAN",
+          "holder": "Account holder",
+          "bogCredentials": "Bank of Georgia credentials",
+          "bogClientId": "Client ID",
+          "bogClientSecret": "Client secret",
+          "bogProduction": "Production mode",
+          "bogProductionHint": "Off = test environment."
+        },
+        "rules": {
+          "title": "Rules",
+          "hint": "Notice, horizon and cancellations.",
+          "minHours": "Minimum notice",
+          "maxDays": "Book up to",
+          "cancelHours": "Cancellation cutoff",
+          "refund": "Refund policy",
+          "refunds": {
+            "full": "Full refund",
+            "partial_50": "50% refund",
+            "partial_25": "25% refund",
+            "no_refund": "No refund"
+          },
+          "autoConfirm": "Confirm bookings automatically",
+          "autoConfirmHint": "Off = you approve each booking by hand."
+        },
+        "reminders": {
+          "title": "Reminders",
+          "hint": "E-mail reminders are always on; SMS is optional.",
+          "first": "Remind before",
+          "second": "Second reminder",
+          "secondHint": "Leave empty for one reminder.",
+          "sms": "Send SMS",
+          "smsHint": "Through sender.ge — your own key or the shared account.",
+          "smsKey": "sender.ge API key",
+          "smsKeyHint": "Leave empty to use the shared account.",
+          "events": {
+            "sms_on_created": "Booking created",
+            "sms_on_confirmed": "Booking confirmed",
+            "sms_on_rescheduled": "Booking rescheduled",
+            "sms_on_cancelled": "Booking cancelled",
+            "sms_on_reminder": "Reminder"
+          }
+        },
+        "publicPage": {
+          "title": "Public booking page",
+          "hint": "Where clients book themselves.",
+          "enabled": "Enable the public page",
+          "enabledHint": "Clients see your services and free slots.",
+          "url": "Your page",
+          "description": "Description",
+          "address": "Address",
+          "phone": "Phone"
+        }
+      }
+    }
+  },
+  "ka": {
+    "onboarding": {
+      "fields": {
+        "timezone": "დროის სარტყელი",
+        "chips": {
+          "add": "დამატება",
+          "suggestions": "შემოთავაზებები"
+        },
+        "secret": {
+          "show": "ჩვენება",
+          "hide": "დამალვა"
+        }
+      },
+      "tickets": {
+        "purpose": "რას აღრიცხავთ?",
+        "purposeHint": "ირჩევს დაფის სვეტებს. მოგვიანებით გადარქმევა შეგიძლიათ.",
+        "purposes": {
+          "support": {
+            "label": "მომხმარებელთა მიმართვები",
+            "description": "კითხვები და პრობლემები მომხმარებლებისგან"
+          },
+          "tasks": {
+            "label": "შიდა დავალებები",
+            "description": "სამუშაო თქვენი გუნდისთვის"
+          },
+          "jobs": {
+            "label": "შეკვეთები და სამუშაოები",
+            "description": "დაგეგმილი სამუშაო ვადით"
+          }
+        },
+        "preview": "დაფის გადახედვა",
+        "previewColumns": "{count} სვეტი",
+        "previewDefault": "ნაგულისხმევი",
+        "previewClosed": "დახურული",
+        "previewTime": "დროის აღრიცხვა",
+        "boardName": "დაფის სახელი",
+        "boardNamePlaceholder": "მაგ. მხარდაჭერა",
+        "team": "ვინ მუშაობს ტიკეტებზე?",
+        "teamHint": "ისინი შედიან ჯგუფში „{board}“ და ხედავენ ამ დაფას.",
+        "fields": "დამატებითი ველები ტიკეტზე",
+        "fieldsHint": "არასავალდებულო. ემატება ტიკეტის ფორმას.",
+        "builtinFields": "ხშირი ველები",
+        "builtin": {
+          "phone": "ტელეფონი",
+          "address": "მისამართი",
+          "site": "ობიექტი",
+          "deadline": "ვადა"
+        },
+        "customFields": "საკუთარი ველები",
+        "fieldLabel": "სახელი",
+        "fieldLabelPlaceholder": "მაგ. მანქანის ნომერი",
+        "fieldType": "ტიპი",
+        "fieldTypes": {
+          "string": "მოკლე ტექსტი",
+          "text": "გრძელი ტექსტი",
+          "number": "რიცხვი",
+          "date": "თარიღი"
+        },
+        "addField": "ველის დამატება",
+        "customFieldsEmpty": "საკუთარი ველები არ არის.",
+        "tags": "თეგები, რომლებსაც იყენებთ",
+        "tagsHint": "ჩაწერეთ თეგი და დააჭირეთ Enter-ს. არასავალდებულო.",
+        "tagPlaceholder": "მაგ. სასწრაფო",
+        "tagPresets": {
+          "salon": "VIP, საჩივარი, გადატანა",
+          "clinic": "სასწრაფო, განმეორებითი ვიზიტი, დაზღვევა",
+          "real_estate": "დათვალიერება, ხელშეკრულება, ხარვეზი",
+          "shop": "დაბრუნება, მიწოდება, გარანტია",
+          "call_centre": "სასწრაფო, გადმორეკვა, საჩივარი",
+          "logistics": "დაგვიანება, დაზიანება, აღება",
+          "services": "სასწრაფო, შეფასება, გარანტია",
+          "other": "სასწრაფო, კითხვა, საჩივარი"
+        },
+        "rules": "წესები",
+        "onlyAdminsDelete": "ტიკეტების წაშლა მხოლოდ ადმინებს შეუძლიათ",
+        "onlyAdminsDeleteHint": "აგენტებს ტიკეტის დახურვა შეუძლიათ, წაშლა — არა.",
+        "minUsers": "მინიმუმ ადამიანი ტიკეტზე",
+        "minUsersHint": "0 = მინიმუმი არ არის.",
+        "telegram": "Telegram შეტყობინებები",
+        "telegramHint": "არასავალდებულო. ამ დაფის ახალი ტიკეტები იგზავნება Telegram ჩატში.",
+        "botToken": "ბოტის ტოკენი",
+        "botTokenHint": "@BotFather-დან. ინახება დაშიფრული.",
+        "chatId": "ჩატის ID",
+        "chatIdHint": "ჯგუფის ან არხის ID, სადაც ბოტი წერს."
+      },
+      "social": {
+        "channels": {
+          "title": "რომელი არხები?",
+          "hint": "დააკავშირეთ ახლა ან მოგვიანებით პარამეტრები → კავშირები გვერდიდან.",
+          "facebook": {
+            "name": "Facebook და Instagram",
+            "description": "გვერდის შეტყობინებები და Instagram-ის პირადი წერილები"
+          },
+          "whatsapp": {
+            "name": "WhatsApp",
+            "description": "WhatsApp Business ნომერი"
+          },
+          "telegram": {
+            "name": "Telegram",
+            "description": "Telegram ანგარიშის პირადი წერილები"
+          },
+          "email": {
+            "name": "ელფოსტა",
+            "description": "საფოსტო ყუთი IMAP/SMTP-ით"
+          },
+          "widget": {
+            "name": "ვებსაიტის ჩატი",
+            "description": "ჩატის ღილაკი თქვენს ვებსაიტზე"
+          }
+        },
+        "connectedCount": "დაკავშირებულია {count}",
+        "notConnected": "არ არის დაკავშირებული",
+        "connect": "დაკავშირება",
+        "connectAnother": "კიდევ ერთის დაკავშირება",
+        "oauthFailed": "დაკავშირების დაწყება ვერ მოხერხდა.",
+        "cancel": "გაუქმება",
+        "telegramSendCode": "კოდის გაგზავნა",
+        "telegramVerify": "დადასტურება",
+        "emailSheetTitle": "საფოსტო ყუთის დაკავშირება",
+        "emailSheetHint": "აირჩიეთ პროვაიდერი ან შეიყვანეთ IMAP/SMTP სერვერები.",
+        "widgetDefaultLabel": "ვებსაიტი",
+        "widgetCreated": "ვებსაიტის ჩატი შეიქმნა. ჩასვით კოდი თქვენს საიტზე.",
+        "widgetFailed": "ვებსაიტის ჩატის შექმნა ვერ მოხერხდა.",
+        "showSnippet": "კოდის ჩვენება",
+        "hideSnippet": "კოდის დამალვა",
+        "hours": {
+          "title": "როდის პასუხობთ?",
+          "hint": "ამ საათების გარეთ იგზავნება არყოფნის შეტყობინება."
+        },
+        "messages": {
+          "title": "ავტომატური პასუხები",
+          "hint": "ერთი ტექსტი Facebook-ის, Instagram-ის და WhatsApp-ისთვის.",
+          "welcome": "მისალმების შეტყობინება",
+          "welcomeHint": "იგზავნება საუბრის პირველ შეტყობინებაზე. გამოსართავად დატოვეთ ცარიელი.",
+          "away": "არასამუშაო საათების შეტყობინება",
+          "awayHint": "იგზავნება ზემოთ მითითებული საათების გარეთ."
+        },
+        "assignment": {
+          "title": "როგორ ინაწილებენ აგენტები ჩატებს?",
+          "shared": "ყველა ყველაფერს ხედავს",
+          "sharedHint": "ნებისმიერ აგენტს შეუძლია პასუხი ნებისმიერ ჩატში.",
+          "claim": "აგენტი იღებს ჩატს",
+          "claimHint": "ჩატი ენიჭება აგენტს, რომელიც მას აიღებს; სხვები ხედავენ, რომ დაკავებულია."
+        },
+        "rating": "სთხოვეთ მომხმარებლებს ჩატის შეფასება",
+        "ratingHint": "შეფასების ბმული იგზავნება ჩატის დახურვისას.",
+        "quickReplies": {
+          "title": "სწრაფი პასუხები",
+          "hint": "მზა პასუხები, რომლებსაც აგენტები ერთი დაჭერით ჩასვამენ.",
+          "colTitle": "სათაური",
+          "titlePlaceholder": "მაგ. სამუშაო საათები",
+          "colMessage": "შეტყობინება",
+          "add": "პასუხის დამატება",
+          "empty": "სწრაფი პასუხები ჯერ არ არის."
+        },
+        "ai": {
+          "title": "AI ასისტენტი",
+          "hint": "აგენტებს პასუხებს სთავაზობს დაკავშირებულ არხებზე.",
+          "enabled": "AI ასისტენტის ჩართვა",
+          "enabledHint": "აგენტები გაგზავნამდე ამოწმებენ ყველა შემოთავაზებას.",
+          "description": "თქვენი კომპანიის შესახებ",
+          "descriptionPlaceholder": "რას აკეთებთ, თქვენი პროდუქტები, როგორ მიმართავთ მომხმარებლებს…",
+          "descriptionHint": "ასისტენტი ამას იყენებს თქვენი სტილით საპასუხოდ.",
+          "language": "პასუხის ენა"
+        }
+      },
+      "bookings": {
+        "units": {
+          "hours": "სთ",
+          "days": "დღე"
+        },
+        "hours": {
+          "title": "სამუშაო საათები",
+          "hint": "ვრცელდება ქვემოთ არჩეულ ყველა თანამშრომელზე."
+        },
+        "services": {
+          "title": "თქვენი სერვისები",
+          "hint": "სახელი ქართულად და ინგლისურად, ხანგრძლივობა, ფასი და წინასწარი გადახდა.",
+          "loadPresets": "შემოთავაზებების ჩატვირთვა",
+          "colName": "სერვისი",
+          "colDuration": "წუთი",
+          "colPrice": "ფასი (₾)",
+          "colDeposit": "წინასწარ %",
+          "colCategory": "კატეგორია",
+          "add": "სერვისის დამატება",
+          "empty": "სერვისები ჯერ არ არის."
+        },
+        "staff": {
+          "title": "ვინ იღებს ჯავშნებს?",
+          "hint": "მათ ენიჭებათ ზემოთ მითითებული საათები და ყველა სერვისი."
+        },
+        "payment": {
+          "title": "როგორ იხდიან კლიენტები?",
+          "hint": "ჩანს საჯარო დაჯავშნის გვერდზე.",
+          "method": "გადახდის მეთოდი",
+          "manual": "საბანკო გადარიცხვა / ვიზიტისას",
+          "bog": "ონლაინ ბარათით (საქართველოს ბანკი)",
+          "cash": "ნაღდი ვიზიტისას",
+          "card": "ბარათი ვიზიტისას",
+          "deposit": "წინასწარი გადახდის მოთხოვნა",
+          "depositHint": "დასადასტურებლად ჩამოიჭრება თითოეული სერვისის წინასწარი %.",
+          "bankName": "ბანკი",
+          "iban": "IBAN",
+          "holder": "ანგარიშის მფლობელი",
+          "bogCredentials": "საქართველოს ბანკის მონაცემები",
+          "bogClientId": "კლიენტის ID",
+          "bogClientSecret": "კლიენტის საიდუმლო გასაღები",
+          "bogProduction": "საწარმოო რეჟიმი",
+          "bogProductionHint": "გამორთული = სატესტო გარემო."
+        },
+        "rules": {
+          "title": "წესები",
+          "hint": "წინასწარი შეტყობინება, ჰორიზონტი და გაუქმება.",
+          "minHours": "მინიმალური წინასწარი დრო",
+          "maxDays": "დაჯავშნა წინასწარ",
+          "cancelHours": "გაუქმების ზღვარი",
+          "refund": "თანხის დაბრუნების პოლიტიკა",
+          "refunds": {
+            "full": "სრული დაბრუნება",
+            "partial_50": "50% დაბრუნება",
+            "partial_25": "25% დაბრუნება",
+            "no_refund": "არ ბრუნდება"
+          },
+          "autoConfirm": "ჯავშნების ავტომატური დადასტურება",
+          "autoConfirmHint": "გამორთული = თითოეულ ჯავშანს ხელით ადასტურებთ."
+        },
+        "reminders": {
+          "title": "შეხსენებები",
+          "hint": "ელფოსტით შეხსენება ყოველთვის ჩართულია; SMS არასავალდებულოა.",
+          "first": "შეხსენება წინასწარ",
+          "second": "მეორე შეხსენება",
+          "secondHint": "დატოვეთ ცარიელი ერთი შეხსენებისთვის.",
+          "sms": "SMS-ის გაგზავნა",
+          "smsHint": "sender.ge-ს მეშვეობით — თქვენი გასაღებით ან საერთო ანგარიშით.",
+          "smsKey": "sender.ge API გასაღები",
+          "smsKeyHint": "საერთო ანგარიშის გამოსაყენებლად დატოვეთ ცარიელი.",
+          "events": {
+            "sms_on_created": "ჯავშანი შეიქმნა",
+            "sms_on_confirmed": "ჯავშანი დადასტურდა",
+            "sms_on_rescheduled": "ჯავშანი გადაიდო",
+            "sms_on_cancelled": "ჯავშანი გაუქმდა",
+            "sms_on_reminder": "შეხსენება"
+          }
+        },
+        "publicPage": {
+          "title": "საჯარო დაჯავშნის გვერდი",
+          "hint": "სადაც კლიენტები თავად ჯავშნიან.",
+          "enabled": "საჯარო გვერდის ჩართვა",
+          "enabledHint": "კლიენტები ხედავენ თქვენს სერვისებს და თავისუფალ დროებს.",
+          "url": "თქვენი გვერდი",
+          "description": "აღწერა",
+          "address": "მისამართი",
+          "phone": "ტელეფონი"
+        }
+      }
+    }
+  }
+}

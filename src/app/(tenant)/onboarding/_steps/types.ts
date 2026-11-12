@@ -33,6 +33,9 @@ export interface StepDefinition<A extends Answers = Answers> {
    * else `prefill`). Use it to fill defaults for missing keys.
    */
   init?: (step: OnboardingStep) => A
-  /** Normalises the draft right before `POST .../apply/` (trim, drop empty rows…). */
-  prepare?: (answers: A) => A
+  /**
+   * Builds the payload of `POST .../apply/` from the draft (trim, drop empty
+   * rows, fold draft-only keys into the contract shape, omit untouched sections).
+   */
+  prepare?: (answers: A) => Answers
 }

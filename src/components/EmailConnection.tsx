@@ -5,12 +5,10 @@ import DOMPurify from 'dompurify';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   useEmailStatus,
-  useConnectEmail,
   useDisconnectEmail,
   useSyncEmail,
   useUpdateEmailConnection,
   useReactivateEmailConnection,
-  EmailConnectRequest,
   EmailConnectionDetail,
 } from '@/hooks/api/useSocial';
 import { Button } from '@/components/ui/button';
@@ -19,15 +17,12 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TonePill } from '@/components/redesign/pill';
+import { EmailConnectForm } from '@/components/email/EmailConnectForm';
 import { rdButton } from '@/components/redesign/buttons';
 import {
   ChannelDetailCard,
-  FieldRow,
-  SecretInput,
   SettingsNote,
   SettingsSection,
-  SettingsToggle,
-  settingsFieldWidth,
   settingsInputClass,
 } from '@/components/redesign/settings';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,7 +56,6 @@ import {
   Loader2,
   Users,
   Pencil,
-  Plug,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -271,7 +265,6 @@ export function EmailConnection() {
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
   const [showAccessDialog, setShowAccessDialog] = useState(false);
   const [editingConnection, setEditingConnection] = useState<EmailConnectionDetail | null>(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [showEditAdvanced, setShowEditAdvanced] = useState(false);
   const [showEditPassword, setShowEditPassword] = useState(false);
   const [showSignaturePreview, setShowSignaturePreview] = useState(false);
@@ -285,25 +278,8 @@ export function EmailConnection() {
   const [signatureSource, setSignatureSource] = useState<SignatureDialogState['source']>('legacy');
   const [signatureTab, setSignatureTab] = useState<'mailbox' | 'workspace'>('mailbox');
 
-  const [formData, setFormData] = useState<EmailConnectRequest>({
-    email_address: '',
-    display_name: '',
-    imap_server: '',
-    imap_port: 993,
-    imap_use_ssl: true,
-    smtp_server: '',
-    smtp_port: 587,
-    smtp_use_tls: true,
-    smtp_use_ssl: false,
-    username: '',
-    password: '',
-    sync_folder: 'INBOX',
-    sync_days_back: 30,
-  });
-
   // React Query hooks
   const { data: status, isLoading: loading, refetch } = useEmailStatus();
-  const connectEmail = useConnectEmail();
   const disconnectEmail = useDisconnectEmail();
   const syncEmail = useSyncEmail();
   const updateEmailConnection = useUpdateEmailConnection();
@@ -337,96 +313,6 @@ export function EmailConnection() {
   const hasConnections = connections.length > 0;
 
   // Auto-fill server settings based on email domain
-  const handleEmailChange = (email: string) => {
-    setFormData((prev) => ({ ...prev, email_address: email, username: email }));
-
-    const domain = email.split('@')[1]?.toLowerCase();
-    if (domain) {
-      // Common email provider presets
-      const presets: Record<string, Partial<EmailConnectRequest>> = {
-        'gmail.com': {
-          imap_server: 'imap.gmail.com',
-          imap_port: 993,
-          smtp_server: 'smtp.gmail.com',
-          smtp_port: 587,
-        },
-        'googlemail.com': {
-          imap_server: 'imap.gmail.com',
-          imap_port: 993,
-          smtp_server: 'smtp.gmail.com',
-          smtp_port: 587,
-        },
-        'outlook.com': {
-          imap_server: 'outlook.office365.com',
-          imap_port: 993,
-          smtp_server: 'smtp.office365.com',
-          smtp_port: 587,
-        },
-        'hotmail.com': {
-          imap_server: 'outlook.office365.com',
-          imap_port: 993,
-          smtp_server: 'smtp.office365.com',
-          smtp_port: 587,
-        },
-        'live.com': {
-          imap_server: 'outlook.office365.com',
-          imap_port: 993,
-          smtp_server: 'smtp.office365.com',
-          smtp_port: 587,
-        },
-        'yahoo.com': {
-          imap_server: 'imap.mail.yahoo.com',
-          imap_port: 993,
-          smtp_server: 'smtp.mail.yahoo.com',
-          smtp_port: 587,
-        },
-        'icloud.com': {
-          imap_server: 'imap.mail.me.com',
-          imap_port: 993,
-          smtp_server: 'smtp.mail.me.com',
-          smtp_port: 587,
-        },
-      };
-
-      const preset = presets[domain];
-      if (preset) {
-        setFormData((prev) => ({ ...prev, ...preset }));
-      }
-    }
-  };
-
-  const handleConnect = async () => {
-    if (!formData.email_address || !formData.password || !formData.imap_server || !formData.smtp_server) {
-      toast.error(t('requiredFields'));
-      return;
-    }
-
-    try {
-      await connectEmail.mutateAsync(formData);
-      toast.success(t('connected'));
-      setShowConnectDialog(false);
-      setFormData({
-        email_address: '',
-        display_name: '',
-        imap_server: '',
-        imap_port: 993,
-        imap_use_ssl: true,
-        smtp_server: '',
-        smtp_port: 587,
-        smtp_use_tls: true,
-        smtp_use_ssl: false,
-        username: '',
-        password: '',
-        sync_folder: 'INBOX',
-        sync_days_back: 30,
-      });
-    } catch (error: any) {
-      console.error('Failed to connect email:', error);
-      const errorMessage = error.response?.data?.error || error.response?.data?.details || t('connectFailed');
-      toast.error(errorMessage);
-    }
-  };
-
   const handleDisconnect = async (connectionId: number, emailAddress: string) => {
     if (!confirm(t('confirmRemove', { email: emailAddress }))) {
       return;
@@ -589,8 +475,6 @@ export function EmailConnection() {
     }
   };
 
-  const fieldLabel = 'text-xs font-medium text-muted-foreground';
-
   return (
     <>
       <ChannelDetailCard
@@ -640,176 +524,7 @@ export function EmailConnection() {
       {/* Add mailbox (design CONNECTIONS email add form; same fields, checks and request as the old dialog) */}
       {showConnectDialog && (
         <SettingsSection title={t('addTitle')} hint={t('addDescription')} testId="email-add-form">
-          <div className="flex flex-col gap-3.5 px-4 py-3.5">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <label className="flex min-w-0 flex-col gap-1">
-                <span className={fieldLabel}>{t('emailAddress')}</span>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  className={settingsInputClass}
-                  value={formData.email_address}
-                  onChange={(e) => handleEmailChange(e.target.value)}
-                />
-              </label>
-              <label className="flex min-w-0 flex-col gap-1">
-                <span className={fieldLabel}>{t('displayName')}</span>
-                <input
-                  id="display_name"
-                  className={settingsInputClass}
-                  placeholder={t('displayNamePlaceholder')}
-                  value={formData.display_name}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, display_name: e.target.value }))}
-                />
-              </label>
-              <div className="flex min-w-0 flex-col gap-1">
-                <label htmlFor="password" className={fieldLabel}>{t('passwordRequired')}</label>
-                <SecretInput
-                  id="password"
-                  mono={false}
-                  value={formData.password}
-                  onChange={(value) => setFormData((prev) => ({ ...prev, password: value }))}
-                  placeholder={t('passwordPlaceholder')}
-                  autoComplete="new-password"
-                  showLabel={t('showPassword')}
-                  hideLabel={t('hidePassword')}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-3 sm:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)_88px]">
-              <label className="flex min-w-0 flex-col gap-1">
-                <span className={fieldLabel}>{t('imapServer')}</span>
-                <input
-                  id="imap_server"
-                  className={settingsInputClass}
-                  placeholder="imap.example.com"
-                  value={formData.imap_server}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, imap_server: e.target.value }))}
-                />
-              </label>
-              <label className="flex min-w-0 flex-col gap-1">
-                <span className={fieldLabel}>{t('imapPort')}</span>
-                <input
-                  id="imap_port"
-                  type="number"
-                  className={cn(settingsInputClass, 'font-mono tabular-nums')}
-                  value={formData.imap_port}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, imap_port: parseInt(e.target.value) || 993 }))}
-                />
-              </label>
-              <label className="flex min-w-0 flex-col gap-1">
-                <span className={fieldLabel}>{t('smtpServer')}</span>
-                <input
-                  id="smtp_server"
-                  className={settingsInputClass}
-                  placeholder="smtp.example.com"
-                  value={formData.smtp_server}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, smtp_server: e.target.value }))}
-                />
-              </label>
-              <label className="flex min-w-0 flex-col gap-1">
-                <span className={fieldLabel}>{t('smtpPort')}</span>
-                <input
-                  id="smtp_port"
-                  type="number"
-                  className={cn(settingsInputClass, 'font-mono tabular-nums')}
-                  value={formData.smtp_port}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, smtp_port: parseInt(e.target.value) || 587 }))}
-                />
-              </label>
-            </div>
-
-            <p className="text-xs leading-[17px] text-muted-foreground">{t('addHint')}</p>
-
-            {/* Advanced Settings */}
-            <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced} className="rounded-lg border">
-              <CollapsibleTrigger asChild>
-                <button type="button" className="flex h-9 w-full items-center justify-between gap-2 px-3 text-[13px] font-medium hover:bg-accent/60">
-                  <span className="flex items-center gap-2">
-                    <Settings2 className="h-4 w-4 text-muted-foreground" aria-hidden />
-                    {t('advanced')}
-                  </span>
-                  <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', showAdvanced && 'rotate-180')} aria-hidden />
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="border-t">
-                <FieldRow label={t('username')} htmlFor="username" align="center">
-                  <input
-                    id="username"
-                    className={cn(settingsInputClass, settingsFieldWidth)}
-                    placeholder={t('usernamePlaceholder')}
-                    value={formData.username}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, username: e.target.value }))}
-                  />
-                </FieldRow>
-                <FieldRow label={t('imapSsl')} htmlFor="imap_ssl" align="center">
-                  <SettingsToggle
-                    id="imap_ssl"
-                    checked={formData.imap_use_ssl}
-                    onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, imap_use_ssl: checked }))}
-                  />
-                </FieldRow>
-                <FieldRow label={t('smtpTls')} htmlFor="smtp_tls" align="center">
-                  <SettingsToggle
-                    id="smtp_tls"
-                    checked={formData.smtp_use_tls}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, smtp_use_tls: checked, smtp_use_ssl: checked ? false : prev.smtp_use_ssl }))
-                    }
-                  />
-                </FieldRow>
-                <FieldRow label={t('smtpSsl')} htmlFor="smtp_ssl" align="center">
-                  <SettingsToggle
-                    id="smtp_ssl"
-                    checked={formData.smtp_use_ssl}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, smtp_use_ssl: checked, smtp_use_tls: checked ? false : prev.smtp_use_tls }))
-                    }
-                  />
-                </FieldRow>
-                <FieldRow label={t('syncFolder')} htmlFor="sync_folder" align="center">
-                  <input
-                    id="sync_folder"
-                    className={cn(settingsInputClass, settingsFieldWidth)}
-                    value={formData.sync_folder}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, sync_folder: e.target.value }))}
-                  />
-                </FieldRow>
-                <FieldRow label={t('syncDaysBack')} htmlFor="sync_days" align="center">
-                  <input
-                    id="sync_days"
-                    type="number"
-                    min={1}
-                    max={365}
-                    className={cn(settingsInputClass, 'w-28 font-mono tabular-nums')}
-                    value={formData.sync_days_back}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, sync_days_back: parseInt(e.target.value) || 30 }))}
-                  />
-                </FieldRow>
-              </CollapsibleContent>
-            </Collapsible>
-
-            <div className="flex flex-wrap justify-end gap-2">
-              <button type="button" className={rdButton.outline} onClick={() => setShowConnectDialog(false)}>
-                {t('cancel')}
-              </button>
-              <button type="button" onClick={handleConnect} className={rdButton.primary} disabled={connectEmail.isPending} data-testid="email-connect-submit">
-                {connectEmail.isPending ? (
-                  <>
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                    {t('connecting')}
-                  </>
-                ) : (
-                  <>
-                    <Plug className="h-3.5 w-3.5" aria-hidden />
-                    {t('connect')}
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
+          <EmailConnectForm onConnected={() => setShowConnectDialog(false)} onCancel={() => setShowConnectDialog(false)} />
         </SettingsSection>
       )}
 
