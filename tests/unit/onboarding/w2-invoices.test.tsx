@@ -4,7 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { fireEvent, screen, waitFor } from "@testing-library/react"
 
 const mocks = vi.hoisted(() => ({ post: vi.fn() }))
-vi.mock("@/api/axios", () => ({ default: { get: vi.fn(), post: (...a: unknown[]) => mocks.post(...a) } }))
+vi.mock("@/api/axios", () => {
+  const inst = { get: vi.fn(), post: (...a: unknown[]) => mocks.post(...a), put: vi.fn(), patch: vi.fn(), delete: vi.fn() }
+  return { default: inst, createAxiosInstance: () => inst, getApiUrl: () => "" }
+})
 
 import { InvoiceStep, initInvoiceAnswers, prepareInvoiceAnswers, numberPreview, type InvoiceAnswers } from "@/app/(tenant)/onboarding/_steps/invoice_management"
 import { hasStepComponent, getStepDefinition } from "@/app/(tenant)/onboarding/_steps"

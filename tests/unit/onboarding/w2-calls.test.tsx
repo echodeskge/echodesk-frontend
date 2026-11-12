@@ -5,7 +5,10 @@ import path from "node:path"
 import { describe, expect, it, vi } from "vitest"
 import { fireEvent, screen, within } from "@testing-library/react"
 
-vi.mock("@/api/axios", () => ({ default: { get: vi.fn(), post: vi.fn() } }))
+vi.mock("@/api/axios", () => {
+  const inst = { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() }
+  return { default: inst, createAxiosInstance: () => inst, getApiUrl: () => "" }
+})
 
 import { CallsStep, initCallsAnswers, prepareCallsAnswers, type CallsAnswers } from "@/app/(tenant)/onboarding/_steps/ip_calling"
 import { hasStepComponent } from "@/app/(tenant)/onboarding/_steps"

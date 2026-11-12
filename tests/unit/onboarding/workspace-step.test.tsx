@@ -39,8 +39,9 @@ describe("workspace answers", () => {
     expect(hasStepComponent("workspace")).toBe(true)
     expect(getStepDefinition("workspace").titleKey).toBe("steps.workspace.title")
     expect(hasStepComponent("tickets")).toBe(true)
-    expect(hasStepComponent("ecommerce_crm")).toBe(false)
-    expect(getStepDefinition("ecommerce_crm").titleKey).toBe("steps.ecommerce_crm.title")
+    expect(hasStepComponent("ecommerce_crm")).toBe(true)
+    expect(hasStepComponent("not_a_step")).toBe(false)
+    expect(getStepDefinition("not_a_step").titleKey).toBe("steps.not_a_step.title")
   })
 
   it("init takes prefill when nothing was applied, with safe defaults", () => {

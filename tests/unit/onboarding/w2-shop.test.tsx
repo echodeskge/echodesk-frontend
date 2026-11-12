@@ -3,7 +3,10 @@ import React, { useState } from "react"
 import { describe, expect, it, vi } from "vitest"
 import { fireEvent, screen, within } from "@testing-library/react"
 
-vi.mock("@/api/axios", () => ({ default: { get: vi.fn(), post: vi.fn() } }))
+vi.mock("@/api/axios", () => {
+  const inst = { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() }
+  return { default: inst, createAxiosInstance: () => inst, getApiUrl: () => "" }
+})
 vi.mock("@/components/MiniMapPicker", () => ({
   MiniMapPicker: ({ latitude, longitude, onChange }: { latitude: number | null; longitude: number | null; onChange: (lat: number, lng: number) => void }) => (
     <button type="button" data-testid="map" onClick={() => onChange(41.7, 44.8)}>

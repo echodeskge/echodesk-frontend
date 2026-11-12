@@ -3,7 +3,10 @@ import React, { useState } from "react"
 import { describe, expect, it, vi } from "vitest"
 import { fireEvent, screen, within } from "@testing-library/react"
 
-vi.mock("@/api/axios", () => ({ default: { get: vi.fn(), post: vi.fn() } }))
+vi.mock("@/api/axios", () => {
+  const inst = { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() }
+  return { default: inst, createAxiosInstance: () => inst, getApiUrl: () => "" }
+})
 
 import { LeaveStep, initLeaveAnswers, prepareLeaveAnswers, type LeaveAnswers } from "@/app/(tenant)/onboarding/_steps/leave_management"
 import { hasStepComponent } from "@/app/(tenant)/onboarding/_steps"
