@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
@@ -70,11 +70,18 @@ function OnboardingWizard() {
   )
 
   // First choice of step: `?step=` if valid, else the first pending one, else the finish screen.
+  // `?step=` is honoured once per value: the effect also re-runs on other
+  // state changes (e.g. `finished` after the last apply, while the URL
+  // still names that step) and must not reopen the step then.
+  const seenStepParam = useRef<string | null | undefined>(undefined)
   useEffect(() => {
     if (steps.length === 0) return
-    if (stepParam && steps.some((s) => s.key === stepParam)) {
-      goTo(stepParam)
-      return
+    if (stepParam !== seenStepParam.current) {
+      seenStepParam.current = stepParam
+      if (stepParam && steps.some((s) => s.key === stepParam)) {
+        goTo(stepParam)
+        return
+      }
     }
     if (currentKey === null && !finished) {
       const first = firstPendingKey(steps)

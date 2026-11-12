@@ -180,11 +180,25 @@ describe("onboarding wizard", () => {
     await screen.findByTestId("onb-step-tickets")
     expect(screen.queryByTestId("onb-tickets-custom-row-0-label")).toBeNull()
     fireEvent.click(screen.getByTestId("onb-apply"))
-    // ?step=tickets stays in the (mocked) URL, so the wizard re-renders the
-    // tickets step from the stored answers right after the apply.
-    await waitFor(() => expect(mocks.post).toHaveBeenCalled())
-    expect(await screen.findByTestId("onb-tickets-custom-row-0-label")).toHaveValue("Plate")
+    await screen.findByTestId("onb-step-placeholder-unknown_future_step")
     expect(screen.getByTestId("onb-rail-step-tickets")).toHaveAttribute("data-status", "done")
+    fireEvent.click(screen.getByTestId("onb-back"))
+    await screen.findByTestId("onb-step-tickets")
+    expect(screen.getByTestId("onb-tickets-custom-row-0-label")).toHaveValue("Plate")
+  })
+
+  it("applying the last step shows the finish screen although ?step= still names it", async () => {
+    mocks.search = "step=tickets"
+    mocks.get.mockResolvedValue({ data: state([step("workspace", 0, { status: "done" }), step("tickets", 10)]) })
+    mocks.post.mockResolvedValueOnce({
+      data: { step: { ...step("tickets", 10), status: "done", answers: { purpose: "support" } }, result: { created: {}, updated: [], notes: [] } },
+    })
+    renderOnb(<OnboardingPage />)
+    await screen.findByTestId("onb-step-tickets")
+    fireEvent.click(screen.getByTestId("onb-apply"))
+    await screen.findByTestId("onb-finish")
+    expect(mocks.replace).toHaveBeenCalledWith("/onboarding", { scroll: false })
+    expect(screen.queryByTestId("onb-step-tickets")).toBeNull()
   })
 
   it("shows the finish screen directly when nothing is pending", async () => {
