@@ -9142,5 +9142,816 @@
       "open": "Open",
       "loadFailed": "Couldn't load the client's bookings"
     }
+  },
+  "onboarding": {
+    "title": "Set up your workspace",
+    "subtitle": "A few questions per module. You can change everything later in Settings.",
+    "progress": "{done} of {total}",
+    "stepOf": "Step {index} of {total}",
+    "status": {
+      "pending": "To do",
+      "done": "Done",
+      "skipped": "Skipped"
+    },
+    "actions": {
+      "back": "Back",
+      "skip": "Skip for now",
+      "apply": "Apply and continue",
+      "applying": "Saving…",
+      "finish": "Finish",
+      "open": "Open",
+      "skipShort": "Skip",
+      "retry": "Try again",
+      "goToWorkspace": "Go to workspace",
+      "close": "Close",
+      "add": "Add",
+      "remove": "Remove",
+      "exit": "Exit setup"
+    },
+    "errors": {
+      "title": "Could not load setup",
+      "hint": "Check your connection and try again.",
+      "noAccessTitle": "Admins only",
+      "noAccessHint": "Ask a workspace admin to finish the setup.",
+      "applyFailed": "Could not save this step.",
+      "skipFailed": "Could not skip this step.",
+      "fixFields": "Please fix the highlighted fields."
+    },
+    "loading": "Loading setup…",
+    "placeholder": {
+      "title": "Coming soon",
+      "hint": "The “{key}” setup screen arrives in the next update. Skip it for now or apply the suggested defaults."
+    },
+    "finish": {
+      "title": "You're all set",
+      "subtitle": "Your workspace is ready. Here is where to go next.",
+      "skippedNote": "{count, plural, one {# step was skipped} other {# steps were skipped}} — you can finish them later from the “Finish setup” button in the header."
+    },
+    "chip": {
+      "label": "Finish setup",
+      "count": "{count}",
+      "title": "Finish setup",
+      "subtitle": "{pending, plural, =0 {Everything is set up} one {# step left} other {# steps left}}"
+    },
+    "steps": {
+      "workspace": {
+        "title": "Workspace",
+        "hint": "Company, language and team"
+      },
+      "tickets": {
+        "title": "Tickets",
+        "hint": "Board and columns"
+      },
+      "social_integrations": {
+        "title": "Inbox",
+        "hint": "Channels and replies"
+      },
+      "booking_management": {
+        "title": "Bookings",
+        "hint": "Services and staff"
+      },
+      "ecommerce_crm": {
+        "title": "Online shop",
+        "hint": "Store, payment, delivery"
+      },
+      "invoice_management": {
+        "title": "Invoices",
+        "hint": "Legal details and numbering"
+      },
+      "leave_management": {
+        "title": "Leave",
+        "hint": "Leave types and approvals"
+      },
+      "ip_calling": {
+        "title": "Calls",
+        "hint": "PBX, trunk, queue"
+      }
+    },
+    "workspace": {
+      "company": "Company",
+      "companyName": "Company name",
+      "companyNamePlaceholder": "e.g. Amanati LLC",
+      "logo": "Logo",
+      "logoHint": "PNG or SVG, up to 2 MB. Shown in the sidebar and on documents.",
+      "logoUpload": "Upload logo",
+      "logoChange": "Change logo",
+      "logoUploading": "Uploading…",
+      "logoUploaded": "Logo uploaded",
+      "logoFailed": "Could not upload the logo.",
+      "language": "Interface language",
+      "languageHint": "Default for new users; each user can change their own.",
+      "languages": {
+        "ka": "ქართული",
+        "en": "English",
+        "ru": "Русский"
+      },
+      "industry": "What do you do?",
+      "industryHint": "Picks sensible presets in the next steps.",
+      "industries": {
+        "salon": "Salon / beauty",
+        "clinic": "Clinic",
+        "real_estate": "Real estate / builder",
+        "shop": "Shop",
+        "call_centre": "Call centre",
+        "logistics": "Logistics",
+        "services": "Services",
+        "other": "Other"
+      },
+      "departments": "Departments",
+      "departmentsHint": "Type a name and press Enter. Optional.",
+      "departmentPlaceholder": "e.g. Sales",
+      "departmentSuggestions": "Suggestions",
+      "team": "Invite your team",
+      "teamHint": "Each person gets an e-mail with a temporary password. You can add more later.",
+      "teamEmpty": "No one yet — add a colleague or continue on your own.",
+      "addPerson": "Add person",
+      "columns": {
+        "email": "E-mail",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "role": "Role",
+        "department": "Department"
+      },
+      "roles": {
+        "admin": "Admin",
+        "manager": "Manager",
+        "agent": "Agent"
+      },
+      "noDepartment": "—",
+      "addDepartment": "Add",
+      "departmentPresets": {
+        "salon": "Reception, Stylists",
+        "clinic": "Reception, Doctors, Nurses",
+        "real_estate": "Sales, Construction",
+        "shop": "Sales, Warehouse",
+        "call_centre": "Support, Sales",
+        "logistics": "Dispatch, Drivers, Warehouse",
+        "services": "Sales, Support",
+        "other": "Sales, Support"
+      }
+    },
+    "fields": {
+      "optional": "optional",
+      "yes": "Yes",
+      "no": "No",
+      "searchUsers": "Search people…",
+      "noUsers": "No people found",
+      "selectedCount": "{count} selected",
+      "hours": {
+        "closed": "Closed",
+        "open": "Open",
+        "from": "From",
+        "to": "To",
+        "break": "Break",
+        "copyToAll": "Apply Monday to all days",
+        "days": {
+          "mon": "Mon",
+          "tue": "Tue",
+          "wed": "Wed",
+          "thu": "Thu",
+          "fri": "Fri",
+          "sat": "Sat",
+          "sun": "Sun"
+        }
+      },
+      "i18n": {
+        "ka": "KA",
+        "en": "EN"
+      },
+      "table": {
+        "add": "Add row",
+        "remove": "Remove row",
+        "empty": "Nothing here yet."
+      },
+      "timezone": "Timezone",
+      "chips": {
+        "add": "Add",
+        "suggestions": "Suggestions"
+      },
+      "secret": {
+        "show": "Show",
+        "hide": "Hide"
+      }
+    },
+    "tickets": {
+      "purpose": "What will you track?",
+      "purposeHint": "Picks the board columns. You can rename them later.",
+      "purposes": {
+        "support": {
+          "label": "Customer requests",
+          "description": "Questions and problems from customers"
+        },
+        "tasks": {
+          "label": "Internal tasks",
+          "description": "Work for your own team"
+        },
+        "jobs": {
+          "label": "Orders and jobs",
+          "description": "Scheduled work with a deadline"
+        }
+      },
+      "preview": "Board preview",
+      "previewColumns": "{count, plural, one {# column} other {# columns}}",
+      "previewDefault": "default",
+      "previewClosed": "closed",
+      "previewTime": "tracks time",
+      "boardName": "Board name",
+      "boardNamePlaceholder": "e.g. Support",
+      "team": "Who works on tickets?",
+      "teamHint": "They join the “{board}” group and see this board.",
+      "fields": "Extra fields on a ticket",
+      "fieldsHint": "Optional. Added to the ticket form.",
+      "builtinFields": "Common fields",
+      "builtin": {
+        "phone": "Phone",
+        "address": "Address",
+        "site": "Object / site",
+        "deadline": "Deadline"
+      },
+      "customFields": "Custom fields",
+      "fieldLabel": "Label",
+      "fieldLabelPlaceholder": "e.g. Car plate",
+      "fieldType": "Type",
+      "fieldTypes": {
+        "string": "Short text",
+        "text": "Long text",
+        "number": "Number",
+        "date": "Date"
+      },
+      "addField": "Add field",
+      "customFieldsEmpty": "No custom fields.",
+      "tags": "Tags you use",
+      "tagsHint": "Type a tag and press Enter. Optional.",
+      "tagPlaceholder": "e.g. urgent",
+      "tagPresets": {
+        "salon": "VIP, Complaint, Reschedule",
+        "clinic": "Urgent, Follow-up, Insurance",
+        "real_estate": "Viewing, Contract, Defect",
+        "shop": "Return, Delivery, Warranty",
+        "call_centre": "Urgent, Callback, Complaint",
+        "logistics": "Delay, Damage, Pickup",
+        "services": "Urgent, Quote, Warranty",
+        "other": "Urgent, Question, Complaint"
+      },
+      "rules": "Rules",
+      "onlyAdminsDelete": "Only admins may delete tickets",
+      "onlyAdminsDeleteHint": "Agents can close tickets but not delete them.",
+      "minUsers": "Minimum people per ticket",
+      "minUsersHint": "0 = no minimum.",
+      "telegram": "Telegram alerts",
+      "telegramHint": "Optional. New tickets of this board are posted to a Telegram chat.",
+      "botToken": "Bot token",
+      "botTokenHint": "From @BotFather. Stored encrypted.",
+      "chatId": "Chat ID",
+      "chatIdHint": "The group or channel ID the bot posts to."
+    },
+    "social": {
+      "channels": {
+        "title": "Which channels?",
+        "hint": "Connect now or later from Settings → Connections.",
+        "facebook": {
+          "name": "Facebook and Instagram",
+          "description": "Page messages and Instagram direct messages"
+        },
+        "whatsapp": {
+          "name": "WhatsApp",
+          "description": "WhatsApp Business number"
+        },
+        "telegram": {
+          "name": "Telegram",
+          "description": "Direct messages of a Telegram account"
+        },
+        "email": {
+          "name": "E-mail",
+          "description": "A mailbox over IMAP/SMTP"
+        },
+        "widget": {
+          "name": "Website chat",
+          "description": "A chat bubble on your website"
+        }
+      },
+      "connectedCount": "{count, plural, one {# connected} other {# connected}}",
+      "notConnected": "Not connected",
+      "connect": "Connect",
+      "connectAnother": "Connect another",
+      "oauthFailed": "Could not start the connection.",
+      "cancel": "Cancel",
+      "telegramSendCode": "Send code",
+      "telegramVerify": "Verify",
+      "emailSheetTitle": "Connect a mailbox",
+      "emailSheetHint": "Pick a provider or enter the IMAP/SMTP servers.",
+      "widgetDefaultLabel": "Website",
+      "widgetCreated": "Website chat created. Paste the snippet on your site.",
+      "widgetFailed": "Could not create the website chat.",
+      "showSnippet": "Show snippet",
+      "hideSnippet": "Hide snippet",
+      "hours": {
+        "title": "When do you answer?",
+        "hint": "Outside these hours the away message is sent."
+      },
+      "messages": {
+        "title": "Automatic replies",
+        "hint": "One text for Facebook, Instagram and WhatsApp.",
+        "welcome": "Welcome message",
+        "welcomeHint": "Sent on the first message of a conversation. Leave empty to disable.",
+        "away": "After-hours message",
+        "awayHint": "Sent outside the hours above."
+      },
+      "assignment": {
+        "title": "How do agents share chats?",
+        "shared": "Everyone sees everything",
+        "sharedHint": "Any agent can reply in any chat.",
+        "claim": "Agent claims a chat",
+        "claimHint": "A chat is assigned to the agent who takes it; others see it as taken."
+      },
+      "rating": "Ask customers to rate the chat",
+      "ratingHint": "A rating link is sent when a chat is closed.",
+      "quickReplies": {
+        "title": "Quick replies",
+        "hint": "Canned answers agents insert with one click.",
+        "colTitle": "Title",
+        "titlePlaceholder": "e.g. Opening hours",
+        "colMessage": "Message",
+        "add": "Add reply",
+        "empty": "No quick replies yet."
+      },
+      "ai": {
+        "title": "AI assistant",
+        "hint": "Suggests replies to agents on the connected channels.",
+        "enabled": "Enable the AI assistant",
+        "enabledHint": "Agents review every suggestion before sending.",
+        "description": "About your company",
+        "descriptionPlaceholder": "What you do, your products, how you address customers…",
+        "descriptionHint": "The assistant uses this to answer in your voice.",
+        "language": "Reply language"
+      }
+    },
+    "bookings": {
+      "units": {
+        "hours": "h",
+        "days": "days"
+      },
+      "hours": {
+        "title": "Opening hours",
+        "hint": "Applied to every staff member you pick below."
+      },
+      "services": {
+        "title": "Your services",
+        "hint": "Name in Georgian and English, duration, price and deposit.",
+        "loadPresets": "Load suggestions",
+        "colName": "Service",
+        "colDuration": "Minutes",
+        "colPrice": "Price (GEL)",
+        "colDeposit": "Deposit %",
+        "colCategory": "Category",
+        "add": "Add service",
+        "empty": "No services yet."
+      },
+      "staff": {
+        "title": "Who takes bookings?",
+        "hint": "They get the opening hours above and all the services."
+      },
+      "payment": {
+        "title": "How do clients pay?",
+        "hint": "Shown on the public booking page.",
+        "method": "Payment method",
+        "manual": "Bank transfer / at the visit",
+        "bog": "Online card (Bank of Georgia)",
+        "cash": "Cash at the visit",
+        "card": "Card at the visit",
+        "deposit": "Require a deposit",
+        "depositHint": "The deposit % of each service is charged to confirm.",
+        "bankName": "Bank",
+        "iban": "IBAN",
+        "holder": "Account holder",
+        "bogCredentials": "Bank of Georgia credentials",
+        "bogClientId": "Client ID",
+        "bogClientSecret": "Client secret",
+        "bogProduction": "Production mode",
+        "bogProductionHint": "Off = test environment."
+      },
+      "rules": {
+        "title": "Rules",
+        "hint": "Notice, horizon and cancellations.",
+        "minHours": "Minimum notice",
+        "maxDays": "Book up to",
+        "cancelHours": "Cancellation cutoff",
+        "refund": "Refund policy",
+        "refunds": {
+          "full": "Full refund",
+          "partial_50": "50% refund",
+          "partial_25": "25% refund",
+          "no_refund": "No refund"
+        },
+        "autoConfirm": "Confirm bookings automatically",
+        "autoConfirmHint": "Off = you approve each booking by hand."
+      },
+      "reminders": {
+        "title": "Reminders",
+        "hint": "E-mail reminders are always on; SMS is optional.",
+        "first": "Remind before",
+        "second": "Second reminder",
+        "secondHint": "Leave empty for one reminder.",
+        "sms": "Send SMS",
+        "smsHint": "Through sender.ge — your own key or the shared account.",
+        "smsKey": "sender.ge API key",
+        "smsKeyHint": "Leave empty to use the shared account.",
+        "events": {
+          "sms_on_created": "Booking created",
+          "sms_on_confirmed": "Booking confirmed",
+          "sms_on_rescheduled": "Booking rescheduled",
+          "sms_on_cancelled": "Booking cancelled",
+          "sms_on_reminder": "Reminder"
+        }
+      },
+      "publicPage": {
+        "title": "Public booking page",
+        "hint": "Where clients book themselves.",
+        "enabled": "Enable the public page",
+        "enabledHint": "Clients see your services and free slots.",
+        "url": "Your page",
+        "description": "Description",
+        "address": "Address",
+        "phone": "Phone"
+      }
+    },
+    "invoices": {
+      "company": {
+        "title": "Legal details",
+        "hint": "Printed on every invoice",
+        "name": "Company name",
+        "tax_id": "Tax ID",
+        "registration_number": "Registration number",
+        "address": "Address",
+        "phone": "Phone",
+        "email": "E-mail",
+        "website": "Website"
+      },
+      "defaults": {
+        "title": "Defaults",
+        "hint": "VAT, currency, numbering",
+        "vatPayer": "VAT payer",
+        "vatPayerHint": "On: 18% VAT is added by default. Off: 0%.",
+        "taxRate": "VAT rate",
+        "currency": "Currency",
+        "dueDays": "Payment term",
+        "days": "days",
+        "prefix": "Prefix",
+        "startingNumber": "Starting number",
+        "preview": "Next invoice"
+      },
+      "bank": {
+        "title": "Bank accounts",
+        "hint": "Shown on the invoice for transfers",
+        "bankName": "Bank",
+        "bankNamePlaceholder": "e.g. TBC Bank",
+        "accountNumber": "Account number",
+        "default": "Default",
+        "add": "Add account",
+        "empty": "No bank account yet — add one or continue without."
+      },
+      "branding": {
+        "title": "Branding",
+        "hint": "Optional; PNG or SVG",
+        "logo": "Logo",
+        "badge": "Seal",
+        "signature": "Signature",
+        "upload": "Upload",
+        "change": "Change",
+        "uploading": "Uploading…",
+        "uploaded": "Uploaded",
+        "failed": "Could not upload the file."
+      },
+      "email": {
+        "title": "Sending",
+        "hint": "How invoices reach your clients",
+        "template": "Fill template",
+        "templateKa": "Georgian template",
+        "templateEn": "English template",
+        "fromName": "From name",
+        "from": "From e-mail",
+        "cc": "CC",
+        "subject": "Subject",
+        "placeholders": "Placeholders: {invoice_number}, {company_name}, {client_name}, {total_amount}, {due_date}, {due_days}",
+        "message": "Message",
+        "footer": "Footer text",
+        "terms": "Payment terms"
+      },
+      "clients": {
+        "title": "Where do your clients come from?",
+        "hint": "Pick the source of the client list",
+        "ecommerce": "Online shop",
+        "ecommerceHint": "Customers who ordered in your shop",
+        "itemlist": "A client list",
+        "itemlistHint": "A “Clients” list you fill in yourself",
+        "none": "Later",
+        "noneHint": "Type the client on each invoice",
+        "existingLists": "Existing lists: {lists}"
+      }
+    },
+    "shop": {
+      "store": {
+        "title": "Store",
+        "hint": "Shown in the storefront header and e-mails",
+        "name": "Store name",
+        "email": "Contact e-mail",
+        "phone": "Phone"
+      },
+      "categories": {
+        "title": "Product categories",
+        "hint": "Builds the category grid of the home page",
+        "new": "New category",
+        "placeholderKa": "e.g. ფეხსაცმელი",
+        "placeholderEn": "e.g. Shoes",
+        "add": "Add",
+        "suggestions": "Suggestions"
+      },
+      "payment": {
+        "title": "Payment",
+        "hint": "How customers pay",
+        "cash": "Cash on delivery",
+        "cashHint": "The courier collects the money.",
+        "card": "Online card payment",
+        "cardHint": "Through a Georgian payment provider.",
+        "provider": "Provider",
+        "providers": {
+          "bog": "Bank of Georgia",
+          "tbc": "TBC",
+          "flitt": "Flitt"
+        },
+        "clientId": "Client ID",
+        "clientSecret": "Client secret",
+        "apiKey": "API key",
+        "merchantId": "Merchant ID",
+        "password": "Password",
+        "show": "Show",
+        "hide": "Hide"
+      },
+      "delivery": {
+        "title": "Delivery",
+        "hint": "Pickup, your own couriers, Quickshipper",
+        "pickup": "Pickup in store",
+        "pickupHint": "Customers collect the order themselves.",
+        "pickupAddress": "Pickup address",
+        "methods": "Courier methods",
+        "methodsHint": "Your own delivery options with a price.",
+        "nameKa": "Name (KA)",
+        "nameEn": "Name (EN)",
+        "namePlaceholderKa": "მიტანა თბილისში",
+        "namePlaceholderEn": "Tbilisi delivery",
+        "price": "Price",
+        "freeFrom": "Free from",
+        "days": "Days",
+        "addMethod": "Add method",
+        "methodsEmpty": "No delivery methods yet.",
+        "quickshipper": "Quickshipper",
+        "quickshipperHint": "Courier company integration; orders are sent automatically.",
+        "qsApiKey": "Quickshipper API key",
+        "qsProduction": "Production mode",
+        "qsProductionHint": "Off: test environment.",
+        "pickupPoint": "Pickup point for couriers",
+        "contactName": "Contact name",
+        "phone": "Phone",
+        "address": "Address",
+        "city": "City",
+        "extra": "Extra instructions",
+        "mapDropPin": "Click the map to drop a pin",
+        "mapMovePin": "Drag the pin to adjust",
+        "mapLoading": "Loading map…"
+      },
+      "tax": {
+        "title": "VAT",
+        "hint": "How prices are shown",
+        "rate": "VAT rate",
+        "label": "Label",
+        "inclusive": "Prices include VAT",
+        "inclusiveHint": "Off: VAT is added at checkout."
+      },
+      "look": {
+        "title": "Look",
+        "hint": "Template, colours and mode",
+        "classic": "Classic",
+        "classicHint": "Clean grid storefront",
+        "voltage": "Voltage",
+        "voltageHint": "Bold, editorial storefront",
+        "preset": "Colour preset",
+        "presets": {
+          "refurb": "Refurb",
+          "cobalt": "Cobalt",
+          "ember": "Ember",
+          "forest": "Forest",
+          "violet": "Violet",
+          "mono": "Mono",
+          "rose": "Rose"
+        },
+        "mode": "Mode",
+        "light": "Light",
+        "dark": "Dark",
+        "color": "Brand colour"
+      },
+      "analytics": {
+        "title": "Analytics",
+        "hint": "Optional tracking IDs",
+        "expand": "Show",
+        "collapse": "Hide"
+      },
+      "publish": {
+        "title": "Publish",
+        "hint": "Your storefront goes live on an EchoDesk address; a custom domain can be added later",
+        "now": "Publish the storefront now",
+        "nowHint": "Deploys the storefront when you apply this step.",
+        "alreadyDeployed": "Your storefront is already published.",
+        "status": {
+          "deployed": "Published",
+          "deploying": "Publishing…",
+          "failed": "Failed",
+          "pending": "Not published"
+        }
+      }
+    },
+    "leave": {
+      "week": {
+        "title": "Work week",
+        "hint": "Working and weekend days",
+        "workingDays": "Working days",
+        "summary": "{working} working days, {weekend} weekend days",
+        "holidays": "Georgian public holidays",
+        "holidaysHint": "Loads the official holidays for this and next year automatically."
+      },
+      "types": {
+        "title": "Leave types",
+        "hint": "Edit the presets or add your own",
+        "existing": "{count, plural, one {# leave type already exists} other {# leave types already exist}} — rows with the same code update them",
+        "code": "Code",
+        "nameKa": "Name (KA)",
+        "nameEn": "Name (EN)",
+        "paid": "Paid",
+        "method": "Method",
+        "methods": {
+          "annual": "Annual",
+          "accrual": "Accrual",
+          "manual": "Manual"
+        },
+        "daysPerYear": "Days / year",
+        "carryMax": "Carry max",
+        "carryExpiry": "Expiry (mo)",
+        "color": "Colour",
+        "add": "Add leave type",
+        "empty": "No leave types yet."
+      },
+      "approval": {
+        "title": "Who approves?",
+        "hint": "Can be changed per department later",
+        "manager": "Direct manager",
+        "managerHint": "The employee's manager approves",
+        "hr": "HR",
+        "hrHint": "HR approves every request",
+        "both": "Both",
+        "bothHint": "Manager first, then HR"
+      },
+      "org": {
+        "title": "Managers and departments",
+        "hint": "Needed for manager approval",
+        "empty": "Invite your team in the Workspace step first.",
+        "person": "Person",
+        "manager": "Manager",
+        "department": "Department",
+        "noManager": "No manager",
+        "departmentPlaceholder": "Type or pick"
+      },
+      "balance": {
+        "title": "Balances",
+        "hint": "Going below zero",
+        "negative": "Allow negative balance",
+        "negativeHint": "Employees may take leave they have not accrued yet.",
+        "maxNegative": "Maximum negative",
+        "days": "days"
+      },
+      "extras": {
+        "title": "Extras",
+        "hint": "HR features; all optional",
+        "substitutes": "Substitutes",
+        "substitutesHint": "A colleague covers for the person on leave.",
+        "attendance": "Attendance grid",
+        "attendanceHint": "Monthly presence table per employee.",
+        "kpi": "KPI",
+        "kpiHint": "Targets and scores per employee.",
+        "payroll": "Payroll",
+        "payrollHint": "Salaries, income tax and pension.",
+        "mode": "Salary mode",
+        "gross": "Gross",
+        "net": "Net",
+        "incomeTax": "Income tax",
+        "pension": "Pension",
+        "currency": "Currency",
+        "payrollManagers": "Payroll managers",
+        "payrollManagersHint": "Who can see and edit salaries."
+      },
+      "init": {
+        "title": "Balances for current employees",
+        "balances": "Create balances now",
+        "balancesHint": "Every active user gets the yearly allowance of each leave type."
+      }
+    },
+    "calls": {
+      "hosting": {
+        "title": "PBX server",
+        "hint": "Where Asterisk runs",
+        "byo": "I have my own PBX",
+        "byoHint": "A server you run; we give you an install command",
+        "hosted": "EchoDesk hosts it",
+        "hostedHint": "We set up a server for you",
+        "hostedNote": "The EchoDesk team will contact you to set up the server. You can fill in the rest now.",
+        "requestSent": "Request sent"
+      },
+      "server": {
+        "title": "Your server",
+        "hint": "Ubuntu 22.04 with Asterisk 18",
+        "status": {
+          "active": "Active",
+          "pending": "Waiting for install",
+          "provisioning": "Provisioning",
+          "error": "Error",
+          "revoked": "Revoked"
+        },
+        "name": "Name",
+        "fqdn": "Domain",
+        "publicIp": "Public IP",
+        "amiPort": "AMI port",
+        "install": "Install command",
+        "installHint": "Run it on the server as root; it configures Asterisk and reports back.",
+        "copy": "Copy",
+        "copied": "Copied",
+        "afterApply": "The install command appears here after you apply this step."
+      },
+      "trunk": {
+        "title": "SIP provider",
+        "hint": "The trunk that carries your calls",
+        "provider": "Provider",
+        "providers": {
+          "magti": "Magti",
+          "silknet": "Silknet",
+          "other": "Other"
+        },
+        "host": "SIP host",
+        "port": "Port",
+        "username": "Username",
+        "password": "Password",
+        "show": "Show",
+        "hide": "Hide",
+        "realm": "Realm",
+        "dids": "Phone numbers (DIDs)",
+        "didsHint": "Type a number and press Enter.",
+        "addDid": "Add",
+        "callerId": "Caller ID",
+        "callerIdHint": "Shown to the people you call; defaults to the first number."
+      },
+      "agents": {
+        "title": "Who answers calls?",
+        "hint": "Each person gets an extension",
+        "extensions": "Extensions"
+      },
+      "queue": {
+        "title": "Ring style",
+        "hint": "How incoming calls reach the team",
+        "strategy": "Strategy",
+        "strategies": {
+          "ringall": "All at once",
+          "rrmemory": "Round robin",
+          "leastrecent": "Longest idle"
+        },
+        "timeout": "Ring each agent for",
+        "timeoutHint": "Before moving to the next one.",
+        "maxWait": "Maximum wait",
+        "maxWaitHint": "Then the after-hours action runs.",
+        "seconds": "s"
+      },
+      "hours": {
+        "title": "Working hours",
+        "hint": "Outside them callers get the after-hours action",
+        "timezone": "Timezone",
+        "schedule": "Schedule",
+        "afterHours": "After hours",
+        "actions": {
+          "announcement": "Announcement",
+          "voicemail": "Voicemail",
+          "forward": "Forward to a number"
+        },
+        "forwardNumber": "Forward to"
+      },
+      "rating": {
+        "title": "Rating after the call",
+        "hint": "Ask customers how it went",
+        "method": "Method",
+        "methods": {
+          "none": "No",
+          "callback": "Callback",
+          "sms": "SMS",
+          "both": "Both"
+        },
+        "smsKey": "sender.ge API key",
+        "smsKeyHint": "Used to send the rating SMS."
+      }
+    }
   }
 }
