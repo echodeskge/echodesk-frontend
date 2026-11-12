@@ -26,6 +26,9 @@ export const GLOBAL_NAMESPACES = [
   // signup form + the testimonials strip used by landing pages.
   'newsletter',
   'testimonials',
+  // "Finish setup" chip + first-login gate (app/(tenant)/onboarding/_components)
+  // mount in the tenant header on every route.
+  'onboarding',
 ];
 
 /**

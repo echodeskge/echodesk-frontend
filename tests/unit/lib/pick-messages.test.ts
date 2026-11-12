@@ -170,6 +170,8 @@ describe("GLOBAL_NAMESPACES", () => {
     expect(GLOBAL_NAMESPACES).toContain("common");
     expect(GLOBAL_NAMESPACES).toContain("nav");
     expect(GLOBAL_NAMESPACES).toContain("tickets");
+    // the Finish-setup chip renders in the tenant header on every route
+    expect(GLOBAL_NAMESPACES).toContain("onboarding");
     expect(GLOBAL_NAMESPACES).toContain("calls");
     expect(GLOBAL_NAMESPACES).toContain("bugReport");
     expect(GLOBAL_NAMESPACES).toContain("notFound");
