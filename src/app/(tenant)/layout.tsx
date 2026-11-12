@@ -55,6 +55,9 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { webRouteForNotificationLink } from "@/lib/notificationLinks";
 import { HeaderActionsProvider, useHeaderSlot } from "@/contexts/HeaderActionsContext";
+import { profileHasPermission } from "@/lib/backendPermissions";
+import { OnboardingGate } from "./onboarding/_components/OnboardingGate";
+import { FinishSetupChip } from "./onboarding/_components/FinishSetupChip";
 
 /**
  * Keeps `BoardContext.selectedBoardId` in sync with `/tickets?board=` (plan
@@ -431,6 +434,11 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       return true;
     }
 
+    // The setup wizard is for admins (same rule as the onboarding endpoints).
+    if (pathParts[0] === 'onboarding') {
+      return isStaffOrAdmin || profileHasPermission(userProfile, 'manage_settings');
+    }
+
     // Old Templates links only forward to /settings/templates
     if (currentPath === '/social/templates' || currentPath === '/social/templates/create') {
       return true;
@@ -651,7 +659,13 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // The setup wizard is full-screen: no sidebar, header or widgets.
+  if (pathname.startsWith("/onboarding")) {
+    return <div className="h-screen w-full overflow-auto bg-background">{children}</div>;
+  }
+
   return (
+    <OnboardingGate>
     <SidebarProvider
       style={{ "--sidebar-width": "15rem", "--sidebar-width-icon": "3.25rem" } as React.CSSProperties}
     >
@@ -681,6 +695,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
               )}
             </h1>
             {headerSlot?.meta && <div className="ml-2 flex min-w-0 items-center">{headerSlot.meta}</div>}
+            {/* "Finish setup · N" (admins, while onboarding steps are pending) */}
+            <FinishSetupChip className="ml-2" />
             <div className="ml-auto flex items-center gap-1.5">
               {headerSlot?.primary}
               {headerSlot?.primary && <span aria-hidden className="mx-0.5 h-4 w-px bg-border" />}
@@ -767,6 +783,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
         <TeamChatWidget currentUserId={userProfile.id} />
       )}
     </SidebarProvider>
+    </OnboardingGate>
   );
 }
 
