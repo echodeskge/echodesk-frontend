@@ -9633,7 +9633,7 @@
         "from": "From e-mail",
         "cc": "CC",
         "subject": "Subject",
-        "placeholders": "Placeholders: {invoice_number}, {company_name}, {client_name}, {total_amount}, {due_date}, {due_days}",
+        "placeholders": "Placeholders: '{'invoice_number'}', '{'company_name'}', '{'client_name'}', '{'total_amount'}', '{'due_date'}', '{'due_days'}'",
         "message": "Message",
         "footer": "Footer text",
         "terms": "Payment terms"
