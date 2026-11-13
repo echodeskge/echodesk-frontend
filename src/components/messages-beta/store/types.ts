@@ -52,6 +52,17 @@ export type WsState = "idle" | "connecting" | "open" | "reconnecting" | "down";
 export type BootstrapState = "pending" | "loading" | "ready" | "error";
 export type AssignmentTab = "all" | "assigned";
 
+/**
+ * Server-side list for one platform chip. The bootstrap list is the newest
+ * 50 chats across every channel, so a chip that only filtered it client-side
+ * showed a handful of rows and no way to scroll further. With a chip active
+ * the sidebar fetches that platform's own pages and paginates them here.
+ */
+export interface PlatformListSlice {
+  state: BootstrapState;
+  nextPage: number | null;
+}
+
 export interface MessagesBetaState {
   conversations: ConversationRow[];
   messagesByChatId: Record<string, MessageType[]>;
@@ -90,6 +101,8 @@ export interface MessagesBetaState {
   nextConversationsPage: number | null;
   /** True while a next-page fetch is in flight (prevents duplicate scrolls firing parallel requests). */
   isFetchingNextPage: boolean;
+  /** platform → its own paginated list, loaded when that chip is active. */
+  platformListByFilter: Partial<Record<BetaPlatform, PlatformListSlice>>;
 
   // --- PR B: thread slices ---
   /** chatId → true once the full history has been fetched (deeper than the

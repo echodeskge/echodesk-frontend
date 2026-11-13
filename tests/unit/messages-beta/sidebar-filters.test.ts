@@ -174,3 +174,33 @@ describe("store – sidebar action slices (PR A)", () => {
     expect(s.assignmentTab).toBe("assigned");
   });
 });
+
+describe("store – duplicate rows and per-platform lists", () => {
+  it("hydrateConversations keeps one row per id (API may repeat a chat)", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "wa_1_995500", platform: "whatsapp", lastMessage: { content: "new", createdAt: "2024-06-02T10:00:00Z" } }),
+      makeRow({ id: "wa_1_995500", platform: "whatsapp", lastMessage: { content: "old", createdAt: "2024-06-01T10:00:00Z" } }),
+      makeRow({ id: "fb_p_1" }),
+    ]);
+    const rows = useMessagesBetaStore.getState().conversations;
+    expect(rows.map((r) => r.id)).toEqual(["wa_1_995500", "fb_p_1"]);
+    expect(rows[0].lastMessage?.content).toBe("new");
+  });
+
+  it("appendConversations drops duplicates inside the page as well as against existing rows", () => {
+    useMessagesBetaStore.getState().hydrateConversations([makeRow({ id: "a" })]);
+    useMessagesBetaStore.getState().appendConversations([
+      makeRow({ id: "a" }),
+      makeRow({ id: "b" }),
+      makeRow({ id: "b" }),
+    ]);
+    expect(useMessagesBetaStore.getState().conversations.map((r) => r.id).sort()).toEqual(["a", "b"]);
+  });
+
+  it("setPlatformList records a chip's cursor and a fresh bootstrap clears it", () => {
+    useMessagesBetaStore.getState().setPlatformList("facebook", { state: "ready", nextPage: 2 });
+    expect(useMessagesBetaStore.getState().platformListByFilter.facebook).toEqual({ state: "ready", nextPage: 2 });
+    useMessagesBetaStore.getState().hydrateConversations([makeRow({ id: "a" })]);
+    expect(useMessagesBetaStore.getState().platformListByFilter).toEqual({});
+  });
+});

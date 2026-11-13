@@ -68,6 +68,8 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
   const setIsFetchingNextPage = useMessagesBetaStore((s) => s.setIsFetchingNextPage);
   const setNextConversationsPage = useMessagesBetaStore((s) => s.setNextConversationsPage);
   const appendConversations = useMessagesBetaStore((s) => s.appendConversations);
+  const platformListByFilter = useMessagesBetaStore((s) => s.platformListByFilter);
+  const setPlatformList = useMessagesBetaStore((s) => s.setPlatformList);
   const patchAssignment = useMessagesBetaStore((s) => s.patchAssignment);
   const patchArchive = useMessagesBetaStore((s) => s.patchArchive);
   const messagesLoaded = useMessagesBetaStore((s) => s.messagesLoaded);
@@ -130,14 +132,23 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
     platformsRef.current = platforms;
   }, [platforms]);
 
+  // With a channel chip active the list paginates that platform's own
+  // server-side list (see PlatformListSlice); otherwise the bootstrap list's.
+  const activeFilterList = platformFilter ? platformListByFilter[platformFilter] : undefined;
+  const activeNextPage = platformFilter
+    ? activeFilterList?.state === "ready"
+      ? activeFilterList.nextPage
+      : null
+    : nextConversationsPage;
+
   const loadNextPage = useCallback(async () => {
-    if (nextConversationsPage == null) return;
+    if (activeNextPage == null) return;
     if (isFetchingNextPage) return;
     setIsFetchingNextPage(true);
     try {
       const { rows, assignments, archives, nextPage } = await fetchConversationsPage({
-        platforms: platformsRef.current,
-        page: nextConversationsPage,
+        platforms: platformFilter ? [platformFilter] : platformsRef.current,
+        page: activeNextPage,
       });
       appendConversations(rows);
       for (const [chatId, slice] of assignments) {
@@ -152,7 +163,8 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
         const current = useMessagesBetaStore.getState().archivedByChatId[chatId];
         if (current === undefined) patchArchive(chatId, meta);
       }
-      setNextConversationsPage(nextPage);
+      if (platformFilter) setPlatformList(platformFilter, { state: "ready", nextPage });
+      else setNextConversationsPage(nextPage);
     } catch (err) {
       // Failure to fetch the next page shouldn't be fatal — leave nextPage
       // intact so a subsequent scroll attempt can retry.
@@ -161,10 +173,52 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
       setIsFetchingNextPage(false);
     }
   }, [
-    nextConversationsPage,
+    activeNextPage,
+    platformFilter,
     isFetchingNextPage,
     setIsFetchingNextPage,
     setNextConversationsPage,
+    setPlatformList,
+    appendConversations,
+    patchAssignment,
+    patchArchive,
+  ]);
+
+  // --- Channel chip: fetch that platform's own first page. ---
+  // The bootstrap list is the newest 50 chats across all channels, so
+  // filtering it alone showed only the few rows of that platform that
+  // happened to be in it. Once per platform per bootstrap (hydrate resets).
+  useEffect(() => {
+    if (!platformFilter || showArchived) return;
+    if (bootstrapState !== "ready") return;
+    if (platformListByFilter[platformFilter]) return;
+    const platform = platformFilter;
+    setPlatformList(platform, { state: "loading", nextPage: null });
+    fetchConversationsPage({ platforms: [platform] })
+      .then(({ rows, assignments, archives, nextPage }) => {
+        appendConversations(rows);
+        for (const [chatId, slice] of assignments) {
+          if (useMessagesBetaStore.getState().assignmentByChatId[chatId] === undefined) {
+            patchAssignment(chatId, slice);
+          }
+        }
+        for (const [chatId, meta] of archives) {
+          if (useMessagesBetaStore.getState().archivedByChatId[chatId] === undefined) {
+            patchArchive(chatId, meta);
+          }
+        }
+        setPlatformList(platform, { state: "ready", nextPage });
+      })
+      .catch((err) => {
+        console.warn("[messages-beta] platform list fetch failed:", err);
+        setPlatformList(platform, { state: "error", nextPage: null });
+      });
+  }, [
+    platformFilter,
+    showArchived,
+    bootstrapState,
+    platformListByFilter,
+    setPlatformList,
     appendConversations,
     patchAssignment,
     patchArchive,
@@ -313,7 +367,8 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
           const listLoading =
             tab === "archive"
               ? archivedListState === "loading"
-              : bootstrapState === "loading";
+              : bootstrapState === "loading" ||
+                (activeFilterList?.state === "loading" && visibleRows.length === 0);
           const listError =
             tab === "archive"
               ? archivedListState === "error"
@@ -437,7 +492,7 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
 
                       {/* Infinite-scroll footer: spinner while fetching, or a
                           "scroll for more" hint when more pages exist. */}
-                      {nextConversationsPage != null && visibleRows.length > 0 && (
+                      {(tab === "archive" ? archivedNextPage : activeNextPage) != null && visibleRows.length > 0 && (
                         <li className="flex justify-center py-4">
                           {isFetchingNextPage ? (
                             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />

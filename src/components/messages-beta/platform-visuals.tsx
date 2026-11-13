@@ -1,26 +1,28 @@
-import { Facebook, Instagram, Mail, MessageCircle, Send, type LucideIcon } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 
+import {
+  InstagramIcon, MailIcon, MessengerIcon, TelegramIcon, WhatsAppIcon, WidgetIcon, type PlatformIcon,
+} from "./brand-icons";
 import type { BetaPlatform } from "./store/types";
 
-export const PLATFORM_ICON: Record<BetaPlatform, LucideIcon> = {
-  facebook: Facebook,
-  instagram: Instagram,
-  whatsapp: MessageCircle,
-  email: Mail,
-  widget: MessageCircle,
-  telegram: Send,
+/** The real channel glyph per platform (Messenger for Facebook pages). */
+export const PLATFORM_ICON: Record<BetaPlatform, PlatformIcon> = {
+  facebook: MessengerIcon,
+  instagram: InstagramIcon,
+  whatsapp: WhatsAppIcon,
+  email: MailIcon,
+  widget: WidgetIcon,
+  telegram: TelegramIcon,
 };
 
-/** Brand colour for the channel badge / chip. */
+/** Brand colour for the channel badge / chip (matches MessagesDropdownItem). */
 export const PLATFORM_BG: Record<BetaPlatform, string> = {
-  facebook: "bg-blue-600",
-  instagram: "bg-gradient-to-br from-purple-600 to-pink-600",
-  whatsapp: "bg-green-600",
-  email: "bg-red-600",
-  widget: "bg-indigo-600",
-  telegram: "bg-sky-500",
+  facebook: "bg-[#0084FF]",
+  instagram: "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF]",
+  whatsapp: "bg-[#25D366]",
+  email: "bg-[#475569]",
+  widget: "bg-[#6366F1]",
+  telegram: "bg-[#229ED9]",
 };
 
 /** Brand names stay untranslated; "widget" gets its label from i18n. */

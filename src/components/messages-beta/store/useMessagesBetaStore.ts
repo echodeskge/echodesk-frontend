@@ -12,6 +12,7 @@ import type {
   ChatAssignmentSlice,
   ConversationRow,
   MessagesBetaState,
+  PlatformListSlice,
   WsState,
 } from "./types";
 
@@ -104,6 +105,7 @@ export interface MessagesBetaActions {
   /** Append more rows from a paginated fetch. Skips rows whose id already
    *  exists so a re-fetch (e.g. on reconnect) can't double-insert. */
   appendConversations: (rows: ConversationRow[]) => void;
+  setPlatformList: (platform: BetaPlatform, slice: PlatformListSlice) => void;
 
   // --- PR B: thread actions ---
   /** Replace the message list for a chat from a full-history fetch. Also
@@ -149,6 +151,7 @@ const initialState: MessagesBetaState = {
   assignmentTab: "all",
   nextConversationsPage: null,
   isFetchingNextPage: false,
+  platformListByFilter: {},
 
   // PR B thread slices.
   fullHistoryLoadedByChatId: {},
@@ -171,6 +174,14 @@ const initialState: MessagesBetaState = {
  * recent activity is on top. Stable for empty timestamps (those drop to
  * the bottom, preserving insertion order among themselves).
  */
+/** First row per id wins. The list API can hand back the same chat twice
+ *  (e.g. one WhatsApp number stored with and without '+'), and the sidebar
+ *  keys rows by id. */
+function uniqueById(rows: ConversationRow[]): ConversationRow[] {
+  const seen = new Set<string>();
+  return rows.filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
+}
+
 function sortConversations(rows: ConversationRow[]): ConversationRow[] {
   return [...rows].sort((a, b) => {
     const at = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
@@ -190,11 +201,15 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
 
   hydrateConversations: (rows) =>
     set((state) => {
+      const unique = uniqueById(rows);
       const unread: Record<string, number> = { ...state.unreadByChatId };
-      for (const r of rows) unread[r.id] = r.unreadCount;
+      for (const r of unique) unread[r.id] = r.unreadCount;
       return {
-        conversations: sortConversations(rows),
+        conversations: sortConversations(unique),
         unreadByChatId: unread,
+        // A fresh bootstrap replaces the rows, so every per-chip list must
+        // be fetched again before it can claim to be complete.
+        platformListByFilter: {},
       };
     }),
 
@@ -525,6 +540,8 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
   // --- PR A: conversations pagination ---
   setNextConversationsPage: (page) => set({ nextConversationsPage: page }),
   setIsFetchingNextPage: (v) => set({ isFetchingNextPage: v }),
+  setPlatformList: (platform, slice) =>
+    set((state) => ({ platformListByFilter: { ...state.platformListByFilter, [platform]: slice } })),
   appendConversations: (rows) =>
     set((state) => {
       if (!rows.length) return {};
@@ -532,7 +549,7 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
       // lastMessage state for rows we've been patching while the next page
       // was in flight.
       const existingIds = new Set(state.conversations.map((r) => r.id));
-      const additions = rows.filter((r) => !existingIds.has(r.id));
+      const additions = uniqueById(rows).filter((r) => !existingIds.has(r.id));
       if (!additions.length) return {};
       const unread = { ...state.unreadByChatId };
       for (const r of additions) {
