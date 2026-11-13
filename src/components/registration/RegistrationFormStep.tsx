@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Feature } from '@/types/package';
 import type { PackSlug } from '@/data/packs';
-import { EMPLOYEE_STEP, MAX_EMPLOYEES, MIN_EMPLOYEES, formatGel, priceOf } from '@/lib/pricing';
+import { EMPLOYEE_STEP, MIN_EMPLOYEES, formatGel, priceOf } from '@/lib/pricing';
 import type { RegistrationFormData } from './RegistrationFlow';
 
 interface RegistrationFormStepProps {
@@ -161,7 +161,6 @@ export function RegistrationFormStep({
                 type="number"
                 min={MIN_EMPLOYEES}
                 step={EMPLOYEE_STEP}
-                max={MAX_EMPLOYEES}
                 value={formData.agent_count}
                 onChange={handleInputChange}
                 required

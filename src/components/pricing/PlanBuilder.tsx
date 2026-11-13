@@ -11,10 +11,8 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import type { Feature } from '@/types/package';
 import { MODULE_CATALOG } from '@/data/module-catalog';
-import { CONTACT_US_FROM, formatGel, monthlyTotal, perEmployeePrice, visibleModules } from '@/lib/pricing';
+import { formatGel, monthlyTotal, perEmployeePrice, visibleModules } from '@/lib/pricing';
 import { useModuleCopy } from './use-module-copy';
-
-const CONTACT_EMAIL = 'info@echodesk.ge';
 
 export interface PlanBuilderProps {
   features: readonly Feature[];
@@ -152,17 +150,6 @@ export function PlanBuilder({
                 </div>
               </div>
             </div>
-            {employees >= CONTACT_US_FROM && (
-              <p className="text-sm text-muted-foreground" data-testid="contact-us">
-                {t.rich('builder.summary.contact', {
-                  email: (chunks) => (
-                    <a className="font-medium text-foreground underline-offset-4 hover:underline" href={`mailto:${CONTACT_EMAIL}`}>
-                      {chunks}
-                    </a>
-                  ),
-                })}
-              </p>
-            )}
             {summaryExtra}
           </CardContent>
           <CardFooter className="flex-col gap-3">

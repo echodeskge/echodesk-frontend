@@ -1,7 +1,8 @@
 /**
  * Landing calculator (design: module list + sticky "Your plan"): switches,
- * team-size stepper/presets, live total, AI → inbox rule, "50+ contact us",
- * pack → calculator hand-off, select all / clear, info panels.
+ * the employee-count control (any whole number from 1, chips as shortcuts,
+ * no cap, no "contact us"), live total, AI → inbox rule, pack → calculator
+ * hand-off, select all / clear, info panels.
  */
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -36,18 +37,21 @@ function renderPricing(locale: "ka" | "en" = "en") {
 const total = () => screen.getByTestId("plan-total").textContent?.replace(/\s+/g, " ").trim();
 const moduleSwitch = (key: string) => within(screen.getByTestId(`module-${key}`)).getByRole("switch");
 const plus = () => screen.getByRole("button", { name: "More employees" });
+const minus = () => screen.getByRole("button", { name: "Fewer employees" });
+const countInput = () => screen.getByTestId("employee-count") as HTMLInputElement;
 
 describe("calculator", () => {
-  it("starts with tickets + workspace for 5 employees = 50 ₾ and follows the switches", () => {
+  it("starts with tickets + workspace for 1 employee = 10 ₾ and follows the switches", () => {
     renderPricing();
     expect(moduleSwitch("ticket_management")).toHaveAttribute("aria-checked", "true");
-    expect(total()).toBe("50 ₾");
+    expect(countInput()).toHaveValue(1);
+    expect(total()).toBe("10 ₾");
 
     fireEvent.click(moduleSwitch("social_integrations"));
-    expect(total()).toBe("145 ₾");
+    expect(total()).toBe("29 ₾");
 
     fireEvent.click(moduleSwitch("ticket_management"));
-    expect(total()).toBe("100 ₾");
+    expect(total()).toBe("20 ₾");
   });
 
   it("clicking anywhere on a row toggles it, except the (i) button", () => {
@@ -73,28 +77,65 @@ describe("calculator", () => {
     expect(row).toHaveTextContent("Included");
     expect(row).toHaveTextContent("Always on");
     fireEvent.click(row);
-    expect(total()).toBe("50 ₾");
+    expect(total()).toBe("10 ₾");
   });
 
-  it("the stepper goes 5 → 10 in steps of 5, presets jump, and the lines show price × n", () => {
+  it("the stepper goes 1 → 2 → 3 by one, chips jump, and the lines show price × n", () => {
     renderPricing();
-    expect(screen.getByRole("button", { name: "Fewer employees" })).toBeDisabled();
+    expect(minus()).toBeDisabled();
     fireEvent.click(plus());
-    expect(screen.getByTestId("employee-count")).toHaveTextContent("10");
-    expect(total()).toBe("100 ₾");
-    expect(screen.getByTestId("line-ticket_management")).toHaveTextContent("9 ₾ × 10 = 90 ₾");
-    expect(screen.getByTestId("line-workspace")).toHaveTextContent("1 ₾ × 10 = 10 ₾");
+    expect(countInput()).toHaveValue(2);
+    expect(total()).toBe("20 ₾");
+    fireEvent.click(plus());
+    expect(countInput()).toHaveValue(3);
+    expect(total()).toBe("30 ₾");
+    expect(screen.getByTestId("line-ticket_management")).toHaveTextContent("9 ₾ × 3 = 27 ₾");
+    expect(screen.getByTestId("line-workspace")).toHaveTextContent("1 ₾ × 3 = 3 ₾");
     // Pack presets follow the same count.
     expect(within(screen.getByTestId("pack-bookings")).getByTestId("pack-total")).toHaveTextContent(
-      "= 440 ₾ / month for 10 employees",
+      "= 132 ₾ / month for 3 employees",
     );
+    expect(screen.getByTestId("plan-cta").getAttribute("href")).toContain("employees=3");
 
-    fireEvent.click(screen.getByRole("button", { name: "25" }));
-    expect(screen.getByTestId("employee-count")).toHaveTextContent("25");
-    expect(total()).toBe("250 ₾");
+    fireEvent.click(minus());
+    expect(countInput()).toHaveValue(2);
+    fireEvent.click(minus());
+    expect(countInput()).toHaveValue(1);
+    expect(minus()).toBeDisabled();
 
-    fireEvent.change(screen.getByRole("slider"), { target: { value: "40" } });
-    expect(screen.getByTestId("employee-count")).toHaveTextContent("40");
+    // Chips are shortcuts, not limits.
+    fireEvent.click(screen.getByTestId("employee-chip-10"));
+    expect(countInput()).toHaveValue(10);
+    expect(screen.getByTestId("employee-chip-10")).toHaveAttribute("aria-pressed", "true");
+    expect(total()).toBe("100 ₾");
+    fireEvent.click(screen.getByTestId("employee-chip-20"));
+    expect(total()).toBe("200 ₾");
+    fireEvent.click(plus());
+    expect(countInput()).toHaveValue(21);
+    expect(plus()).not.toBeDisabled();
+    expect(screen.queryByRole("slider")).toBeNull();
+  });
+
+  it("the count is typed directly: any whole number, no upper limit, junk floors to 1", () => {
+    renderPricing();
+    fireEvent.change(countInput(), { target: { value: "7" } });
+    expect(total()).toBe("70 ₾");
+    fireEvent.change(countInput(), { target: { value: "350" } });
+    expect(countInput()).toHaveValue(350);
+    expect(total()).toBe("3 500 ₾");
+    expect(screen.queryByTestId("contact-us")).toBeNull();
+
+    // Emptying the field keeps the last total; blur restores a valid value.
+    fireEvent.change(countInput(), { target: { value: "" } });
+    expect(total()).toBe("3 500 ₾");
+    fireEvent.blur(countInput());
+    expect(countInput()).toHaveValue(1);
+    expect(total()).toBe("10 ₾");
+
+    fireEvent.change(countInput(), { target: { value: "0" } });
+    fireEvent.keyDown(countInput(), { key: "Enter" });
+    expect(countInput()).toHaveValue(1);
+    expect(screen.getByTestId("employee-count-hint")).toHaveTextContent("From 1 employee. Change it any time.");
   });
 
   it("switching AI on also switches the inbox on and says so", () => {
@@ -102,17 +143,18 @@ describe("calculator", () => {
     fireEvent.click(moduleSwitch("ai_companion"));
     expect(moduleSwitch("social_integrations")).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("status")).toHaveTextContent("we switched Unified inbox on for you");
-    expect(total()).toBe("220 ₾"); // (1 + 9 + 19 + 15) × 5
+    expect(total()).toBe("44 ₾"); // (1 + 9 + 19 + 15) × 1
     expect(screen.getByTestId("module-ai_companion")).toHaveTextContent("Requires Unified inbox");
   });
 
-  it("shows 'contact us' from 50 employees", () => {
-    renderPricing();
+  it("never shows a 'contact us' line or a 50+ limit, at any team size", () => {
+    const { container } = renderPricing();
+    fireEvent.click(screen.getByTestId("employee-chip-20"));
+    for (let i = 0; i < 35; i++) fireEvent.click(plus());
+    expect(countInput()).toHaveValue(55);
     expect(screen.queryByTestId("contact-us")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "50" }));
-    expect(screen.getByTestId("employee-count")).toHaveTextContent("50");
-    expect(screen.getByTestId("contact-us")).toHaveTextContent("50+ employees?");
-    expect(within(screen.getByTestId("contact-us")).getByRole("link")).toHaveAttribute("href", "mailto:info@echodesk.ge");
+    expect(container.textContent).not.toMatch(/50\+|contact us|Minimum/i);
+    expect(screen.queryByRole("link", { name: /info@echodesk\.ge/ })).toBeNull();
   });
 
   it("the CTA carries the selected module keys and employee count", () => {
@@ -120,14 +162,14 @@ describe("calculator", () => {
     fireEvent.click(moduleSwitch("invoice_management"));
     fireEvent.click(plus());
     const href = decodeURIComponent(screen.getByTestId("plan-cta").getAttribute("href") ?? "");
-    expect(href).toBe("/registration?modules=ticket_management,invoice_management&employees=10");
+    expect(href).toBe("/registration?modules=ticket_management,invoice_management&employees=2");
   });
 
   it("'load into calculator' copies a pack into the builder", () => {
     renderPricing();
     const load = within(screen.getByTestId("pack-callcentre")).getByRole("button", { name: "Load into calculator" });
     fireEvent.click(load);
-    expect(total()).toBe("235 ₾");
+    expect(total()).toBe("47 ₾");
     expect(moduleSwitch("ip_calling")).toHaveAttribute("aria-checked", "true");
     expect(moduleSwitch("booking_management")).toHaveAttribute("aria-checked", "false");
     expect(screen.getByText(/5 of 8 selected/)).toBeInTheDocument();
@@ -136,10 +178,10 @@ describe("calculator", () => {
   it("'select all' switches every module on and becomes 'clear optional'", () => {
     renderPricing();
     fireEvent.click(screen.getByRole("button", { name: "Select all" }));
-    expect(total()).toBe("500 ₾");
+    expect(total()).toBe("100 ₾");
     expect(screen.getByText(/8 of 8 selected/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Clear optional" }));
-    expect(total()).toBe("5 ₾");
+    expect(total()).toBe("1 ₾");
     expect(moduleSwitch("ticket_management")).toHaveAttribute("aria-checked", "false");
   });
 
@@ -149,6 +191,8 @@ describe("calculator", () => {
     expect(screen.getByText("დაიწყეთ ამ პაკეტით")).toBeInTheDocument();
     expect(screen.getByText("რამდენი თანამშრომელი შევა სისტემაში?")).toBeInTheDocument();
     expect(screen.getByTestId("plan-summary")).toHaveTextContent("10 ₾ თანამშრომელზე");
-    expect(screen.getByTestId("plan-summary")).toHaveTextContent("1 მოდული არჩეულია 5 თანამშრომლისთვის");
+    expect(screen.getByTestId("plan-summary")).toHaveTextContent("1 მოდული არჩეულია 1 თანამშრომლისთვის");
+    expect(screen.getByTestId("employee-count-hint")).toHaveTextContent("1 თანამშრომლიდან. შეცვლა ნებისმიერ დროს.");
+    expect(document.body.textContent).not.toMatch(/მინიმუმ 5|50\+|50-ზე მეტი/);
   });
 });

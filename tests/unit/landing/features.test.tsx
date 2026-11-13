@@ -97,7 +97,7 @@ describe("features grid", () => {
     expect(sw).toHaveAttribute("aria-checked", "false");
     fireEvent.click(card);
     expect(sw).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByTestId("plan-total")).toHaveTextContent("75 ₾"); // (1 + 9 + 5) × 5
+    expect(screen.getByTestId("plan-total")).toHaveTextContent("15 ₾"); // (1 + 9 + 5) × 1
     // AI pulls the inbox in through the same `requires` rule.
     fireEvent.click(screen.getByTestId("feature-ai_companion"));
     expect(within(screen.getByTestId("module-social_integrations")).getByRole("switch")).toHaveAttribute("aria-checked", "true");

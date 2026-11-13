@@ -11,22 +11,19 @@ import { EVERYTHING_SLUG, PACKS, isPackSlug, type PackSlug } from '@/data/packs'
  * Pure pricing helpers shared by the landing section and the signup flow.
  * Everything is per employee (= one login), per 30-day cycle, in GEL:
  *   monthly = (workspace + Σ selected module prices) × employees
- * No discounts exist; 50+ employees is a "contact us" line (decision D3).
+ * The employee count is any whole number from 1 — no packs, no upper cap,
+ * no discounts (decisions D2/D3 as revised 2026-11-13). It is chosen at
+ * signup and changeable at any time from Settings → Subscription.
  */
 
-export const MIN_EMPLOYEES = 5;
-export const MAX_EMPLOYEES = 200;
-export const EMPLOYEE_STEP = 5;
-/** From this team size the page shows "contact us" next to the total. */
-export const CONTACT_US_FROM = 50;
+export const MIN_EMPLOYEES = 1;
+export const EMPLOYEE_STEP = 1;
 
 export type PriceMap = ReadonlyMap<string, number>;
 
-/** Round to the step and clamp into [MIN, MAX]. */
+/** Whole number ≥ 1: 0 → 1, 2.6 → 3, NaN / undefined → 1. No upper limit. */
 export function clampEmployees(value: number): number {
-  if (!Number.isFinite(value)) return MIN_EMPLOYEES;
-  const stepped = Math.round(value / EMPLOYEE_STEP) * EMPLOYEE_STEP;
-  return Math.min(MAX_EMPLOYEES, Math.max(MIN_EMPLOYEES, stepped));
+  return Math.max(MIN_EMPLOYEES, Math.round(Number(value) || MIN_EMPLOYEES));
 }
 
 export function priceOf(feature: Pick<Feature, 'price_per_user_gel'>): number {
@@ -72,6 +69,19 @@ export function monthlyTotal(
   employees: number,
 ): number {
   return perEmployeePrice(moduleKeys, prices) * employees;
+}
+
+/**
+ * Monthly total of an existing subscription: Σ price of *every* selected
+ * feature key (workspace keys included, since the API lists them) × seats.
+ * Used by Settings → Subscription to preview a new employee count.
+ */
+export function subscriptionMonthlyTotal(
+  selectedKeys: readonly string[],
+  prices: PriceMap,
+  employees: number,
+): number {
+  return modulesPrice(selectedKeys, prices) * clampEmployees(employees);
 }
 
 /** Module keys of a pack; "everything" = every sellable module the API returns. */

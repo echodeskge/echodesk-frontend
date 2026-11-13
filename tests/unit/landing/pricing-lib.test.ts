@@ -16,6 +16,7 @@ import {
   parseRegistrationParams,
   priceByKey,
   registrationUrl,
+  subscriptionMonthlyTotal,
   toggleModule,
   visibleModuleKeys,
 } from "@/lib/pricing";
@@ -78,12 +79,29 @@ describe("calculator math", () => {
     expect(monthlyTotal([], prices, 5)).toBe(5);
   });
 
-  it("employees snap to 5…200 in steps of 5", () => {
-    expect(clampEmployees(1)).toBe(5);
-    expect(clampEmployees(7)).toBe(5);
-    expect(clampEmployees(8)).toBe(10);
-    expect(clampEmployees(999)).toBe(200);
-    expect(clampEmployees(NaN)).toBe(5);
+  it("employees are any whole number from 1 — no step, no cap", () => {
+    expect(clampEmployees(1)).toBe(1);
+    expect(clampEmployees(0)).toBe(1);
+    expect(clampEmployees(-3)).toBe(1);
+    expect(clampEmployees(7)).toBe(7);
+    expect(clampEmployees(2.6)).toBe(3);
+    expect(clampEmployees(999)).toBe(999);
+    expect(clampEmployees(100000)).toBe(100000);
+    expect(clampEmployees(NaN)).toBe(1);
+    expect(clampEmployees(undefined as unknown as number)).toBe(1);
+  });
+
+  it("totals for a single employee are the per-employee price", () => {
+    expect(monthlyTotal(["ticket_management"], prices, 1)).toBe(10);
+    expect(monthlyTotal([], prices, 1)).toBe(1);
+    expect(monthlyTotal(["ticket_management"], prices, 3)).toBe(30);
+  });
+
+  it("subscriptionMonthlyTotal sums every selected key (workspace included) × seats", () => {
+    expect(subscriptionMonthlyTotal(["user_management", "ticket_management"], prices, 1)).toBe(10);
+    expect(subscriptionMonthlyTotal(["user_management", "ticket_management"], prices, 4)).toBe(40);
+    expect(subscriptionMonthlyTotal(["ticket_management"], prices, 0)).toBe(9);
+    expect(subscriptionMonthlyTotal(["bogus"], prices, 7)).toBe(0);
   });
 
   it("AI switches the inbox on; switching the inbox off drops AI", () => {
@@ -119,8 +137,12 @@ describe("registration query string", () => {
     const url = registrationUrl({ pack: "bookings", modules: ["booking_management", "social_integrations"], employees: 5 });
     expect(url).toBe("/registration?pack=bookings&modules=booking_management%2Csocial_integrations&employees=5");
     expect(registrationUrl({ modules: ["ticket_management"], employees: 7 })).toBe(
-      "/registration?modules=ticket_management&employees=5",
+      "/registration?modules=ticket_management&employees=7",
     );
+    expect(registrationUrl({ modules: ["ticket_management"], employees: 1 })).toBe(
+      "/registration?modules=ticket_management&employees=1",
+    );
+    expect(registrationUrl({ modules: [], employees: 0 })).toBe("/registration?employees=1");
   });
 
   it("parses a pack link", () => {
@@ -144,7 +166,15 @@ describe("registration query string", () => {
     );
     expect(parsed.pack).toBeNull();
     expect(parsed.moduleKeys).toEqual(["ticket_management"]);
-    expect(parsed.employees).toBe(5);
+    expect(parsed.employees).toBe(3);
+  });
+
+  it("accepts any employee count from a link and floors junk to 1", () => {
+    expect(parseRegistrationParams(new URLSearchParams("employees=1"), LIVE_LIKE).employees).toBe(1);
+    expect(parseRegistrationParams(new URLSearchParams("employees=7"), LIVE_LIKE).employees).toBe(7);
+    expect(parseRegistrationParams(new URLSearchParams("employees=999"), LIVE_LIKE).employees).toBe(999);
+    expect(parseRegistrationParams(new URLSearchParams("employees=0"), LIVE_LIKE).employees).toBe(1);
+    expect(parseRegistrationParams(new URLSearchParams("employees=abc"), LIVE_LIKE).employees).toBe(1);
   });
 
   it("still understands the legacy ?features=<ids>&agents=", () => {
@@ -154,10 +184,10 @@ describe("registration query string", () => {
     expect(parsed.preselected).toBe(true);
   });
 
-  it("a bare /registration is not preselected", () => {
+  it("a bare /registration is not preselected and starts at 1 employee", () => {
     const parsed = parseRegistrationParams(new URLSearchParams(""), LIVE_LIKE);
     expect(parsed.preselected).toBe(false);
-    expect(parsed.employees).toBe(5);
+    expect(parsed.employees).toBe(1);
   });
 });
 

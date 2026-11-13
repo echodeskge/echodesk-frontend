@@ -11,7 +11,9 @@ type Translator = (key: string) => string;
 
 /**
  * Homepage SoftwareApplication schema. One `Offer` per pack, priced from
- * the live feature catalogue (per-employee price × the 5-employee floor),
+ * the live feature catalogue. `price` is the pack's price for one employee
+ * (MIN_EMPLOYEES = 1) — intentional: pricing is per employee from 1, with no
+ * packs of seats — and the unit price repeats it in `priceSpecification`,
  * so the numbers Google sees match the pack cards below.
  */
 export function SoftwareApplicationSchema({ features, t }: { features: Feature[]; t?: Translator }) {

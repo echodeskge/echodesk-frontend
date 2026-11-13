@@ -37,11 +37,11 @@ describe("pack presets", () => {
     const bookings = within(screen.getByTestId("pack-bookings"));
     expect(bookings.getByText("ჯავშნების პაკეტი")).toBeInTheDocument();
     expect(bookings.getByText("46 ₾")).toBeInTheDocument();
-    expect(bookings.getByTestId("pack-total")).toHaveTextContent("= 230 ₾ / თვეში 5 თანამშრომელზე");
+    expect(bookings.getByTestId("pack-total")).toHaveTextContent("= 46 ₾ / თვეში 1 თანამშრომელზე");
 
     const shop = within(screen.getByTestId("pack-shop"));
     expect(shop.getByText("45 ₾")).toBeInTheDocument();
-    expect(shop.getByTestId("pack-total")).toHaveTextContent("225 ₾");
+    expect(shop.getByTestId("pack-total")).toHaveTextContent("= 45 ₾");
 
     const cc = within(screen.getByTestId("pack-callcentre"));
     expect(cc.getByText("48 ₾")).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe("pack presets", () => {
 
     const all = within(screen.getByTestId("pack-everything"));
     expect(all.getByText("102 ₾")).toBeInTheDocument();
-    expect(all.getByTestId("pack-total")).toHaveTextContent("510 ₾");
+    expect(all.getByTestId("pack-total")).toHaveTextContent("= 102 ₾");
   });
 
   it("lists the included modules in Georgian", () => {
@@ -59,12 +59,12 @@ describe("pack presets", () => {
     expect(bookings).toHaveTextContent("სალონები, კლინიკები");
   });
 
-  it("links to /registration with the pack keys and 5 employees preselected", () => {
+  it("links to /registration with the pack keys and 1 employee preselected", () => {
     renderPricing();
     const href = screen.getByTestId("pack-cta-bookings").getAttribute("href") ?? "";
     expect(href).toContain("/registration?");
     expect(href).toContain("pack=bookings");
-    expect(href).toContain("employees=5");
+    expect(href).toContain("employees=1");
     expect(decodeURIComponent(href)).toContain("modules=booking_management,social_integrations,invoice_management");
 
     const all = decodeURIComponent(screen.getByTestId("pack-cta-everything").getAttribute("href") ?? "");
@@ -78,7 +78,7 @@ describe("pack presets", () => {
     expect(within(screen.getByTestId("pack-bookings")).getByText("Bookings pack")).toBeInTheDocument();
     expect(within(screen.getByTestId("pack-callcentre")).getByText("Call centre & logistics")).toBeInTheDocument();
     expect(within(screen.getByTestId("pack-bookings")).getByTestId("pack-total")).toHaveTextContent(
-      "= 220 ₾ / month for 5 employees",
+      "= 44 ₾ / month for 1 employee",
     );
     expect(screen.getByText("30 days free to start, no card needed.", { exact: false })).toBeInTheDocument();
     for (const note of ["Pay for what you use", "Scale with confidence", "Cancel anytime"]) {
@@ -86,13 +86,14 @@ describe("pack presets", () => {
     }
   });
 
-  it("uses the Georgian seat word, never 'operator', and no 14-day trial", () => {
+  it("uses the Georgian seat word, never 'operator', no 14-day trial, no minimum or 50+ cap", () => {
     const { container } = renderPricing();
     const text = container.textContent ?? "";
     expect(text).toContain("თანამშრომელ");
     expect(text).not.toContain("ოპერატორების რაოდენობა");
     expect(text).not.toMatch(/14[- ]?დღ/);
     expect(text).not.toMatch(/14-day/);
+    expect(text).not.toMatch(/მინიმუმ 5|50\+|50-ზე მეტი|info@echodesk\.ge/);
   });
 });
 

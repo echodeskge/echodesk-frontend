@@ -4722,27 +4722,20 @@
     "pricing": {
       "title": "One base. Add only the modules you need.",
       "subtitle": "Pick a ready-made pack or switch modules on one by one. Every module has one fixed price per employee, billed monthly in Georgian lari. Add, remove or cancel whenever you like.",
-      "chips": {
-        "gel": "Prices in GEL",
-        "monthly": "Billed monthly",
-        "cancel": "Cancel anytime"
-      },
       "stepper": {
         "label": "How many people will log in?",
-        "hint": "One employee = one login. Your clients are unlimited. Minimum {min}.",
+        "hint": "From 1 employee. Change it any time.",
         "value": "{n, plural, one {employee} other {employees}}",
         "decrease": "Fewer employees",
-        "increase": "More employees"
+        "increase": "More employees",
+        "quick": "Quick picks"
       },
       "perEmployeeMonth": "per employee / month",
       "perMonth": "per month",
-      "forEmployees": "= {total} ₾ / month for {n} employees",
-      "contactUs": "50+ employees, a tender or a custom deployment? Write to <email>info@echodesk.ge</email>",
+      "forEmployees": "= {total} ₾ / month for {n, plural, one {# employee} other {# employees}}",
       "packs": {
         "mostPopular": "Most popular",
-        "addons": "Popular add-ons",
         "loadCalculator": "Load into calculator",
-        "workspaceIncluded": "Workspace — staff, roles, mobile app",
         "bookings": {
           "name": "Bookings pack",
           "audience": "Salons, clinics, studios, tutors",
@@ -4771,13 +4764,7 @@
         "orBuild": "or build your own below — every number comes from the live price list."
       },
       "table": {
-        "title": "What's in each pack",
-        "module": "Module",
-        "price": "₾ / employee",
-        "total": "Total per employee / month",
-        "footnote": "Any module can be added to any pack at its own price.",
-        "included": "Included",
-        "notIncluded": "Not included"
+        "included": "Included"
       },
       "workspace": {
         "name": "Workspace",
@@ -4796,7 +4783,6 @@
           "perEmployee": "{price} ₾ per employee",
           "cta": "Start with this plan",
           "note": "Add or remove modules any time. A module added mid-month is charged only for the days left.",
-          "contact": "50+ employees? Write to <email>info@echodesk.ge</email> for a custom quote.",
           "teamSize": "Team size",
           "teamHint": "How many employees will log in?",
           "planSummary": "{modules, plural, one {# module} other {# modules}} selected for {n} employees"
@@ -4853,9 +4839,6 @@
         }
       },
       "billing": {
-        "gel": "Paid in GEL by Bank of Georgia card. International payment — contact us.",
-        "change": "Change modules, add employees or cancel any time. No contract, no setup fee.",
-        "included": "Mobile app, Georgian interface and support from Tbilisi are included in every plan.",
         "footer": "All prices in Georgian lari (₾), per employee, billed every 30 days. 30 days free to start, no card needed."
       },
       "registration": {
@@ -5192,6 +5175,34 @@
         "reduced": "Monthly cost reduced by {amount} GEL",
         "addFailed": "Failed to add feature",
         "removeFailed": "Failed to remove feature"
+      }
+    },
+    "employees": {
+      "title": "Employees",
+      "description": "Seats (logins) on your subscription — any whole number from 1, no upper limit. Change it any time.",
+      "current": "{count, plural, one {# employee} other {# employees}}",
+      "label": "Number of employees",
+      "perEmployee": "{price} ₾ per employee / month for your current modules",
+      "newTotal": "New monthly total",
+      "perMonth": "per month",
+      "trialNote": "You are on the free trial: changing the employee count is free. Nothing is charged until the trial ends.",
+      "paidNote": "On a paid subscription the difference for the days left in this billing cycle is charged now; the new amount applies from the next cycle.",
+      "save": "Save",
+      "reset": "Reset",
+      "payNow": "Complete payment",
+      "readOnly": "Only billing admins (owners and staff) can change the employee count.",
+      "result": {
+        "trial": "Employee count set to {count}. Free during the trial.",
+        "saved": "Employee count set to {count}.",
+        "monthly": "New monthly cost: {amount} ₾",
+        "prorated": "Charged now for the {days} days left: {amount} ₾",
+        "proratedNoDays": "Charged now for the days left: {amount} ₾"
+      },
+      "toasts": {
+        "saved": "Employee count updated to {count}",
+        "savedTrial": "Employee count updated to {count} — free during the trial",
+        "saveFailed": "Could not update the employee count",
+        "redirecting": "Redirecting to payment..."
       }
     }
   },
@@ -7589,7 +7600,7 @@
     },
     "pricing": {
       "title": "Stop paying for features you don't use — EchoDesk pricing",
-      "description": "Pick only the modules your team actually needs — tickets, WhatsApp, SIP calls, email, invoices, bookings, leave management — then scale from 5 to 200 agents. Transparent monthly pricing in GEL, cancel anytime.",
+      "description": "Pick only the modules your team actually needs — tickets, WhatsApp, SIP calls, email, invoices, bookings, leave management — priced per employee, from 1 employee, with no upper limit. Transparent monthly pricing in GEL, 30-day free trial without a card, cancel anytime.",
       "keywords": "pay per feature CRM, WhatsApp helpdesk pricing, SIP PBX cost, invoicing software pricing, HR software Georgia, CRM pricing Georgia, GEL pricing, Kommo vs EchoDesk",
       "ogTitle": "Pay only for what you use",
       "ogSubtitle": "Channels, calls, invoicing, bookings, HR — pick and scale",

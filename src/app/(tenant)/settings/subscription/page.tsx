@@ -16,6 +16,7 @@ import { UsageStatsCard } from '@/components/subscription/UsageStatsCard';
 import { PaymentMethodCard } from '@/components/subscription/PaymentMethodCard';
 import { InvoiceHistoryTable } from '@/components/subscription/InvoiceHistoryTable';
 import { FeatureManagementCard } from '@/components/subscription/FeatureManagementCard';
+import { EmployeeCountCard } from '@/components/subscription/EmployeeCountCard';
 import { Globe, CreditCard, CalendarClock } from 'lucide-react';
 import { Segmented } from '@/components/redesign/segmented';
 import { StatGrid } from '@/components/redesign/stats';
@@ -143,8 +144,13 @@ export default function SubscriptionPage() {
         testId="subscription-tabs"
       />
 
-      {/* Features Tab */}
-      {activeTab === 'features' && <FeatureManagementCard />}
+      {/* Features Tab: seats first (feature prices are per seat), then the modules */}
+      {activeTab === 'features' && (
+        <>
+          <EmployeeCountCard />
+          <FeatureManagementCard />
+        </>
+      )}
 
       {/* Usage Tab */}
       {activeTab === 'usage' && (
