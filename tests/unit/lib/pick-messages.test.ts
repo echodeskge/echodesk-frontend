@@ -83,6 +83,59 @@ describe("pickMessages", () => {
 
     expect(result).toEqual({});
   });
+
+  // Dotted sub-namespaces: a shared component (EmployeeCount on the
+  // Settings → Subscription card) reads `landing.pricing.stepper.*`; the
+  // settings layout ships only that sub-tree, not the whole landing bundle.
+  describe("dotted sub-namespaces", () => {
+    const NESTED: Record<string, unknown> = {
+      common: { greeting: "Hello" },
+      landing: {
+        hero: { title: "Big" },
+        pricing: { title: "Pricing", stepper: { hint: "From 1 employee", label: "How many?" } },
+      },
+    };
+
+    it("picks only the addressed sub-tree, nested under its parents", () => {
+      expect(pickMessages(NESTED, ["common", "landing.pricing.stepper"])).toEqual({
+        common: { greeting: "Hello" },
+        landing: { pricing: { stepper: { hint: "From 1 employee", label: "How many?" } } },
+      });
+    });
+
+    it("merges two sub-trees of the same parent", () => {
+      expect(pickMessages(NESTED, ["landing.pricing.stepper", "landing.hero"])).toEqual({
+        landing: {
+          hero: { title: "Big" },
+          pricing: { stepper: { hint: "From 1 employee", label: "How many?" } },
+        },
+      });
+    });
+
+    it("a whole-namespace pick wins over a sub-tree pick, in either order", () => {
+      expect(pickMessages(NESTED, ["landing", "landing.pricing.stepper"]).landing).toBe(NESTED.landing);
+      expect(pickMessages(NESTED, ["landing.pricing.stepper", "landing"]).landing).toBe(NESTED.landing);
+    });
+
+    it("ignores a dotted path that does not resolve", () => {
+      expect(pickMessages(NESTED, ["landing.pricing.nope", "nope.deep"])).toEqual({});
+    });
+
+    it("does not mutate the source messages", () => {
+      const before = JSON.stringify(NESTED);
+      pickMessages(NESTED, ["landing.pricing.stepper", "landing.hero"]);
+      expect(JSON.stringify(NESTED)).toBe(before);
+    });
+
+    it("pickRouteMessages accepts dotted route namespaces", () => {
+      const result = pickRouteMessages(NESTED, ["landing.pricing.stepper"]);
+      expect(result).toHaveProperty("common");
+      expect(result).toEqual({
+        common: { greeting: "Hello" },
+        landing: { pricing: { stepper: { hint: "From 1 employee", label: "How many?" } } },
+      });
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------

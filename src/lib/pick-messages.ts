@@ -31,19 +31,54 @@ export const GLOBAL_NAMESPACES = [
   'onboarding',
 ];
 
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+
 /**
- * Picks specific top-level namespaces from the messages object.
+ * Picks specific namespaces from the messages object.
  * Used to split messages per-route so each page only ships the translations it needs.
+ *
+ * A namespace is normally top-level (`'settings'`). A dotted path
+ * (`'landing.pricing.stepper'`) picks just that sub-tree, nested under its
+ * parents, for a shared component whose strings live in another route's
+ * namespace — without shipping the whole parent bundle. A top-level pick of
+ * the same parent always wins over a sub-tree pick.
  */
 export function pickMessages(
   messages: Record<string, unknown>,
   namespaces: string[]
 ): Record<string, unknown> {
   const picked: Record<string, unknown> = {};
+  const whole = new Set<string>();
   for (const ns of namespaces) {
-    if (ns in messages) {
-      picked[ns] = messages[ns];
+    if (!ns.includes('.')) {
+      if (ns in messages) {
+        picked[ns] = messages[ns];
+        whole.add(ns);
+      }
+      continue;
     }
+    const path = ns.split('.');
+    if (whole.has(path[0])) continue;
+    // Resolve the sub-tree in the source.
+    let src: unknown = messages;
+    for (const key of path) {
+      if (!isRecord(src) || !(key in src)) {
+        src = undefined;
+        break;
+      }
+      src = src[key];
+    }
+    if (src === undefined) continue;
+    // Write it under the same path in the result, cloning parents we create.
+    let dst = picked;
+    for (const key of path.slice(0, -1)) {
+      const existing = dst[key];
+      const next: Record<string, unknown> = isRecord(existing) ? existing : {};
+      dst[key] = next;
+      dst = next;
+    }
+    dst[path[path.length - 1]] = src;
   }
   return picked;
 }

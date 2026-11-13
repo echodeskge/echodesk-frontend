@@ -3,7 +3,10 @@ import { getMessages } from 'next-intl/server';
 import { pickRouteMessages } from '@/lib/pick-messages';
 import { SettingsShell } from './_components/settings-shell';
 
-const NAMESPACES = ['settings', 'social', 'autoPosting', 'ecommerceSettings', 'ecommerceUi', 'ecommerceOrders', 'invoices', 'bookingSettings', 'leave', 'users', 'groups', 'callsSettings', 'calls', 'subscription', 'notificationPreferences', 'ratingStatistics', 'pbxSettings', 'imageGalleryPicker'];
+// `landing.pricing.stepper`: the shared EmployeeCount control (Settings →
+// Subscription seat card) keeps its strings with the landing pricing block;
+// pick just that sub-tree rather than the whole landing bundle.
+const NAMESPACES = ['settings', 'social', 'autoPosting', 'ecommerceSettings', 'ecommerceUi', 'ecommerceOrders', 'invoices', 'bookingSettings', 'leave', 'users', 'groups', 'callsSettings', 'calls', 'subscription', 'notificationPreferences', 'ratingStatistics', 'pbxSettings', 'imageGalleryPicker', 'landing.pricing.stepper'];
 
 // Full-height settings shell (design Settings screen): grouped nav, header
 // breadcrumb + search, and the scrolling content column with the save bar slot.
