@@ -73,15 +73,20 @@ export function EmployeeCount({
   const large = size === 'lg';
   const buttonClass = cn(
     'flex shrink-0 items-center justify-center transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40',
-    large ? 'h-12 w-12 rounded-xl border' : 'h-[34px] w-8',
+    large ? 'h-12 w-12 rounded-xl border' : 'h-9 w-9',
   );
 
   return (
     <div
-      className={cn('flex flex-col gap-2.5', large && 'items-center text-center', className)}
+      className={cn('flex flex-col gap-3', large && 'items-center text-center', className)}
       data-testid="employee-count-control"
     >
-      <div className={cn('flex items-center', large ? 'justify-center gap-3' : 'gap-0 overflow-hidden rounded-lg border')}>
+      <div
+        className={cn(
+          'flex items-center',
+          large ? 'justify-center gap-3' : 'w-fit gap-0 overflow-hidden rounded-lg border bg-background',
+        )}
+      >
         <button
           type="button"
           aria-label={t('decrease')}
@@ -108,7 +113,7 @@ export function EmployeeCount({
             'min-w-0 bg-transparent text-center font-bold tabular-nums outline-none [appearance:textfield] focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
             large
               ? 'h-16 w-32 rounded-xl border text-5xl leading-none'
-              : 'h-[34px] w-16 border-x text-[15px] leading-[34px]',
+              : 'h-9 w-[4.5rem] border-x text-base leading-9',
           )}
         />
         <button
@@ -123,7 +128,14 @@ export function EmployeeCount({
       </div>
 
       {chips && (
-        <div className={cn('flex flex-wrap gap-1.5', large && 'justify-center')} role="group" aria-label={t('quick')}>
+        <div
+          className={cn('flex flex-wrap items-center gap-1.5', large && 'justify-center')}
+          role="group"
+          aria-label={t('quick')}
+        >
+          <span className="mr-0.5 text-xs text-muted-foreground" aria-hidden="true">
+            {t('quick')}:
+          </span>
           {EMPLOYEE_CHIPS.map((n) => (
             <button
               key={n}
@@ -133,8 +145,7 @@ export function EmployeeCount({
               aria-pressed={value === n}
               data-testid={`employee-chip-${n}`}
               className={cn(
-                'h-7 min-w-9 rounded-md border px-2 text-xs font-semibold transition-colors hover:border-foreground disabled:cursor-not-allowed disabled:opacity-40',
-                large ? 'flex-none' : 'flex-1',
+                'h-7 min-w-8 flex-none rounded-full border px-2.5 text-xs font-semibold transition-colors hover:border-foreground disabled:cursor-not-allowed disabled:opacity-40',
                 value === n ? 'border-primary bg-primary text-primary-foreground' : 'border-border',
               )}
             >

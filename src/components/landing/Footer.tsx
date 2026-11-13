@@ -39,7 +39,7 @@ export function Footer() {
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,200px),1fr))] gap-8">
           {/* Brand */}
           <div className="flex flex-col gap-3.5">
-            <Image src="/logo-svg.svg" alt="EchoDesk" width={140} height={35} className="h-8 w-auto" />
+            <Image src="/logo-svg.svg" alt="EchoDesk" width={140} height={35} className="h-8 w-auto self-start" />
             <p className="text-sm text-muted-foreground">{t('tagline')}</p>
             <div className="flex gap-3.5 text-muted-foreground">
               <a href="#" aria-label="Facebook" className={link}>
