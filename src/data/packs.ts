@@ -4,7 +4,9 @@
  * the workspace) at render time, so an admin price edit never leaves a
  * stale number on the page. Hard-coding 44 / 47 / 100 anywhere is forbidden.
  */
-export type PackSlug = 'bookings' | 'shop' | 'callcentre' | 'everything';
+/** `everything` is no longer a card (replaced by `builders`, 2026-11-13) but
+ * stays a valid slug so older /registration?pack=everything links keep working. */
+export type PackSlug = 'bookings' | 'shop' | 'callcentre' | 'builders' | 'everything';
 
 export interface PackDef {
   slug: PackSlug;
@@ -39,9 +41,24 @@ export const PACKS: readonly PackDef[] = [
     addonKeys: ['ai_companion', 'booking_management', 'ecommerce_crm'],
     highlight: true,
   },
+  {
+    // Construction / real-estate developers (the builders sales deck):
+    // leads from Facebook/Instagram/WhatsApp in one inbox, site visits
+    // booked online, every request a task, calls, invoices.
+    slug: 'builders',
+    keys: [
+      'social_integrations',
+      'booking_management',
+      'ticket_management',
+      'ip_calling',
+      'invoice_management',
+    ],
+    addonKeys: ['ai_companion', 'leave_management', 'ecommerce_crm'],
+  },
 ];
 
-/** The "Everything" card: every sellable module the API returns. */
+/** "Everything" = every sellable module the API returns. Not shown as a card
+ * any more; kept for deep links and the registration flow. */
 export const EVERYTHING_SLUG: PackSlug = 'everything';
 
 export const PACK_SLUGS: readonly PackSlug[] = [...PACKS.map((p) => p.slug), EVERYTHING_SLUG];

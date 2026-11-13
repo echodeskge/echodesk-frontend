@@ -1,6 +1,6 @@
 import { JsonLd } from './JsonLd';
 import type { Feature } from '@/types/package';
-import { EVERYTHING_SLUG, PACKS } from '@/data/packs';
+import { PACKS } from '@/data/packs';
 import { MIN_EMPLOYEES, packModuleKeys, packPerEmployee } from '@/lib/pricing';
 
 const SITE_URL =
@@ -17,7 +17,7 @@ type Translator = (key: string) => string;
  * so the numbers Google sees match the pack cards below.
  */
 export function SoftwareApplicationSchema({ features, t }: { features: Feature[]; t?: Translator }) {
-  const slugs = [...PACKS.map((p) => p.slug), EVERYTHING_SLUG];
+  const slugs = PACKS.map((p) => p.slug);
   const offers = slugs
     .filter((slug) => packModuleKeys(slug, features).length > 0)
     .map((slug) => {

@@ -29,7 +29,7 @@ export function mockFeature(
   };
 }
 
-/** Live-like prices (2026-11-11): bookings/shop 44, call centre 47, everything 100. */
+/** Live-like prices (2026-11-11): bookings/shop 44, call centre 47, builders 62, everything 100. */
 export const LIVE_LIKE: Feature[] = [
   mockFeature(44, "advanced_analytics", "Advanced Analytics", "0.00"),
   mockFeature(8, "ip_calling", "IP Calling", "9.00"),
@@ -48,7 +48,8 @@ export const LIVE_LIKE: Feature[] = [
 
 /**
  * Admin raised bookings to 20 and the workspace to 2: bookings pack = 2+20+19+5 = 46,
- * shop = 2+19+19+5 = 45, call centre = 2+9+19+9+5+4 = 48, everything = 2+9+19+15+9+20+19+5+4 = 102.
+ * shop = 2+19+19+5 = 45, call centre = 2+9+19+9+5+4 = 48, builders = 2+19+20+9+9+5 = 64,
+ * everything = 2+9+19+15+9+20+19+5+4 = 102.
  */
 export const EDITED: Feature[] = LIVE_LIKE.map((f) => {
   if (f.key === "booking_management") return { ...f, price_per_user_gel: "20.00" };

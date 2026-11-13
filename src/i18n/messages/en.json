@@ -4754,6 +4754,12 @@
           "tagline": "Every call and every message in one queue; every request becomes a ticket with an owner.",
           "cta": "Start with Call centre & logistics"
         },
+        "builders": {
+          "name": "Builders & developers",
+          "audience": "Construction and real-estate development companies",
+          "tagline": "Leads from Facebook, Instagram and WhatsApp in one inbox, site visits booked online, every request a task with an owner.",
+          "cta": "Start with Builders & developers"
+        },
         "everything": {
           "name": "Everything",
           "audience": "One system for the whole business",

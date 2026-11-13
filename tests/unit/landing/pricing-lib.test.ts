@@ -23,10 +23,11 @@ import {
 import { EDITED, LIVE_LIKE } from "./pricing-fixtures";
 
 describe("packs are computed from the API prices", () => {
-  it("matches the 2026-11-11 catalogue: 44 / 44 / 47 / 100", () => {
+  it("matches the 2026-11-11 catalogue: 44 / 44 / 47 / 62 / 100", () => {
     expect(packPerEmployee("bookings", LIVE_LIKE)).toBe(44);
     expect(packPerEmployee("shop", LIVE_LIKE)).toBe(44);
     expect(packPerEmployee("callcentre", LIVE_LIKE)).toBe(47);
+    expect(packPerEmployee("builders", LIVE_LIKE)).toBe(62);
     expect(packPerEmployee("everything", LIVE_LIKE)).toBe(100);
   });
 
@@ -34,12 +35,14 @@ describe("packs are computed from the API prices", () => {
     expect(packPerEmployee("bookings", EDITED)).toBe(46);
     expect(packPerEmployee("shop", EDITED)).toBe(45);
     expect(packPerEmployee("callcentre", EDITED)).toBe(48);
+    expect(packPerEmployee("builders", EDITED)).toBe(64);
     expect(packPerEmployee("everything", EDITED)).toBe(102);
   });
 
   it("the shipped fallback catalogue reproduces the live totals", () => {
     expect(packPerEmployee("bookings", FALLBACK_FEATURES)).toBe(44);
     expect(packPerEmployee("callcentre", FALLBACK_FEATURES)).toBe(47);
+    expect(packPerEmployee("builders", FALLBACK_FEATURES)).toBe(62);
     expect(packPerEmployee("everything", FALLBACK_FEATURES)).toBe(100);
   });
 

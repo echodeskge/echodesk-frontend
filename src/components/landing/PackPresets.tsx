@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { ArrowRight, CalendarCheck, Layers, PhoneCall, ShoppingBag, type LucideIcon } from 'lucide-react';
+import { ArrowRight, CalendarCheck, HardHat, Layers, PhoneCall, ShoppingBag, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Feature } from '@/types/package';
-import { EVERYTHING_SLUG, PACKS, type PackSlug } from '@/data/packs';
+import { PACKS, type PackSlug } from '@/data/packs';
 import { formatGel, packModuleKeys, perEmployeePrice, priceByKey, registrationUrl } from '@/lib/pricing';
 import { useModuleCopy } from '@/components/pricing/use-module-copy';
 
@@ -13,6 +13,7 @@ const PACK_ICONS: Record<PackSlug, LucideIcon> = {
   bookings: CalendarCheck,
   shop: ShoppingBag,
   callcentre: PhoneCall,
+  builders: HardHat,
   everything: Layers,
 };
 
@@ -24,9 +25,11 @@ interface PackPresetsProps {
 }
 
 /**
- * Three buyer-named packs + "Everything" as compact preset cards above the
- * builder (decisions D8/D14). Every price is the live sum of the pack's
- * module prices (+ workspace) at render time.
+ * Four buyer-named packs (bookings, shop, call centre, builders &
+ * developers) as compact preset cards above the builder (decisions D8/D14;
+ * the "Everything" card was replaced by the builders pack on 2026-11-13).
+ * Every price is the live sum of the pack's module prices (+ workspace) at
+ * render time.
  */
 export function PackPresets({ features, employees, onLoad }: PackPresetsProps) {
   const t = useTranslations('landing.pricing');
@@ -38,7 +41,7 @@ export function PackPresets({ features, employees, onLoad }: PackPresetsProps) {
     return f ? copy(f).name : key;
   };
 
-  const cards = [...PACKS.map((p) => ({ slug: p.slug, highlight: !!p.highlight })), { slug: EVERYTHING_SLUG, highlight: false }]
+  const cards = PACKS.map((p) => ({ slug: p.slug, highlight: !!p.highlight }))
     .map((p) => ({ ...p, moduleKeys: packModuleKeys(p.slug, features) }))
     .filter((p) => p.moduleKeys.length > 0);
 

@@ -32,7 +32,7 @@ function renderPricing(features = LIVE_LIKE, locale: "ka" | "en" = "ka") {
 }
 
 describe("pack presets", () => {
-  it("shows the three packs + Everything with totals computed from the API prices (ka)", () => {
+  it("shows the four packs with totals computed from the API prices (ka)", () => {
     renderPricing(EDITED);
     const bookings = within(screen.getByTestId("pack-bookings"));
     expect(bookings.getByText("ჯავშნების პაკეტი")).toBeInTheDocument();
@@ -47,9 +47,24 @@ describe("pack presets", () => {
     expect(cc.getByText("48 ₾")).toBeInTheDocument();
     expect(cc.getByText("ყველაზე პოპულარული")).toBeInTheDocument();
 
-    const all = within(screen.getByTestId("pack-everything"));
-    expect(all.getByText("102 ₾")).toBeInTheDocument();
-    expect(all.getByTestId("pack-total")).toHaveTextContent("= 102 ₾");
+    const builders = within(screen.getByTestId("pack-builders"));
+    expect(builders.getByText("დეველოპერის პაკეტი")).toBeInTheDocument();
+    expect(builders.getByText("64 ₾")).toBeInTheDocument();
+    expect(builders.getByTestId("pack-total")).toHaveTextContent("= 64 ₾");
+    // The "Everything" card was replaced by the builders pack.
+    expect(screen.queryByTestId("pack-everything")).toBeNull();
+  });
+
+  it("the builders pack lists inbox, site-visit bookings, tasks, calls and invoices", () => {
+    renderPricing();
+    const builders = screen.getByTestId("pack-builders");
+    expect(builders).toHaveTextContent("სამშენებლო და დეველოპერული კომპანიები");
+    const href = decodeURIComponent(screen.getByTestId("pack-cta-builders").getAttribute("href") ?? "");
+    expect(href).toContain("pack=builders");
+    expect(href).toContain(
+      "modules=social_integrations,booking_management,ticket_management,ip_calling,invoice_management",
+    );
+    expect(href).not.toContain("ecommerce_crm");
   });
 
   it("lists the included modules in Georgian", () => {
@@ -67,16 +82,16 @@ describe("pack presets", () => {
     expect(href).toContain("employees=1");
     expect(decodeURIComponent(href)).toContain("modules=booking_management,social_integrations,invoice_management");
 
-    const all = decodeURIComponent(screen.getByTestId("pack-cta-everything").getAttribute("href") ?? "");
-    expect(all).toContain("pack=everything");
-    expect(all).toContain("ai_companion");
-    expect(all).not.toContain("sip_calling");
+    const cc = decodeURIComponent(screen.getByTestId("pack-cta-callcentre").getAttribute("href") ?? "");
+    expect(cc).toContain("pack=callcentre");
+    expect(cc).not.toContain("sip_calling");
   });
 
   it("renders the English copy under the en locale", () => {
     renderPricing(LIVE_LIKE, "en");
     expect(within(screen.getByTestId("pack-bookings")).getByText("Bookings pack")).toBeInTheDocument();
     expect(within(screen.getByTestId("pack-callcentre")).getByText("Call centre & logistics")).toBeInTheDocument();
+    expect(within(screen.getByTestId("pack-builders")).getByText("Builders & developers")).toBeInTheDocument();
     expect(within(screen.getByTestId("pack-bookings")).getByTestId("pack-total")).toHaveTextContent(
       "= 44 ₾ / month for 1 employee",
     );
@@ -116,6 +131,7 @@ describe("module list + hidden stubs", () => {
     const withUnknown = [...LIVE_LIKE, mockFeature(99, "crystal_ball", "Crystal Ball", "3.00")];
     renderPricing(withUnknown);
     expect(screen.getByTestId("module-crystal_ball")).toHaveTextContent("Crystal Ball");
-    expect(within(screen.getByTestId("pack-everything")).getByText("103 ₾")).toBeInTheDocument();
+    // Packs are fixed module sets, so an unknown sellable key changes no card.
+    expect(within(screen.getByTestId("pack-builders")).getByText("62 ₾")).toBeInTheDocument();
   });
 });
