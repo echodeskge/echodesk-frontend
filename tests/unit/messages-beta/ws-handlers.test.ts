@@ -150,6 +150,51 @@ describe("dispatchWsFrame – new_message", () => {
     expect(msgs[0].images?.[0].url).not.toContain("scontent.fbcdn.net");
   });
 
+  it("WhatsApp Business-app echo (owner replied from the phone) lands live in the customer's chat", () => {
+    // Backend shape since 2026-11-16 for `smb_message_echoes`: platform +
+    // waba_id + to_number so the frame routes to wa_<waba>_<customer>.
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "wa_waba1_8618836109809", platform: "whatsapp", accountId: "waba1", name: "Chloe Lee" }),
+    ]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "new_message",
+        conversation_id: "8618836109809",
+        message: {
+          id: 1738,
+          message_id: "wamid.echo",
+          platform: "whatsapp",
+          waba_id: "waba1",
+          account_id: "waba1",
+          from_number: "995579370374",
+          to_number: "8618836109809",
+          recipient_id: "8618836109809",
+          contact_name: "Chloe Lee",
+          message_text: "",
+          message_type: "image",
+          is_from_business: true,
+          is_echo: true,
+          source: "business_app",
+          attachments: [{ type: "image", media_id: "1461563759376358", url: "https://lookaside.fbsbx.com/x", mime_type: "image/jpeg" }],
+          timestamp: new Date().toISOString(),
+        },
+      },
+      Array.from(PLATFORMS)
+    );
+    const state = useMessagesBetaStore.getState();
+    const msgs = state.messagesByChatId.wa_waba1_8618836109809;
+    expect(msgs).toHaveLength(1);
+    expect(msgs[0].senderId).toBe("business");
+    expect(msgs[0].isEcho).toBe(true);
+    expect(msgs[0].isAutomated).toBe(false);
+    expect(msgs[0].images?.[0].url).toContain("/api/social/whatsapp-media/1461563759376358/?waba_id=waba1");
+    // Our own reply must not count as unread, and no stray row appears.
+    expect(state.unreadByChatId.wa_waba1_8618836109809 ?? 0).toBe(0);
+    expect(state.conversations).toHaveLength(1);
+    expect(state.conversations[0].name).toBe("Chloe Lee");
+  });
+
   it("video attachment lands in images[] with type:'video' (player route in MessageBubble)", () => {
     useMessagesBetaStore.getState().hydrateConversations([
       makeRow({ id: "wa_waba1_995551234567", platform: "whatsapp", accountId: "waba1" }),

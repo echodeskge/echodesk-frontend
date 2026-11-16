@@ -350,8 +350,11 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
         updatedRows = [fabricated, ...state.conversations];
       }
 
+      // Only customer messages count as unread — the server's badge is built
+      // from is_read_by_staff on inbound rows, so a reply echoed from the
+      // WhatsApp Business app (or a teammate's send) must not bump it.
       const unread = { ...state.unreadByChatId };
-      if (!isSelected) {
+      if (!isSelected && finalMessage.senderId !== "business") {
         unread[chatId] = (unread[chatId] || 0) + 1;
       }
 
